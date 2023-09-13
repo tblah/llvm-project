@@ -59,9 +59,12 @@ private:
 // TODO: documentation
 struct PassState {
   SubtreeState globalDataTree;
+  SubtreeState allocatedDataTree;
 
-  explicit PassState(SubtreeState globalDataTree)
-      : globalDataTree{std::move(globalDataTree)} {}
+  explicit PassState(SubtreeState globalDataTree,
+                     SubtreeState allocatedDataTree)
+      : globalDataTree{std::move(globalDataTree)},
+        allocatedDataTree{std::move(allocatedDataTree)} {}
 
   inline const fir::AliasAnalysis::Source &getSource(mlir::Value value) {
     if (!analysisCache.contains(value))
@@ -117,6 +120,18 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
     LLVM_DEBUG(llvm::dbgs().indent(2) << "Found reference to global " << name
                                       << " at " << *op << "\n");
     tag = state.globalDataTree.getTag(name);
+  } else if (source.kind == fir::AliasAnalysis::SourceKind::Allocate) {
+    std::optional<llvm::StringRef> name;
+    mlir::Operation *sourceOp = source.u.get<mlir::Value>().getDefiningOp();
+    if (auto alloc = mlir::dyn_cast_or_null<fir::AllocaOp>(sourceOp))
+      name = alloc.getUniqName();
+    else if (auto alloc = mlir::dyn_cast_or_null<fir::AllocMemOp>(sourceOp))
+      name = alloc.getUniqName();
+    if (name) {
+      LLVM_DEBUG(llvm::dbgs() << "Found reference to allocation " << name
+                              << " at " << *op << "\n");
+      tag = state.allocatedDataTree.getTag(*name);
+    }
   }
 
   if (tag)
@@ -147,8 +162,8 @@ void AddAliasTagsPass::runOnOperation() {
   // Instead this pass stores state per mlir::ModuleOp (which is what MLIR
   // thinks the pass operates on), then the real work of the pass is done in
   // runOnAliasInterface
-  PassState state{/*globalDataTree=*/
-                  SubtreeState{ctx, "global data", anyDataAccessTypeDesc}};
+  PassState state{SubtreeState{ctx, "global data", anyDataAccessTypeDesc},
+                  SubtreeState{ctx, "allocated data", anyDataAccessTypeDesc}};
 
   mlir::ModuleOp mod = getOperation();
   mod.walk([&](fir::FirAliasAnalysisOpInterface op) {
