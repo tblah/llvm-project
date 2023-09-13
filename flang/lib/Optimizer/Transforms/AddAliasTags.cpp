@@ -60,11 +60,16 @@ private:
 struct PassState {
   SubtreeState globalDataTree;
   SubtreeState allocatedDataTree;
+  // TODO: this might produce incorrect results in the presnence of function
+  // inlining and instruction re-ordering
+  SubtreeState dummyArgDataTree;
 
   explicit PassState(SubtreeState globalDataTree,
-                     SubtreeState allocatedDataTree)
+                     SubtreeState allocatedDataTree,
+                     SubtreeState dummyArgDataTree)
       : globalDataTree{std::move(globalDataTree)},
-        allocatedDataTree{std::move(allocatedDataTree)} {}
+        allocatedDataTree{std::move(allocatedDataTree)},
+        dummyArgDataTree(std::move(dummyArgDataTree)) {}
 
   inline const fir::AliasAnalysis::Source &getSource(mlir::Value value) {
     if (!analysisCache.contains(value))
@@ -112,7 +117,12 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
     return;
   LLVM_DEBUG(llvm::dbgs() << "Analysing " << op << "\n");
 
-  fir::AliasAnalysis::Source source = state.getSource(memref);
+  const fir::AliasAnalysis::Source &source = state.getSource(memref);
+  if (source.isTargetOrPointer()) {
+    LLVM_DEBUG(llvm::dbgs().indent(2) << "Skipping TARGET/POINTER\n");
+    return;
+  }
+
   mlir::LLVM::TBAATagAttr tag;
   if (source.kind == fir::AliasAnalysis::SourceKind::Global) {
     mlir::SymbolRefAttr glbl = source.u.get<mlir::SymbolRefAttr>();
@@ -128,10 +138,26 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
     else if (auto alloc = mlir::dyn_cast_or_null<fir::AllocMemOp>(sourceOp))
       name = alloc.getUniqName();
     if (name) {
-      LLVM_DEBUG(llvm::dbgs() << "Found reference to allocation " << name
-                              << " at " << *op << "\n");
+      LLVM_DEBUG(llvm::dbgs().indent(2) << "Found reference to allocation "
+                                        << name << " at " << *op << "\n");
       tag = state.allocatedDataTree.getTag(*name);
+    } else {
+      LLVM_DEBUG(llvm::dbgs().indent(2)
+                 << "WARN: couldn't find a name for allocation " << *op
+                 << "\n");
     }
+  } else if (source.kind == fir::AliasAnalysis::SourceKind::Argument) {
+    LLVM_DEBUG(llvm::dbgs().indent(2)
+               << "Found reference to dummy argument at " << *op << "\n");
+    // TODO: make a better name
+    // value impls should be unique within a given mlir context. Use its address
+    // as a unique id
+    tag = state.dummyArgDataTree.getTag(
+        "dummy" +
+        std::to_string((uintptr_t)source.u.get<mlir::Value>().getImpl()));
+  } else {
+    LLVM_DEBUG(llvm::dbgs().indent(2)
+               << "WARN: unsupported value: " << source << "\n");
   }
 
   if (tag)
@@ -163,7 +189,8 @@ void AddAliasTagsPass::runOnOperation() {
   // thinks the pass operates on), then the real work of the pass is done in
   // runOnAliasInterface
   PassState state{SubtreeState{ctx, "global data", anyDataAccessTypeDesc},
-                  SubtreeState{ctx, "allocated data", anyDataAccessTypeDesc}};
+                  SubtreeState{ctx, "allocated data", anyDataAccessTypeDesc},
+                  SubtreeState{ctx, "dummy arg data", anyDataAccessTypeDesc}};
 
   mlir::ModuleOp mod = getOperation();
   mod.walk([&](fir::FirAliasAnalysisOpInterface op) {
