@@ -12,6 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "flang/Optimizer/Analysis/AliasAnalysis.h"
+#include "flang/Optimizer/Analysis/TBAAForest.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
 #include "flang/Optimizer/Dialect/FIRType.h"
@@ -26,10 +27,10 @@
 #include "llvm/Support/Threading.h"
 #include "llvm/Support/raw_ostream.h"
 #include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/PatternMatch.h>
-#include <thread>
 
 namespace fir {
 #define GEN_PASS_DEF_ADDALIASTAGS
@@ -41,39 +42,6 @@ namespace fir {
 namespace {
 
 // TODO: documentation
-class SubtreeState {
-public:
-  SubtreeState(mlir::MLIRContext *ctx, std::string name,
-               mlir::LLVM::TBAANodeAttr grandParent)
-      : parentId{std::move(name)}, context(ctx) {
-    parent = mlir::LLVM::TBAATypeDescriptorAttr::get(
-        context, parentId, mlir::LLVM::TBAAMemberAttr::get(grandParent, 0));
-  }
-
-  SubtreeState(const SubtreeState &) = delete;
-  SubtreeState(SubtreeState &&) = default;
-
-  mlir::LLVM::TBAATagAttr getTag(llvm::StringRef uniqueId) const;
-
-private:
-  const std::string parentId;
-  mlir::MLIRContext *const context;
-  mlir::LLVM::TBAATypeDescriptorAttr parent;
-  llvm::DenseMap<llvm::StringRef, mlir::LLVM::TBAATagAttr> tagDedup;
-};
-
-// per-function TBAA tree
-// TODO documentation
-struct TBAATree {
-  SubtreeState globalDataTree;
-  SubtreeState allocatedDataTree;
-  SubtreeState dummyArgDataTree;
-
-  static TBAATree buildTree(mlir::func::FuncOp function);
-  explicit TBAATree(mlir::LLVM::TBAANodeAttr root);
-};
-
-// TODO: documentation
 class PassState {
 public:
   inline const fir::AliasAnalysis::Source &getSource(mlir::Value value) {
@@ -82,16 +50,14 @@ public:
     return analysisCache[value];
   }
 
-  inline const TBAATree &getFuncTree(mlir::func::FuncOp func) {
-    if (!perFuncTree.contains(func))
-      perFuncTree.insert({func, TBAATree::buildTree(func)});
-    return perFuncTree.at(func);
+  inline const fir::TBAATree &getFuncTree(mlir::func::FuncOp func) {
+    return forrest[func];
   }
 
 private:
   fir::AliasAnalysis analysis;
   llvm::DenseMap<mlir::Value, fir::AliasAnalysis::Source> analysisCache;
-  llvm::DenseMap<mlir::func::FuncOp, TBAATree> perFuncTree;
+  fir::TBAAForrest forrest;
 };
 
 class AddAliasTagsPass : public fir::impl::AddAliasTagsBase<AddAliasTagsPass> {
@@ -104,32 +70,6 @@ private:
 };
 
 } // namespace
-
-mlir::LLVM::TBAATagAttr SubtreeState::getTag(llvm::StringRef uniqueName) const {
-  // mlir::LLVM::TBAATagAttr &tag = tagDedup[uniqueName];
-  // if (tag)
-  //   return tag;
-  std::string id = (parentId + "/" + uniqueName).str();
-  mlir::LLVM::TBAATypeDescriptorAttr type =
-      mlir::LLVM::TBAATypeDescriptorAttr::get(
-          context, id, mlir::LLVM::TBAAMemberAttr::get(parent, 0));
-  return mlir::LLVM::TBAATagAttr::get(type, type, 0);
-  // return tag;
-}
-
-TBAATree TBAATree::buildTree(mlir::func::FuncOp func) {
-  llvm::StringRef funcName = func.getSymName();
-  std::string rootId = ("Flang function root " + funcName).str();
-  mlir::MLIRContext *ctx = func->getContext();
-  mlir::LLVM::TBAARootAttr funcRoot =
-      mlir::LLVM::TBAARootAttr::get(ctx, mlir::StringAttr::get(ctx, rootId));
-  return TBAATree{funcRoot};
-}
-
-TBAATree::TBAATree(mlir::LLVM::TBAANodeAttr root)
-    : globalDataTree(root.getContext(), "global data", root),
-      allocatedDataTree(root.getContext(), "allocated data", root),
-      dummyArgDataTree(root.getContext(), "dummy arg data", root) {}
 
 void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
                                            PassState &state) {
