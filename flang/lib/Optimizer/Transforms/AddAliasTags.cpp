@@ -25,6 +25,9 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Threading.h"
 #include "llvm/Support/raw_ostream.h"
+#include <mlir/Dialect/Func/IR/FuncOps.h>
+#include <mlir/IR/BuiltinAttributes.h>
+#include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/PatternMatch.h>
 #include <thread>
 
@@ -50,7 +53,7 @@ public:
   SubtreeState(const SubtreeState &) = delete;
   SubtreeState(SubtreeState &&) = default;
 
-  mlir::LLVM::TBAATagAttr getTag(llvm::StringRef uniqueId);
+  mlir::LLVM::TBAATagAttr getTag(llvm::StringRef uniqueId) const;
 
 private:
   const std::string parentId;
@@ -59,30 +62,36 @@ private:
   llvm::DenseMap<llvm::StringRef, mlir::LLVM::TBAATagAttr> tagDedup;
 };
 
-// TODO: documentation
-struct PassState {
+// per-function TBAA tree
+// TODO documentation
+struct TBAATree {
   SubtreeState globalDataTree;
   SubtreeState allocatedDataTree;
-  // TODO: this might produce incorrect results in the presnence of function
-  // inlining and instruction re-ordering
   SubtreeState dummyArgDataTree;
 
-  explicit PassState(SubtreeState globalDataTree,
-                     SubtreeState allocatedDataTree,
-                     SubtreeState dummyArgDataTree)
-      : globalDataTree{std::move(globalDataTree)},
-        allocatedDataTree{std::move(allocatedDataTree)},
-        dummyArgDataTree(std::move(dummyArgDataTree)) {}
+  static TBAATree buildTree(mlir::func::FuncOp function);
+  explicit TBAATree(mlir::LLVM::TBAANodeAttr root);
+};
 
+// TODO: documentation
+class PassState {
+public:
   inline const fir::AliasAnalysis::Source &getSource(mlir::Value value) {
     if (!analysisCache.contains(value))
-      analysisCache[value] = analysis.getSource(value);
+      analysisCache.insert({value, analysis.getSource(value)});
     return analysisCache[value];
+  }
+
+  inline const TBAATree &getFuncTree(mlir::func::FuncOp func) {
+    if (!perFuncTree.contains(func))
+      perFuncTree.insert({func, TBAATree::buildTree(func)});
+    return perFuncTree.at(func);
   }
 
 private:
   fir::AliasAnalysis analysis;
   llvm::DenseMap<mlir::Value, fir::AliasAnalysis::Source> analysisCache;
+  llvm::DenseMap<mlir::func::FuncOp, TBAATree> perFuncTree;
 };
 
 class AddAliasTagsPass : public fir::impl::AddAliasTagsBase<AddAliasTagsPass> {
@@ -96,7 +105,7 @@ private:
 
 } // namespace
 
-mlir::LLVM::TBAATagAttr SubtreeState::getTag(llvm::StringRef uniqueName) {
+mlir::LLVM::TBAATagAttr SubtreeState::getTag(llvm::StringRef uniqueName) const {
   // mlir::LLVM::TBAATagAttr &tag = tagDedup[uniqueName];
   // if (tag)
   //   return tag;
@@ -107,6 +116,20 @@ mlir::LLVM::TBAATagAttr SubtreeState::getTag(llvm::StringRef uniqueName) {
   return mlir::LLVM::TBAATagAttr::get(type, type, 0);
   // return tag;
 }
+
+TBAATree TBAATree::buildTree(mlir::func::FuncOp func) {
+  llvm::StringRef funcName = func.getSymName();
+  std::string rootId = ("Flang function root " + funcName).str();
+  mlir::MLIRContext *ctx = func->getContext();
+  mlir::LLVM::TBAARootAttr funcRoot =
+      mlir::LLVM::TBAARootAttr::get(ctx, mlir::StringAttr::get(ctx, rootId));
+  return TBAATree{funcRoot};
+}
+
+TBAATree::TBAATree(mlir::LLVM::TBAANodeAttr root)
+    : globalDataTree(root.getContext(), "global data", root),
+      allocatedDataTree(root.getContext(), "allocated data", root),
+      dummyArgDataTree(root.getContext(), "dummy arg data", root) {}
 
 void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
                                            PassState &state) {
@@ -126,13 +149,15 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
     return;
   }
 
+  mlir::func::FuncOp func = op->getParentOfType<mlir::func::FuncOp>();
+
   mlir::LLVM::TBAATagAttr tag;
   if (source.kind == fir::AliasAnalysis::SourceKind::Global) {
     mlir::SymbolRefAttr glbl = source.u.get<mlir::SymbolRefAttr>();
     const char *name = glbl.getRootReference().data();
     LLVM_DEBUG(llvm::dbgs().indent(2) << "Found reference to global " << name
                                       << " at " << *op << "\n");
-    tag = state.globalDataTree.getTag(name);
+    tag = state.getFuncTree(func).globalDataTree.getTag(name);
   } else if (source.kind == fir::AliasAnalysis::SourceKind::Allocate) {
     std::optional<llvm::StringRef> name;
     mlir::Operation *sourceOp = source.u.get<mlir::Value>().getDefiningOp();
@@ -143,7 +168,7 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
     if (name) {
       LLVM_DEBUG(llvm::dbgs().indent(2) << "Found reference to allocation "
                                         << name << " at " << *op << "\n");
-      tag = state.allocatedDataTree.getTag(*name);
+      tag = state.getFuncTree(func).allocatedDataTree.getTag(*name);
     } else {
       LLVM_DEBUG(llvm::dbgs().indent(2)
                  << "WARN: couldn't find a name for allocation " << *op
@@ -155,7 +180,7 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
     // TODO: make a better name
     // value impls should be unique within a given mlir context. Use its address
     // as a unique id
-    tag = state.dummyArgDataTree.getTag(
+    tag = state.getFuncTree(func).dummyArgDataTree.getTag(
         "dummy" +
         std::to_string((uintptr_t)source.u.get<mlir::Value>().getImpl()));
   } else {
@@ -170,34 +195,15 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
     // rewriter.finalizeRootUpdate(op);
   }
 }
-
 void AddAliasTagsPass::runOnOperation() {
   LLVM_DEBUG(llvm::dbgs() << "=== Begin " DEBUG_TYPE " ===\n");
-  mlir::MLIRContext *ctx = &getContext();
-
-  // TODO: share with fir::TBAABuilder
-  static constexpr llvm::StringRef flangTBAARootId = "Flang Type TBAA Root";
-  static constexpr llvm::StringRef anyAccessTypeDescId = "any access";
-  static constexpr llvm::StringRef anyDataAccessTypeDescId = "any data access";
-  mlir::LLVM::TBAARootAttr flangTBAARoot = mlir::LLVM::TBAARootAttr::get(
-      ctx, mlir::StringAttr::get(ctx, flangTBAARootId));
-  mlir::LLVM::TBAATypeDescriptorAttr anyAccessTypeDesc =
-      mlir::LLVM::TBAATypeDescriptorAttr::get(
-          ctx, anyAccessTypeDescId,
-          mlir::LLVM::TBAAMemberAttr::get(flangTBAARoot, 0));
-  mlir::LLVM::TBAATypeDescriptorAttr anyDataAccessTypeDesc =
-      mlir::LLVM::TBAATypeDescriptorAttr::get(
-          ctx, anyDataAccessTypeDescId,
-          mlir::LLVM::TBAAMemberAttr::get(anyAccessTypeDesc, 0));
 
   // MLIR forbids storing state in a pass because different instances might be
   // used in different threads
   // Instead this pass stores state per mlir::ModuleOp (which is what MLIR
   // thinks the pass operates on), then the real work of the pass is done in
   // runOnAliasInterface
-  PassState state{SubtreeState{ctx, "global data", anyDataAccessTypeDesc},
-                  SubtreeState{ctx, "allocated data", anyDataAccessTypeDesc},
-                  SubtreeState{ctx, "dummy arg data", anyDataAccessTypeDesc}};
+  PassState state;
 
   mlir::ModuleOp mod = getOperation();
   mod.walk([&](fir::FirAliasAnalysisOpInterface op) {
