@@ -23,7 +23,10 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/Threading.h"
 #include "llvm/Support/raw_ostream.h"
+#include <mlir/IR/PatternMatch.h>
+#include <thread>
 
 namespace fir {
 #define GEN_PASS_DEF_ADDALIASTAGS
@@ -94,15 +97,15 @@ private:
 } // namespace
 
 mlir::LLVM::TBAATagAttr SubtreeState::getTag(llvm::StringRef uniqueName) {
-  mlir::LLVM::TBAATagAttr &tag = tagDedup[uniqueName];
-  if (tag)
-    return tag;
+  // mlir::LLVM::TBAATagAttr &tag = tagDedup[uniqueName];
+  // if (tag)
+  //   return tag;
   std::string id = (parentId + "/" + uniqueName).str();
   mlir::LLVM::TBAATypeDescriptorAttr type =
       mlir::LLVM::TBAATypeDescriptorAttr::get(
           context, id, mlir::LLVM::TBAAMemberAttr::get(parent, 0));
-  tag = mlir::LLVM::TBAATagAttr::get(type, type, 0);
-  return tag;
+  return mlir::LLVM::TBAATagAttr::get(type, type, 0);
+  // return tag;
 }
 
 void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
@@ -160,8 +163,12 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
                << "WARN: unsupported value: " << source << "\n");
   }
 
-  if (tag)
+  if (tag) {
+    // mlir::IRRewriter rewriter{&getContext()};
+    // rewriter.startRootUpdate(op);
     op.setTBAATags(mlir::ArrayAttr::get(&getContext(), tag));
+    // rewriter.finalizeRootUpdate(op);
+  }
 }
 
 void AddAliasTagsPass::runOnOperation() {
