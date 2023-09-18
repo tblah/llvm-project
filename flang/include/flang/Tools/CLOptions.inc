@@ -65,6 +65,8 @@ DisableOption(CfgConversion, "cfg-conversion", "disable FIR to CFG pass");
 DisableOption(FirAvc, "avc", "array value copy analysis and transformation");
 DisableOption(
     FirMao, "memory-allocation-opt", "memory allocation optimization");
+DisableOption(
+  FirAliasAnalysis, "no-fir-alias-analysis", "disable fir alias analysis");
 
 /// CodeGen Passes
 #if !defined(FLANG_EXCLUDE_CODEGEN)
@@ -186,7 +188,7 @@ inline void addExternalNameConversionPass(
 /// \param pm - MLIR pass manager that will hold the pipeline definition
 inline void createDefaultFIROptimizerPassPipeline(mlir::PassManager &pm,
     llvm::OptimizationLevel optLevel = defaultOptLevel,
-    bool stackArrays = false, bool loopVersioning = false) {
+    bool stackArrays = false, bool loopVersioning = false, bool aliasAnalysis = true) {
   // simplify the IR
   mlir::GreedyRewriteConfig config;
   config.enableRegionSimplification = false;
@@ -222,7 +224,9 @@ inline void createDefaultFIROptimizerPassPipeline(mlir::PassManager &pm,
   // Polymorphic types
   pm.addPass(fir::createPolymorphicOpConversionPass());
 
-  pm.addPass(fir::createAliasTagsPass());
+  // TODO: also disable tbaa tags in codegen
+  if (aliasAnalysis && !disableFirAliasAnalysis)
+    pm.addPass(fir::createAliasTagsPass());
 
   // convert control flow to CFG form
   fir::addCfgConversionPass(pm);
@@ -316,13 +320,13 @@ inline void createDefaultFIRCodeGenPassPipeline(mlir::PassManager &pm,
 inline void createMLIRToLLVMPassPipeline(mlir::PassManager &pm,
     llvm::OptimizationLevel optLevel = defaultOptLevel,
     bool stackArrays = false, bool underscoring = true,
-    bool loopVersioning = false,
+    bool loopVersioning = false, bool aliasAnalysis = true,
     llvm::codegenoptions::DebugInfoKind debugInfo = NoDebugInfo) {
   fir::createHLFIRToFIRPassPipeline(pm, optLevel);
 
   // Add default optimizer pass pipeline.
   fir::createDefaultFIROptimizerPassPipeline(
-      pm, optLevel, stackArrays, loopVersioning);
+      pm, optLevel, stackArrays, loopVersioning, aliasAnalysis);
 
   // Add codegen pass pipeline.
   fir::createDefaultFIRCodeGenPassPipeline(

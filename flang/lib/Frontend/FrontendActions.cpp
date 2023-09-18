@@ -716,6 +716,7 @@ void CodeGenAction::generateLLVMIR() {
   // Create the pass pipeline
   fir::createMLIRToLLVMPassPipeline(pm, level, opts.StackArrays,
                                     opts.Underscoring, opts.LoopVersioning,
+                                    opts.AliasAnalysis,
                                     opts.getDebugInfo());
   (void)mlir::applyPassManagerCLOptions(pm);
 
