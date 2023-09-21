@@ -26,6 +26,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Threading.h"
 #include "llvm/Support/raw_ostream.h"
+#include <initializer_list>
 #include <mlir/Dialect/Func/IR/FuncOps.h>
 #include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 #include <mlir/IR/BuiltinAttributes.h>
@@ -73,6 +74,19 @@ private:
 
 void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
                                            PassState &state) {
+  mlir::func::FuncOp func = op->getParentOfType<mlir::func::FuncOp>();
+
+  // TODO: REMOVE
+  llvm::StringRef funcName = func.getSymName();
+  const std::initializer_list<llvm::StringRef> skipFns{
+      /*this one breaks*/ "mm5atm", /*"gasabs", "rrtmlwrad"*/};
+  for (const llvm::StringRef &skipFn : skipFns) {
+    if (funcName.contains(skipFn)) {
+      llvm::outs() << "WARN: Skipping func " << funcName << "\n";
+      return;
+    }
+  }
+
   llvm::SmallVector<mlir::Value> accessedOperands = op.getAccessedOperands();
   assert(accessedOperands.size() == 1 &&
          "load and store only access one address");
@@ -88,8 +102,6 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
     LLVM_DEBUG(llvm::dbgs().indent(2) << "Skipping TARGET/POINTER\n");
     return;
   }
-
-  mlir::func::FuncOp func = op->getParentOfType<mlir::func::FuncOp>();
 
   mlir::LLVM::TBAATagAttr tag;
   if (source.kind == fir::AliasAnalysis::SourceKind::Global) {
