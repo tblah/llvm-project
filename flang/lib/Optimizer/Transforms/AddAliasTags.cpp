@@ -77,6 +77,7 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
   mlir::func::FuncOp func = op->getParentOfType<mlir::func::FuncOp>();
 
   // TODO: REMOVE
+#if 0
   llvm::StringRef funcName = func.getSymName();
   const std::initializer_list<llvm::StringRef> skipFns{
       /*this one breaks*/ "mm5atm", /*"gasabs", "rrtmlwrad"*/};
@@ -86,6 +87,7 @@ void AddAliasTagsPass::runOnAliasInterface(fir::FirAliasAnalysisOpInterface op,
       return;
     }
   }
+#endif
 
   llvm::SmallVector<mlir::Value> accessedOperands = op.getAccessedOperands();
   assert(accessedOperands.size() == 1 &&
