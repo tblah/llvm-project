@@ -538,14 +538,14 @@ static void CheckExplicitDataArg(const characteristics::DummyDataObject &dummy,
         }
         if (actualIsArrayElement && actualLastSymbol &&
             !evaluate::IsContiguous(*actualLastSymbol, foldingContext) &&
-            !dummy.ignoreTKR.test(common::IgnoreTKR::Contiguous)) {
+            !dummy.ignoreTKR.test(common::IgnoreTKR::Rank)) {
           if (IsPointer(*actualLastSymbol)) {
             basicError = true;
             messages.Say(
                 "Element of pointer array may not be associated with a %s array"_err_en_US,
                 dummyName);
           } else if (IsAssumedShape(*actualLastSymbol) &&
-              !dummy.ignoreTKR.test(common::IgnoreTKR::Contiguous)) {
+              !dummy.ignoreTKR.test(common::IgnoreTKR::Rank)) {
             basicError = true;
             messages.Say(
                 "Element of assumed-shape array may not be associated with a %s array"_err_en_US,
