@@ -11,7 +11,7 @@
 namespace Fortran::runtime {
 extern "C" {
 
-#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
+#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
 CppTypeFor<TypeCategory::Real, 16> RTDEF(J0F128)(
     CppTypeFor<TypeCategory::Real, 16> x) {
   return J0<true>::invoke(x);

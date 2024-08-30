@@ -31,7 +31,7 @@
 #define CSqrt(x) csqrtq(x)
 #define CTan(x) ctanq(x)
 #define CTanh(x) ctanhq(x)
-#elif LDBL_MANT_DIG == 113
+#elif __LDBL_MANT_DIG__ == 113
 /* Use 'long double' versions of libm functions. */
 #include <complex.h>
 

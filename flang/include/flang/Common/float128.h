@@ -13,7 +13,7 @@
  * support or is emulated.
  *
  * 128-bit arithmetic may be available via "long double"; this can
- * be determined by LDBL_MANT_DIG == 113.  A machine may have both 128-bit
+ * be determined by __LDBL_MANT_DIG__ == 113.  A machine may have both 128-bit
  * long double and __float128; prefer long double by testing for it first.
  */
 
@@ -52,7 +52,7 @@
           !defined(_LIBCPP_VERSION)  && !defined(__CUDA_ARCH__) */
 
 /* Define pure C CFloat128Type and CFloat128ComplexType. */
-#if LDBL_MANT_DIG == 113
+#if __LDBL_MANT_DIG__ == 113
 typedef long double CFloat128Type;
 #ifndef __cplusplus
 typedef long double _Complex CFloat128ComplexType;

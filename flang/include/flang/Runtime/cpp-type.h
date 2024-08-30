@@ -44,17 +44,17 @@ template <> struct CppTypeForHelper<TypeCategory::Real, 4> {
 template <> struct CppTypeForHelper<TypeCategory::Real, 8> {
   using type = double;
 };
-#if LDBL_MANT_DIG == 64
+#if __LDBL_MANT_DIG__ == 64
 template <> struct CppTypeForHelper<TypeCategory::Real, 10> {
   using type = long double;
 };
 #endif
-#if LDBL_MANT_DIG == 113
+#if __LDBL_MANT_DIG__ == 113
 using CppFloat128Type = long double;
 #elif HAS_FLOAT128
 using CppFloat128Type = __float128;
 #endif
-#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
+#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
 template <> struct CppTypeForHelper<TypeCategory::Real, 16> {
   using type = CppFloat128Type;
 };

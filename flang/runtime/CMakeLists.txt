@@ -75,8 +75,8 @@ check_cxx_source_compiles(
 # Check if 128-bit float computations can be done via long double.
 check_cxx_source_compiles(
   "#include <cfloat>
-   #if LDBL_MANT_DIG != 113
-   #error LDBL_MANT_DIG != 113
+   #if __LDBL_MANT_DIG__ != 113
+   #error __LDBL_MANT_DIG__ != 113
    #endif
    int main() { return 0; }
   "

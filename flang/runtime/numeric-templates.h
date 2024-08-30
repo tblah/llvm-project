@@ -159,7 +159,7 @@ template <typename T> struct MAXTy {
   }
 };
 
-#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
+#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
 template <> struct MAXTy<CppTypeFor<TypeCategory::Real, 16>> {
   static CppTypeFor<TypeCategory::Real, 16> compute() {
     return MaxOrMinIdentity<TypeCategory::Real, 16, true>::Value();
