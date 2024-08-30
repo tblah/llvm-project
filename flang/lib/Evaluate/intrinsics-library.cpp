@@ -395,7 +395,7 @@ template <> struct HostRuntimeLibrary<double, LibraryVersion::LibmExtensions> {
   static_assert(map.Verify(), "map must be sorted");
 };
 
-#if __LDBL_MANT_DIG__ == 80 || __LDBL_MANT_DIG__ == 113
+#if LDBL_MANT_DIG == 80 || LDBL_MANT_DIG == 113
 template <>
 struct HostRuntimeLibrary<long double, LibraryVersion::LibmExtensions> {
   using F = FuncPointer<long double, long double>;
@@ -411,7 +411,7 @@ struct HostRuntimeLibrary<long double, LibraryVersion::LibmExtensions> {
   static constexpr HostRuntimeMap map{table};
   static_assert(map.Verify(), "map must be sorted");
 };
-#endif // __LDBL_MANT_DIG__ == 80 || __LDBL_MANT_DIG__ == 113
+#endif // LDBL_MANT_DIG == 80 || LDBL_MANT_DIG == 113
 #endif //_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
 
 /// Define pgmath description

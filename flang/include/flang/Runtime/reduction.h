@@ -68,11 +68,11 @@ float RTDECL(SumReal4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 double RTDECL(SumReal8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 long double RTDECL(SumReal10)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 CppFloat128Type RTDECL(SumReal16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
@@ -89,12 +89,12 @@ void RTDECL(CppSumComplex4)(std::complex<float> &, const Descriptor &,
 void RTDECL(CppSumComplex8)(std::complex<double> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 void RTDECL(CppSumComplex10)(std::complex<long double> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 void RTDECL(CppSumComplex16)(std::complex<CppFloat128Type> &,
     const Descriptor &, const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
@@ -128,11 +128,11 @@ float RTDECL(ProductReal4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 double RTDECL(ProductReal8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 long double RTDECL(ProductReal10)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 CppFloat128Type RTDECL(ProductReal16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
@@ -149,12 +149,12 @@ void RTDECL(CppProductComplex4)(std::complex<float> &, const Descriptor &,
 void RTDECL(CppProductComplex8)(std::complex<double> &, const Descriptor &,
     const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 void RTDECL(CppProductComplex10)(std::complex<long double> &,
     const Descriptor &, const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 void RTDECL(CppProductComplex16)(std::complex<CppFloat128Type> &,
     const Descriptor &, const char *source, int line, int dim = 0,
     const Descriptor *mask = nullptr);
@@ -307,11 +307,11 @@ float RTDECL(MaxvalReal4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 double RTDECL(MaxvalReal8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 long double RTDECL(MaxvalReal10)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 CppFloat128Type RTDECL(MaxvalReal16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
@@ -338,11 +338,11 @@ float RTDECL(MinvalReal4)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
 double RTDECL(MinvalReal8)(const Descriptor &, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 long double RTDECL(MinvalReal10)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 CppFloat128Type RTDECL(MinvalReal16)(const Descriptor &, const char *source,
     int line, int dim = 0, const Descriptor *mask = nullptr);
 #endif
@@ -363,11 +363,11 @@ float RTDECL(Norm2_4)(
     const Descriptor &, const char *source, int line, int dim = 0);
 double RTDECL(Norm2_8)(
     const Descriptor &, const char *source, int line, int dim = 0);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 long double RTDECL(Norm2_10)(
     const Descriptor &, const char *source, int line, int dim = 0);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 long double RTDECL(Norm2_16)(
     const Descriptor &, const char *source, int line, int dim = 0);
 void RTDECL(Norm2DimReal16)(
@@ -413,11 +413,11 @@ float RTDECL(DotProductReal4)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
 double RTDECL(DotProductReal8)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 long double RTDECL(DotProductReal10)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 CppFloat128Type RTDECL(DotProductReal16)(const Descriptor &, const Descriptor &,
     const char *source = nullptr, int line = 0);
 #endif
@@ -429,12 +429,12 @@ void RTDECL(CppDotProductComplex4)(std::complex<float> &, const Descriptor &,
     const Descriptor &, const char *source = nullptr, int line = 0);
 void RTDECL(CppDotProductComplex8)(std::complex<double> &, const Descriptor &,
     const Descriptor &, const char *source = nullptr, int line = 0);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 void RTDECL(CppDotProductComplex10)(std::complex<long double> &,
     const Descriptor &, const Descriptor &, const char *source = nullptr,
     int line = 0);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 void RTDECL(CppDotProductComplex16)(std::complex<CppFloat128Type> &,
     const Descriptor &, const Descriptor &, const char *source = nullptr,
     int line = 0);

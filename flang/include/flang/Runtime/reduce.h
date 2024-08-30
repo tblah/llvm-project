@@ -188,7 +188,7 @@ void RTDECL(ReduceReal8DimValue)(Descriptor &result, const Descriptor &array,
     ValueReductionOperation<double>, const char *source, int line, int dim,
     const Descriptor *mask = nullptr, const double *identity = nullptr,
     bool ordered = true);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 long double RTDECL(ReduceReal10Ref)(const Descriptor &,
     ReferenceReductionOperation<long double>, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr,
@@ -206,7 +206,7 @@ void RTDECL(ReduceReal10DimValue)(Descriptor &result, const Descriptor &array,
     const Descriptor *mask = nullptr, const long double *identity = nullptr,
     bool ordered = true);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 CppFloat128Type RTDECL(ReduceReal16Ref)(const Descriptor &,
     ReferenceReductionOperation<CppFloat128Type>, const char *source, int line,
     int dim = 0, const Descriptor *mask = nullptr,
@@ -289,7 +289,7 @@ void RTDECL(CppReduceComplex8DimValue)(Descriptor &result,
     const Descriptor &array, ValueReductionOperation<std::complex<double>>,
     const char *source, int line, int dim, const Descriptor *mask = nullptr,
     const std::complex<double> *identity = nullptr, bool ordered = true);
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 void RTDECL(CppReduceComplex10Ref)(std::complex<long double> &,
     const Descriptor &, ReferenceReductionOperation<std::complex<long double>>,
     const char *source, int line, int dim = 0, const Descriptor *mask = nullptr,
@@ -308,7 +308,7 @@ void RTDECL(CppReduceComplex10DimValue)(Descriptor &result,
     const char *source, int line, int dim, const Descriptor *mask = nullptr,
     const std::complex<long double> *identity = nullptr, bool ordered = true);
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 void RTDECL(CppReduceComplex16Ref)(std::complex<CppFloat128Type> &,
     const Descriptor &,
     ReferenceReductionOperation<std::complex<CppFloat128Type>>,

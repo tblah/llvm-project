@@ -395,7 +395,7 @@ void RTDEF(ReduceReal8DimValue)(Descriptor &result, const Descriptor &array,
   PartialReduction<Accumulator, TypeCategory::Real, 8>(result, array,
       array.ElementBytes(), dim, mask, terminator, "REDUCE", accumulator);
 }
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 long double RTDEF(ReduceReal10Ref)(const Descriptor &array,
     ReferenceReductionOperation<long double> operation, const char *source,
     int line, int dim, const Descriptor *mask, const long double *identity,
@@ -439,7 +439,7 @@ void RTDEF(ReduceReal10DimValue)(Descriptor &result, const Descriptor &array,
       array.ElementBytes(), dim, mask, terminator, "REDUCE", accumulator);
 }
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 CppFloat128Type RTDEF(ReduceReal16Ref)(const Descriptor &array,
     ReferenceReductionOperation<CppFloat128Type> operation, const char *source,
     int line, int dim, const Descriptor *mask, const CppFloat128Type *identity,
@@ -574,7 +574,7 @@ void RTDEF(CppReduceComplex8DimValue)(Descriptor &result,
   PartialReduction<Accumulator, TypeCategory::Complex, 8>(result, array,
       array.ElementBytes(), dim, mask, terminator, "REDUCE", accumulator);
 }
-#if __LDBL_MANT_DIG__ == 64
+#if LDBL_MANT_DIG == 64
 void RTDEF(CppReduceComplex10Ref)(std::complex<long double> &result,
     const Descriptor &array,
     ReferenceReductionOperation<std::complex<long double>> operation,
@@ -622,7 +622,7 @@ void RTDEF(CppReduceComplex10DimValue)(Descriptor &result,
       array.ElementBytes(), dim, mask, terminator, "REDUCE", accumulator);
 }
 #endif
-#if __LDBL_MANT_DIG__ == 113 || HAS_FLOAT128
+#if LDBL_MANT_DIG == 113 || HAS_FLOAT128
 void RTDEF(CppReduceComplex16Ref)(std::complex<CppFloat128Type> &result,
     const Descriptor &array,
     ReferenceReductionOperation<std::complex<CppFloat128Type>> operation,
