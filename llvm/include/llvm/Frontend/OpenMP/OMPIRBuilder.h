@@ -17,6 +17,7 @@
 #include "llvm/Frontend/Atomic/Atomic.h"
 #include "llvm/Frontend/OpenMP/OMPConstants.h"
 #include "llvm/Frontend/OpenMP/OMPGridValues.h"
+#include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/DebugLoc.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
@@ -580,6 +581,11 @@ public:
 
     /// Flag to indicate if the directive is cancellable.
     bool IsCancellable;
+
+    /// The basic block to which control should be transferred to which
+    /// implements the FiniCB. Memoized to avoid generating finalization
+    /// multiple times.
+    llvm::BasicBlock *FiniBB = nullptr;
   };
 
   /// Push a finalization callback on the finalization stack.
@@ -2181,8 +2187,7 @@ public:
   ///
   /// \return an error, if any were triggered during execution.
   LLVM_ABI Error emitCancelationCheckImpl(Value *CancelFlag,
-                                          omp::Directive CanceledDirective,
-                                          FinalizeCallbackTy ExitCB = {});
+                                          omp::Directive CanceledDirective);
 
   /// Generate a target region entry call.
   ///
