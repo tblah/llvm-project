@@ -286,7 +286,7 @@ static const Symbol &GetSchemaField(
 static evaluate::StructureConstructorValues &AddValue(
     evaluate::StructureConstructorValues &values, const DeclTypeSpec &spec,
     const std::string &name, SomeExpr &&x) {
-  values.emplace(GetSchemaField(spec, name), std::move(x));
+  //values.emplace(GetSchemaField(spec, name), std::move(x));
   return values;
 }
 
