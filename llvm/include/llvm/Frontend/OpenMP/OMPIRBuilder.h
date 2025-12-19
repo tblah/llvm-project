@@ -1475,7 +1475,8 @@ public:
       BodyGenCallbackTy BodyGenCB,
       llvm::function_ref<llvm::Expected<llvm::CanonicalLoopInfo *>()> LoopInfo,
       Value *LBVal, Value *UBVal, Value *StepVal, bool Tied = true,
-      TaskDupCallbackTy DupCB = nullptr,
+      Value *IfCond = nullptr, Value *GrainSize = nullptr, bool NoGroup = false,
+      int Sched = 0, TaskDupCallbackTy DupCB = nullptr,
       Value *TaskContextStructPtrVal = nullptr);
 
   /// Generator for `#omp task`
