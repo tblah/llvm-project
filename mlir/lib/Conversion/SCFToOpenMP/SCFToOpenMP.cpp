@@ -512,7 +512,8 @@ struct ParallelOpLowering : public OpRewritePattern<scf::ParallelOp> {
         /* reduction_mod = */ nullptr,
         /* reduction_vars = */ llvm::SmallVector<Value>{},
         /* reduction_byref = */ DenseBoolArrayAttr{},
-        /* reduction_syms = */ ArrayAttr{});
+        /* reduction_syms = */ ArrayAttr{},
+        /* shared_vars = */ ValueRange());
     {
 
       OpBuilder::InsertionGuard guard(rewriter);

@@ -857,6 +857,20 @@ collectReductionDecls(T op,
   }
 }
 
+/// Maps shared variable block arguments to the LLVM values of their
+/// corresponding outer operands (identity mapping).
+template <typename T>
+static void mapSharedVars(T op, LLVM::ModuleTranslation &moduleTranslation) {
+  auto iface = cast<omp::BlockArgOpenMPOpInterface>(*op);
+  ArrayRef<BlockArgument> sharedBlockArgs = iface.getSharedBlockArgs();
+  OperandRange sharedVars = op.getSharedVars();
+
+  for (auto [blockArg, sharedVar] :
+       llvm::zip_equal(sharedBlockArgs, sharedVars))
+    moduleTranslation.mapValue(blockArg,
+                               moduleTranslation.lookupValue(sharedVar));
+}
+
 /// Translates the blocks contained in the given region and appends them to at
 /// the current insertion point of `builder`. The operations of the entry block
 /// are appended to the current insertion block. If set, `continuationBlockArgs`
@@ -2048,6 +2062,7 @@ convertOmpTeams(omp::TeamsOp op, llvm::IRBuilderBase &builder,
   }
 
   auto bodyCB = [&](InsertPointTy allocaIP, InsertPointTy codegenIP) {
+    mapSharedVars(op, moduleTranslation);
     LLVM::ModuleTranslation::SaveStack<OpenMPAllocaStackFrame> frame(
         moduleTranslation, allocaIP);
     builder.restoreIP(codegenIP);
@@ -2829,6 +2844,8 @@ convertOmpTaskOp(omp::TaskOp taskOp, llvm::IRBuilderBase &builder,
     // translate the body of the task:
     builder.restoreIP(codegenIP);
 
+    mapSharedVars(taskOp, moduleTranslation);
+
     llvm::BasicBlock *privInitBlock = nullptr;
     privateVarsInfo.llvmVars.resize(privateVarsInfo.blockArgs.size());
     for (auto [i, zip] : llvm::enumerate(llvm::zip_equal(
@@ -3216,6 +3233,11 @@ convertOmpTaskloopContextOp(omp::TaskloopContextOp contextOp,
 
   // Set up inserttion point for call to createTaskloop()
   builder.SetInsertPoint(taskloopStartBlock);
+
+  // Map shared block args to their outer values before looking up loop bounds.
+  // The bounds are operands of omp.loop_nest inside the region and may be
+  // shared block args, which must be resolved before createTaskloop is called.
+  mapSharedVars(contextOp, moduleTranslation);
 
   auto loopOp = cast<omp::LoopNestOp>(loopWrapperOp.getWrappedLoop());
   llvm::Value *lbVal = nullptr;
@@ -3717,6 +3739,8 @@ convertOmpParallel(omp::ParallelOp opInst, llvm::IRBuilderBase &builder,
 
   auto bodyGenCB = [&](InsertPointTy allocaIP,
                        InsertPointTy codeGenIP) -> llvm::Error {
+    mapSharedVars(opInst, moduleTranslation);
+
     llvm::Expected<llvm::BasicBlock *> afterAllocas = allocatePrivateVars(
         builder, moduleTranslation, privateVarsInfo, allocaIP);
     if (handleError(afterAllocas, *opInst).failed())

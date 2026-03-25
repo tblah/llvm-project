@@ -108,8 +108,10 @@ def BlockArgMapClause : BlockArgOpenMPClause<
     "map", "Map", BlockArgInReductionClause>;
 def BlockArgPrivateClause : BlockArgOpenMPClause<
     "private", "Private", BlockArgMapClause>;
+def BlockArgSharedClause : BlockArgOpenMPClause<
+    "shared", "Shared", BlockArgPrivateClause>;
 def BlockArgReductionClause : BlockArgOpenMPClause<
-    "reduction", "Reduction", BlockArgPrivateClause>;
+    "reduction", "Reduction", BlockArgSharedClause>;
 def BlockArgTaskReductionClause : BlockArgOpenMPClause<
     "task_reduction", "TaskReduction", BlockArgReductionClause>;
 def BlockArgUseDeviceAddrClause : BlockArgOpenMPClause<
@@ -127,7 +129,7 @@ def BlockArgOpenMPOpInterface : OpInterface<"BlockArgOpenMPOpInterface"> {
 
   defvar clauses = [ BlockArgHasDeviceAddrClause, BlockArgHostEvalClause,
     BlockArgInReductionClause, BlockArgMapClause, BlockArgPrivateClause,
-    BlockArgReductionClause, BlockArgTaskReductionClause,
+    BlockArgSharedClause, BlockArgReductionClause, BlockArgTaskReductionClause,
     BlockArgUseDeviceAddrClause, BlockArgUseDevicePtrClause ];
 
   let methods = !listconcat(

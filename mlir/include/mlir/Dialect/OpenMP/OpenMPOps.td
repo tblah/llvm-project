@@ -195,7 +195,8 @@ def ParallelOp : OpenMP_Op<"parallel", traits = [
     RecursiveMemoryEffects
   ], clauses = [
     OpenMP_AllocateClause, OpenMP_IfClause, OpenMP_NumThreadsClause,
-    OpenMP_PrivateClause, OpenMP_ProcBindClause, OpenMP_ReductionClause
+    OpenMP_PrivateClause, OpenMP_ProcBindClause, OpenMP_ReductionClause,
+    OpenMP_SharedClause
   ], singleRegion = true> {
   let summary = "parallel construct";
   let description = [{
@@ -213,8 +214,9 @@ def ParallelOp : OpenMP_Op<"parallel", traits = [
   ];
 
   let assemblyFormat = clausesAssemblyFormat # [{
-    custom<PrivateReductionRegion>($region, $private_vars, type($private_vars),
-        $private_syms, $private_needs_barrier, $reduction_mod, $reduction_vars,
+    custom<PrivateSharedReductionRegion>($region, $private_vars,
+        type($private_vars), $private_syms, $private_needs_barrier,
+        $shared_vars, type($shared_vars), $reduction_mod, $reduction_vars,
         type($reduction_vars), $reduction_byref, $reduction_syms) attr-dict
   }];
 
@@ -241,7 +243,8 @@ def TeamsOp : OpenMP_Op<"teams", traits = [
     AttrSizedOperandSegments, RecursiveMemoryEffects, OutlineableOpenMPOpInterface
   ], clauses = [
     OpenMP_AllocateClause, OpenMP_IfClause, OpenMP_NumTeamsClause,
-    OpenMP_PrivateClause, OpenMP_ReductionClause, OpenMP_ThreadLimitClause
+    OpenMP_PrivateClause, OpenMP_ReductionClause, OpenMP_SharedClause,
+    OpenMP_ThreadLimitClause
   ], singleRegion = true> {
   let summary = "teams construct";
   let description = [{
@@ -258,8 +261,9 @@ def TeamsOp : OpenMP_Op<"teams", traits = [
   ];
 
   let assemblyFormat = clausesAssemblyFormat # [{
-    custom<PrivateReductionRegion>($region, $private_vars, type($private_vars),
-        $private_syms, $private_needs_barrier, $reduction_mod, $reduction_vars,
+    custom<PrivateSharedReductionRegion>($region, $private_vars,
+        type($private_vars), $private_syms, $private_needs_barrier,
+        $shared_vars, type($shared_vars), $reduction_mod, $reduction_vars,
         type($reduction_vars), $reduction_byref, $reduction_syms) attr-dict
   }];
 
@@ -937,6 +941,7 @@ def TaskOp
                     OpenMP_DependClause, OpenMP_FinalClause, OpenMP_IfClause,
                     OpenMP_InReductionClause, OpenMP_MergeableClause,
                     OpenMP_PriorityClause, OpenMP_PrivateClause,
+                    OpenMP_SharedClause,
                     OpenMP_UntiedClause, OpenMP_DetachClause],
                 singleRegion = true> {
   let summary = "task construct";
@@ -963,10 +968,11 @@ def TaskOp
   ];
 
   let assemblyFormat = clausesAssemblyFormat # [{
-    custom<InReductionPrivateRegion>(
+    custom<InReductionPrivateSharedRegion>(
         $region, $in_reduction_vars, type($in_reduction_vars),
         $in_reduction_byref, $in_reduction_syms, $private_vars,
-        type($private_vars), $private_syms, $private_needs_barrier) attr-dict
+        type($private_vars), $private_syms, $private_needs_barrier,
+        $shared_vars, type($shared_vars)) attr-dict
   }];
 
   let hasVerifier = 1;
@@ -982,7 +988,8 @@ def TaskloopContextOp : OpenMP_Op<"taskloop.context", traits = [
     OpenMP_AllocateClause, OpenMP_FinalClause, OpenMP_GrainsizeClause,
     OpenMP_IfClause, OpenMP_InReductionClause, OpenMP_MergeableClause,
     OpenMP_NogroupClause, OpenMP_NumTasksClause, OpenMP_PriorityClause,
-    OpenMP_PrivateClause, OpenMP_ReductionClause, OpenMP_UntiedClause
+    OpenMP_PrivateClause, OpenMP_ReductionClause, OpenMP_SharedClause,
+    OpenMP_UntiedClause
   ], singleRegion = true> {
   let summary = "OutlinableOpenMPOpInterface wrapper for taskloop construct";
   let description = [{
@@ -1054,12 +1061,12 @@ def TaskloopContextOp : OpenMP_Op<"taskloop.context", traits = [
   ];
 
   let assemblyFormat = clausesAssemblyFormat # [{
-    custom<InReductionPrivateReductionRegion>(
+    custom<InReductionPrivateSharedReductionRegion>(
         $region, $in_reduction_vars, type($in_reduction_vars),
         $in_reduction_byref, $in_reduction_syms, $private_vars,
         type($private_vars), $private_syms, $private_needs_barrier,
-        $reduction_mod, $reduction_vars, type($reduction_vars),
-        $reduction_byref, $reduction_syms) attr-dict
+        $shared_vars, type($shared_vars), $reduction_mod, $reduction_vars,
+        type($reduction_vars), $reduction_byref, $reduction_syms) attr-dict
   }];
 
   let extraClassDeclaration = [{

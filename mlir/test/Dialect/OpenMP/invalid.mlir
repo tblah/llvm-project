@@ -1438,7 +1438,7 @@ func.func @omp_teams_allocate(%data_var : memref<i32>) {
     // expected-error @below {{expected equal sizes for allocate and allocator variables}}
     "omp.teams" (%data_var) ({
       omp.terminator
-    }) {operandSegmentSizes = array<i32: 1,0,0,0,0,0,0,0>} : (memref<i32>) -> ()
+    }) {operandSegmentSizes = array<i32: 1,0,0,0,0,0,0,0,0>} : (memref<i32>) -> ()
     omp.terminator
   }
   return
@@ -1451,7 +1451,7 @@ func.func @omp_teams_num_teams1(%lb : i32) {
     // expected-error @below {{expected exactly one num_teams upper bound when lower bound is specified}}
     "omp.teams" (%lb) ({
       omp.terminator
-    }) {operandSegmentSizes = array<i32: 0,0,0,1,0,0,0,0>} : (i32) -> ()
+    }) {operandSegmentSizes = array<i32: 0,0,0,1,0,0,0,0,0>} : (i32) -> ()
     omp.terminator
   }
   return
@@ -1468,7 +1468,7 @@ func.func @omp_teams_num_teams_multidim_with_bounds() {
     // expected-error @below {{expected exactly one num_teams upper bound when lower bound is specified}}
     "omp.teams" (%lb, %v0, %v1) ({
       omp.terminator
-    }) {operandSegmentSizes = array<i32: 0,0,0,1,2,0,0,0>} : (i32, i32, i32) -> ()
+    }) {operandSegmentSizes = array<i32: 0,0,0,1,2,0,0,0,0>} : (i32, i32, i32) -> ()
     omp.terminator
   }
   return
@@ -1730,7 +1730,7 @@ func.func @omp_task_depend_iterated_mismatch(%it: !omp.iterated<!llvm.ptr>) {
   // expected-error @below {{op expected as many depend iterated values as depend iterated variables}}
     "omp.task"(%it) ({
       "omp.terminator"() : () -> ()
-    }) {depend_iterated_kinds = [], operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0>} : (!omp.iterated<!llvm.ptr>) -> ()
+    }) {depend_iterated_kinds = [], operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0>} : (!omp.iterated<!llvm.ptr>) -> ()
    "func.return"() : () -> ()
 }
 
@@ -2075,7 +2075,7 @@ func.func @taskloop(%lb: i32, %ub: i32, %step: i32) {
       }
     }
     omp.terminator
-  }) {operandSegmentSizes = array<i32: 1, 0, 0, 0, 0, 0, 0, 0, 0, 0>} : (memref<i32>) -> ()
+  }) {operandSegmentSizes = array<i32: 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>} : (memref<i32>) -> ()
   return
 }
 
@@ -2093,7 +2093,7 @@ func.func @taskloop(%lb: i32, %ub: i32, %step: i32) {
       }
     }
     omp.terminator
-  }) {operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 0, 0, 0, 0, 2>, reduction_syms = [@add_f32]} : (!llvm.ptr, !llvm.ptr) -> ()
+  }) {operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0>, reduction_syms = [@add_f32]} : (!llvm.ptr, !llvm.ptr) -> ()
   return
 }
 
@@ -2110,7 +2110,7 @@ func.func @taskloop(%lb: i32, %ub: i32, %step: i32) {
       }
     }
     omp.terminator
-  }) {operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 0, 0, 0, 0, 1>, reduction_syms = [@add_f32, @add_f32]} : (!llvm.ptr) -> ()
+  }) {operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0>, reduction_syms = [@add_f32, @add_f32]} : (!llvm.ptr) -> ()
   return
 }
 
@@ -2128,7 +2128,7 @@ func.func @taskloop(%lb: i32, %ub: i32, %step: i32) {
       }
     }
     omp.terminator
-  }) {in_reduction_syms = [@add_f32], operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 2, 0, 0, 0, 0>} : (!llvm.ptr, !llvm.ptr) -> ()
+  }) {in_reduction_syms = [@add_f32], operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0>} : (!llvm.ptr, !llvm.ptr) -> ()
   return
 }
 
@@ -2145,7 +2145,7 @@ func.func @taskloop(%lb: i32, %ub: i32, %step: i32) {
       }
     }
     omp.terminator
-  }) {in_reduction_syms = [@add_f32, @add_f32], operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 1, 0, 0, 0, 0>} : (!llvm.ptr) -> ()
+  }) {in_reduction_syms = [@add_f32, @add_f32], operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0>} : (!llvm.ptr) -> ()
   return
 }
 
@@ -2767,7 +2767,7 @@ func.func @undefined_privatizer(%arg0: index) {
 // -----
 func.func @undefined_privatizer(%arg0: !llvm.ptr) {
   // expected-error @below {{inconsistent number of private variables and privatizer op symbols, private vars: 1 vs. privatizer op symbols: 2}}
-  "omp.parallel"(%arg0) <{operandSegmentSizes = array<i32: 0, 0, 0, 0, 1, 0>, private_syms = [@x.privatizer, @y.privatizer]}> ({
+  "omp.parallel"(%arg0) <{operandSegmentSizes = array<i32: 0, 0, 0, 0, 1, 0, 0>, private_syms = [@x.privatizer, @y.privatizer]}> ({
     ^bb0(%arg2: !llvm.ptr):
       omp.terminator
     }) : (!llvm.ptr) -> ()
@@ -3448,4 +3448,25 @@ func.func @iterator_yield_type_mismatch(%lb : index, %ub : index, %st : index) {
     omp.yield(%i : index)
   } -> !omp.iterated<i64>
   return
+}
+
+// -----
+
+llvm.func @shared_duplicate(%x: i32) {
+  // expected-error@+1 {{shared variable used more than once in shared clause}}
+  omp.parallel shared(%x -> %xa, %x -> %xb : i32, i32) {
+    omp.terminator
+  }
+  llvm.return
+}
+
+// -----
+
+llvm.func @shared_type_mismatch(%arg0: i32) {
+  // expected-error@+1 {{type mismatch between a shared variable and its block argument, variable type: 'i32' vs. block argument type: 'f32'}}
+  "omp.parallel"(%arg0) <{operandSegmentSizes = array<i32: 0, 0, 0, 0, 0, 0, 1>}> ({
+  ^bb0(%arg1: f32):
+    "omp.terminator"() : () -> ()
+  }) : (i32) -> ()
+  llvm.return
 }

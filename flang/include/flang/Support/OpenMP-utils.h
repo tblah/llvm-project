@@ -39,6 +39,7 @@ struct EntryBlockArgs {
   EntryBlockArgsEntry inReduction;
   EntryBlockArgsEntry map;
   EntryBlockArgsEntry priv;
+  EntryBlockArgsEntry shared;
   EntryBlockArgsEntry reduction;
   EntryBlockArgsEntry taskReduction;
   EntryBlockArgsEntry useDeviceAddr;
@@ -46,19 +47,20 @@ struct EntryBlockArgs {
 
   bool isValid() const {
     return hasDeviceAddr.isValid() && inReduction.isValid() && map.isValid() &&
-        priv.isValid() && reduction.isValid() && taskReduction.isValid() &&
-        useDeviceAddr.isValid() && useDevicePtr.isValid();
+        priv.isValid() && shared.isValid() && reduction.isValid() &&
+        taskReduction.isValid() && useDeviceAddr.isValid() &&
+        useDevicePtr.isValid();
   }
 
   auto getSyms() const {
     return llvm::concat<const semantics::Symbol *const>(hasDeviceAddr.syms,
-        inReduction.syms, map.syms, priv.syms, reduction.syms,
+        inReduction.syms, map.syms, priv.syms, shared.syms, reduction.syms,
         taskReduction.syms, useDeviceAddr.syms, useDevicePtr.syms);
   }
 
   auto getVars() const {
     return llvm::concat<const mlir::Value>(hasDeviceAddr.vars, hostEvalVars,
-        inReduction.vars, map.vars, priv.vars, reduction.vars,
+        inReduction.vars, map.vars, priv.vars, shared.vars, reduction.vars,
         taskReduction.vars, useDeviceAddr.vars, useDevicePtr.vars);
   }
 };

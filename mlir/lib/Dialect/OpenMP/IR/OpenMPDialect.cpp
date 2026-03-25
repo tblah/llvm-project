@@ -918,6 +918,7 @@ struct AllRegionParseArgs {
   std::optional<ReductionParseArgs> inReductionArgs;
   std::optional<MapParseArgs> mapArgs;
   std::optional<PrivateParseArgs> privateArgs;
+  std::optional<MapParseArgs> sharedArgs;
   std::optional<ReductionParseArgs> reductionArgs;
   std::optional<ReductionParseArgs> taskReductionArgs;
   std::optional<MapParseArgs> useDeviceAddrArgs;
@@ -1110,6 +1111,11 @@ static ParseResult parseBlockArgRegion(OpAsmParser &parser, Region &region,
     return parser.emitError(parser.getCurrentLocation())
            << "invalid `private` format";
 
+  if (failed(parseBlockArgClause(parser, entryBlockArgs, "shared",
+                                 args.sharedArgs)))
+    return parser.emitError(parser.getCurrentLocation())
+           << "invalid `shared` format";
+
   if (failed(parseBlockArgClause(parser, entryBlockArgs, "reduction",
                                  args.reductionArgs)))
     return parser.emitError(parser.getCurrentLocation())
@@ -1160,30 +1166,35 @@ static ParseResult parseTargetOpRegion(
   return parseBlockArgRegion(parser, region, args);
 }
 
-static ParseResult parseInReductionPrivateRegion(
+static ParseResult parseInReductionPrivateSharedRegion(
     OpAsmParser &parser, Region &region,
     SmallVectorImpl<OpAsmParser::UnresolvedOperand> &inReductionVars,
     SmallVectorImpl<Type> &inReductionTypes,
     DenseBoolArrayAttr &inReductionByref, ArrayAttr &inReductionSyms,
     llvm::SmallVectorImpl<OpAsmParser::UnresolvedOperand> &privateVars,
     llvm::SmallVectorImpl<Type> &privateTypes, ArrayAttr &privateSyms,
-    UnitAttr &privateNeedsBarrier) {
+    UnitAttr &privateNeedsBarrier,
+    SmallVectorImpl<OpAsmParser::UnresolvedOperand> &sharedVars,
+    SmallVectorImpl<Type> &sharedTypes) {
   AllRegionParseArgs args;
   args.inReductionArgs.emplace(inReductionVars, inReductionTypes,
                                inReductionByref, inReductionSyms);
   args.privateArgs.emplace(privateVars, privateTypes, privateSyms,
                            privateNeedsBarrier);
+  args.sharedArgs.emplace(sharedVars, sharedTypes);
   return parseBlockArgRegion(parser, region, args);
 }
 
-static ParseResult parseInReductionPrivateReductionRegion(
+static ParseResult parseInReductionPrivateSharedReductionRegion(
     OpAsmParser &parser, Region &region,
     SmallVectorImpl<OpAsmParser::UnresolvedOperand> &inReductionVars,
     SmallVectorImpl<Type> &inReductionTypes,
     DenseBoolArrayAttr &inReductionByref, ArrayAttr &inReductionSyms,
     llvm::SmallVectorImpl<OpAsmParser::UnresolvedOperand> &privateVars,
     llvm::SmallVectorImpl<Type> &privateTypes, ArrayAttr &privateSyms,
-    UnitAttr &privateNeedsBarrier, ReductionModifierAttr &reductionMod,
+    UnitAttr &privateNeedsBarrier,
+    SmallVectorImpl<OpAsmParser::UnresolvedOperand> &sharedVars,
+    SmallVectorImpl<Type> &sharedTypes, ReductionModifierAttr &reductionMod,
     SmallVectorImpl<OpAsmParser::UnresolvedOperand> &reductionVars,
     SmallVectorImpl<Type> &reductionTypes, DenseBoolArrayAttr &reductionByref,
     ArrayAttr &reductionSyms) {
@@ -1192,6 +1203,7 @@ static ParseResult parseInReductionPrivateReductionRegion(
                                inReductionByref, inReductionSyms);
   args.privateArgs.emplace(privateVars, privateTypes, privateSyms,
                            privateNeedsBarrier);
+  args.sharedArgs.emplace(sharedVars, sharedTypes);
   args.reductionArgs.emplace(reductionVars, reductionTypes, reductionByref,
                              reductionSyms, &reductionMod);
   return parseBlockArgRegion(parser, region, args);
@@ -1219,6 +1231,25 @@ static ParseResult parsePrivateReductionRegion(
   AllRegionParseArgs args;
   args.privateArgs.emplace(privateVars, privateTypes, privateSyms,
                            privateNeedsBarrier);
+  args.reductionArgs.emplace(reductionVars, reductionTypes, reductionByref,
+                             reductionSyms, &reductionMod);
+  return parseBlockArgRegion(parser, region, args);
+}
+
+static ParseResult parsePrivateSharedReductionRegion(
+    OpAsmParser &parser, Region &region,
+    llvm::SmallVectorImpl<OpAsmParser::UnresolvedOperand> &privateVars,
+    llvm::SmallVectorImpl<Type> &privateTypes, ArrayAttr &privateSyms,
+    UnitAttr &privateNeedsBarrier,
+    SmallVectorImpl<OpAsmParser::UnresolvedOperand> &sharedVars,
+    SmallVectorImpl<Type> &sharedTypes, ReductionModifierAttr &reductionMod,
+    SmallVectorImpl<OpAsmParser::UnresolvedOperand> &reductionVars,
+    SmallVectorImpl<Type> &reductionTypes, DenseBoolArrayAttr &reductionByref,
+    ArrayAttr &reductionSyms) {
+  AllRegionParseArgs args;
+  args.privateArgs.emplace(privateVars, privateTypes, privateSyms,
+                           privateNeedsBarrier);
+  args.sharedArgs.emplace(sharedVars, sharedTypes);
   args.reductionArgs.emplace(reductionVars, reductionTypes, reductionByref,
                              reductionSyms, &reductionMod);
   return parseBlockArgRegion(parser, region, args);
@@ -1284,6 +1315,7 @@ struct AllRegionPrintArgs {
   std::optional<ReductionPrintArgs> inReductionArgs;
   std::optional<MapPrintArgs> mapArgs;
   std::optional<PrivatePrintArgs> privateArgs;
+  std::optional<MapPrintArgs> sharedArgs;
   std::optional<ReductionPrintArgs> reductionArgs;
   std::optional<ReductionPrintArgs> taskReductionArgs;
   std::optional<MapPrintArgs> useDeviceAddrArgs;
@@ -1388,6 +1420,8 @@ static void printBlockArgRegion(OpAsmPrinter &p, Operation *op, Region &region,
                       args.mapArgs);
   printBlockArgClause(p, ctx, "private", iface.getPrivateBlockArgs(),
                       args.privateArgs);
+  printBlockArgClause(p, ctx, "shared", iface.getSharedBlockArgs(),
+                      args.sharedArgs);
   printBlockArgClause(p, ctx, "reduction", iface.getReductionBlockArgs(),
                       args.reductionArgs);
   printBlockArgClause(p, ctx, "task_reduction",
@@ -1424,34 +1458,37 @@ static void printTargetOpRegion(
   printBlockArgRegion(p, op, region, args);
 }
 
-static void printInReductionPrivateRegion(
+static void printInReductionPrivateSharedRegion(
     OpAsmPrinter &p, Operation *op, Region &region, ValueRange inReductionVars,
     TypeRange inReductionTypes, DenseBoolArrayAttr inReductionByref,
     ArrayAttr inReductionSyms, ValueRange privateVars, TypeRange privateTypes,
-    ArrayAttr privateSyms, UnitAttr privateNeedsBarrier) {
+    ArrayAttr privateSyms, UnitAttr privateNeedsBarrier, ValueRange sharedVars,
+    TypeRange sharedTypes) {
   AllRegionPrintArgs args;
   args.inReductionArgs.emplace(inReductionVars, inReductionTypes,
                                inReductionByref, inReductionSyms);
   args.privateArgs.emplace(privateVars, privateTypes, privateSyms,
                            privateNeedsBarrier,
                            /*mapIndices=*/nullptr);
+  args.sharedArgs.emplace(sharedVars, sharedTypes);
   printBlockArgRegion(p, op, region, args);
 }
 
-static void printInReductionPrivateReductionRegion(
+static void printInReductionPrivateSharedReductionRegion(
     OpAsmPrinter &p, Operation *op, Region &region, ValueRange inReductionVars,
     TypeRange inReductionTypes, DenseBoolArrayAttr inReductionByref,
     ArrayAttr inReductionSyms, ValueRange privateVars, TypeRange privateTypes,
-    ArrayAttr privateSyms, UnitAttr privateNeedsBarrier,
-    ReductionModifierAttr reductionMod, ValueRange reductionVars,
-    TypeRange reductionTypes, DenseBoolArrayAttr reductionByref,
-    ArrayAttr reductionSyms) {
+    ArrayAttr privateSyms, UnitAttr privateNeedsBarrier, ValueRange sharedVars,
+    TypeRange sharedTypes, ReductionModifierAttr reductionMod,
+    ValueRange reductionVars, TypeRange reductionTypes,
+    DenseBoolArrayAttr reductionByref, ArrayAttr reductionSyms) {
   AllRegionPrintArgs args;
   args.inReductionArgs.emplace(inReductionVars, inReductionTypes,
                                inReductionByref, inReductionSyms);
   args.privateArgs.emplace(privateVars, privateTypes, privateSyms,
                            privateNeedsBarrier,
                            /*mapIndices=*/nullptr);
+  args.sharedArgs.emplace(sharedVars, sharedTypes);
   args.reductionArgs.emplace(reductionVars, reductionTypes, reductionByref,
                              reductionSyms, reductionMod);
   printBlockArgRegion(p, op, region, args);
@@ -1478,6 +1515,23 @@ static void printPrivateReductionRegion(
   args.privateArgs.emplace(privateVars, privateTypes, privateSyms,
                            privateNeedsBarrier,
                            /*mapIndices=*/nullptr);
+  args.reductionArgs.emplace(reductionVars, reductionTypes, reductionByref,
+                             reductionSyms, reductionMod);
+  printBlockArgRegion(p, op, region, args);
+}
+
+static void printPrivateSharedReductionRegion(
+    OpAsmPrinter &p, Operation *op, Region &region, ValueRange privateVars,
+    TypeRange privateTypes, ArrayAttr privateSyms, UnitAttr privateNeedsBarrier,
+    ValueRange sharedVars, TypeRange sharedTypes,
+    ReductionModifierAttr reductionMod, ValueRange reductionVars,
+    TypeRange reductionTypes, DenseBoolArrayAttr reductionByref,
+    ArrayAttr reductionSyms) {
+  AllRegionPrintArgs args;
+  args.privateArgs.emplace(privateVars, privateTypes, privateSyms,
+                           privateNeedsBarrier,
+                           /*mapIndices=*/nullptr);
+  args.sharedArgs.emplace(sharedVars, sharedTypes);
   args.reductionArgs.emplace(reductionVars, reductionTypes, reductionByref,
                              reductionSyms, reductionMod);
   printBlockArgRegion(p, op, region, args);
@@ -2681,20 +2735,57 @@ void ParallelOp::build(OpBuilder &builder, OperationState &state,
                     /*private_syms=*/nullptr, /*private_needs_barrier=*/nullptr,
                     /*proc_bind_kind=*/nullptr,
                     /*reduction_mod =*/nullptr, /*reduction_vars=*/ValueRange(),
-                    /*reduction_byref=*/nullptr, /*reduction_syms=*/nullptr);
+                    /*reduction_byref=*/nullptr, /*reduction_syms=*/nullptr,
+                    /*shared_vars=*/ValueRange());
   state.addAttributes(attributes);
 }
 
 void ParallelOp::build(OpBuilder &builder, OperationState &state,
                        const ParallelOperands &clauses) {
   MLIRContext *ctx = builder.getContext();
-  ParallelOp::build(builder, state, clauses.allocateVars, clauses.allocatorVars,
-                    clauses.ifExpr, clauses.numThreadsVars, clauses.privateVars,
-                    makeArrayAttr(ctx, clauses.privateSyms),
-                    clauses.privateNeedsBarrier, clauses.procBindKind,
-                    clauses.reductionMod, clauses.reductionVars,
-                    makeDenseBoolArrayAttr(ctx, clauses.reductionByref),
-                    makeArrayAttr(ctx, clauses.reductionSyms));
+  ParallelOp::build(
+      builder, state, clauses.allocateVars, clauses.allocatorVars,
+      clauses.ifExpr, clauses.numThreadsVars, clauses.privateVars,
+      makeArrayAttr(ctx, clauses.privateSyms), clauses.privateNeedsBarrier,
+      clauses.procBindKind, clauses.reductionMod, clauses.reductionVars,
+      makeDenseBoolArrayAttr(ctx, clauses.reductionByref),
+      makeArrayAttr(ctx, clauses.reductionSyms), clauses.sharedVars);
+}
+
+/// Returns true if \p blockArg corresponds to a shared clause entry on
+/// \p op.
+static bool isSharedClauseBlockArg(Operation *op, BlockArgument blockArg) {
+  auto iface = dyn_cast<omp::BlockArgOpenMPOpInterface>(op);
+  if (!iface)
+    // op doesn't have a shared clause.
+    return false;
+
+  return llvm::is_contained(iface.getSharedBlockArgs(), blockArg);
+}
+
+template <typename OpType>
+static LogicalResult verifySharedVarList(OpType &op) {
+  OperandRange sharedVars = op.getSharedVars();
+  if (sharedVars.empty())
+    return success();
+
+  auto iface = cast<omp::BlockArgOpenMPOpInterface>(*op);
+  ArrayRef<BlockArgument> sharedBlockArgs = iface.getSharedBlockArgs();
+
+  llvm::DenseSet<Value> seen;
+  for (auto [var, blockArg] : llvm::zip_equal(sharedVars, sharedBlockArgs)) {
+    if (!seen.insert(var).second)
+      return op.emitError()
+             << "shared variable used more than once in shared clause";
+    if (var.getType() != blockArg.getType())
+      return op.emitError()
+             << "type mismatch between a shared variable and its block "
+                "argument, variable type: "
+             << var.getType()
+             << " vs. block argument type: " << blockArg.getType();
+  }
+
+  return success();
 }
 
 template <typename OpType>
@@ -2748,6 +2839,9 @@ LogicalResult ParallelOp::verify() {
   if (failed(verifyPrivateVarList(*this)))
     return failure();
 
+  if (failed(verifySharedVarList(*this)))
+    return failure();
+
   return verifyReductionVarList(*this, getReductionSyms(), getReductionVars(),
                                 getReductionByref());
 }
@@ -2797,14 +2891,15 @@ void TeamsOp::build(OpBuilder &builder, OperationState &state,
                     const TeamsOperands &clauses) {
   MLIRContext *ctx = builder.getContext();
   // TODO Store clauses in op: privateVars, privateSyms, privateNeedsBarrier
-  TeamsOp::build(
-      builder, state, clauses.allocateVars, clauses.allocatorVars,
-      clauses.ifExpr, clauses.numTeamsLower, clauses.numTeamsUpperVars,
-      /*private_vars=*/{}, /*private_syms=*/nullptr,
-      /*private_needs_barrier=*/nullptr, clauses.reductionMod,
-      clauses.reductionVars,
-      makeDenseBoolArrayAttr(ctx, clauses.reductionByref),
-      makeArrayAttr(ctx, clauses.reductionSyms), clauses.threadLimitVars);
+  TeamsOp::build(builder, state, clauses.allocateVars, clauses.allocatorVars,
+                 clauses.ifExpr, clauses.numTeamsLower,
+                 clauses.numTeamsUpperVars,
+                 /*private_vars=*/{}, /*private_syms=*/nullptr,
+                 /*private_needs_barrier=*/nullptr, clauses.reductionMod,
+                 clauses.reductionVars,
+                 makeDenseBoolArrayAttr(ctx, clauses.reductionByref),
+                 makeArrayAttr(ctx, clauses.reductionSyms), clauses.sharedVars,
+                 clauses.threadLimitVars);
 }
 
 // Verify num_teams clause
@@ -2846,6 +2941,9 @@ LogicalResult TeamsOp::verify() {
   if (getAllocateVars().size() != getAllocatorVars().size())
     return emitError(
         "expected equal sizes for allocate and allocator variables");
+
+  if (failed(verifySharedVarList(*this)))
+    return failure();
 
   return verifyReductionVarList(*this, getReductionSyms(), getReductionVars(),
                                 getReductionByref());
@@ -3317,28 +3415,32 @@ LogicalResult DeclareReductionOp::verifyRegions() {
 void TaskOp::build(OpBuilder &builder, OperationState &state,
                    const TaskOperands &clauses) {
   MLIRContext *ctx = builder.getContext();
-  TaskOp::build(
-      builder, state, clauses.iterated, clauses.affinityVars,
-      clauses.allocateVars, clauses.allocatorVars,
-      makeArrayAttr(ctx, clauses.dependKinds), clauses.dependVars,
-      makeArrayAttr(ctx, clauses.dependIteratedKinds), clauses.dependIterated,
-      clauses.final, clauses.ifExpr, clauses.inReductionVars,
-      makeDenseBoolArrayAttr(ctx, clauses.inReductionByref),
-      makeArrayAttr(ctx, clauses.inReductionSyms), clauses.mergeable,
-      clauses.priority, /*private_vars=*/clauses.privateVars,
-      /*private_syms=*/makeArrayAttr(ctx, clauses.privateSyms),
-      clauses.privateNeedsBarrier, clauses.untied, clauses.eventHandle);
+  TaskOp::build(builder, state, clauses.iterated, clauses.affinityVars,
+                clauses.allocateVars, clauses.allocatorVars,
+                makeArrayAttr(ctx, clauses.dependKinds), clauses.dependVars,
+                makeArrayAttr(ctx, clauses.dependIteratedKinds),
+                clauses.dependIterated, clauses.final, clauses.ifExpr,
+                clauses.inReductionVars,
+                makeDenseBoolArrayAttr(ctx, clauses.inReductionByref),
+                makeArrayAttr(ctx, clauses.inReductionSyms), clauses.mergeable,
+                clauses.priority, /*private_vars=*/clauses.privateVars,
+                /*private_syms=*/makeArrayAttr(ctx, clauses.privateSyms),
+                clauses.privateNeedsBarrier, clauses.sharedVars, clauses.untied,
+                clauses.eventHandle);
 }
 
 LogicalResult TaskOp::verify() {
   LogicalResult verifyDependVars =
       verifyDependVarList(*this, getDependKinds(), getDependVars(),
                           getDependIteratedKinds(), getDependIterated());
-  return failed(verifyDependVars)
-             ? verifyDependVars
-             : verifyReductionVarList(*this, getInReductionSyms(),
-                                      getInReductionVars(),
-                                      getInReductionByref());
+  if (failed(verifyDependVars))
+    return verifyDependVars;
+
+  if (failed(verifySharedVarList(*this)))
+    return failure();
+
+  return verifyReductionVarList(*this, getInReductionSyms(),
+                                getInReductionVars(), getInReductionByref());
 }
 
 //===----------------------------------------------------------------------===//
@@ -3378,7 +3480,8 @@ void TaskloopContextOp::build(OpBuilder &builder, OperationState &state,
       /*private_syms=*/makeArrayAttr(ctx, clauses.privateSyms),
       clauses.privateNeedsBarrier, clauses.reductionMod, clauses.reductionVars,
       makeDenseBoolArrayAttr(ctx, clauses.reductionByref),
-      makeArrayAttr(ctx, clauses.reductionSyms), clauses.untied);
+      makeArrayAttr(ctx, clauses.reductionSyms), clauses.sharedVars,
+      clauses.untied);
 }
 
 TaskloopWrapperOp TaskloopContextOp::getLoopOp() {
@@ -3396,7 +3499,8 @@ LogicalResult TaskloopContextOp::verify() {
                                     getReductionVars(), getReductionByref())) ||
       failed(verifyReductionVarList(*this, getInReductionSyms(),
                                     getInReductionVars(),
-                                    getInReductionByref())))
+                                    getInReductionByref())) ||
+      failed(verifySharedVarList(*this)))
     return failure();
 
   if (!getReductionVars().empty() && getNogroup())
@@ -3444,6 +3548,12 @@ LogicalResult TaskloopContextOp::verifyRegions() {
     // valid. A region is considered an ancestor of itself.
     if (!region.isAncestor(valueRegion))
       return true;
+
+    // Values defined in the SHARED clause are another way of including values
+    // defined in an anscestor to the taskloop context region. Other block args
+    // are not valid.
+    if (auto blockArg = dyn_cast<BlockArgument>(value))
+      return isSharedClauseBlockArg(getOperation(), blockArg);
 
     Operation *defOp = value.getDefiningOp();
     if (!defOp || defOp->getNumRegions() != 0 || !isPure(defOp))

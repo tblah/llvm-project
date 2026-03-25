@@ -1352,6 +1352,37 @@ class OpenMP_PriorityClauseSkip<
 def OpenMP_PriorityClause : OpenMP_PriorityClauseSkip<>;
 
 //===----------------------------------------------------------------------===//
+// V5.2: [5.4.2] `shared` clause
+//===----------------------------------------------------------------------===//
+
+class OpenMP_SharedClauseSkip<
+    bit traits = false, bit arguments = false, bit assemblyFormat = false,
+    bit description = false, bit extraClassDeclaration = false
+  > : OpenMP_Clause<traits, arguments, assemblyFormat, description,
+                    extraClassDeclaration> {
+  let traits = [
+    BlockArgOpenMPOpInterface
+  ];
+
+  let arguments = (ins
+    Variadic<AnyType>:$shared_vars
+  );
+
+  let description = [{
+    Shared variables are listed in `shared_vars`. Each shared variable is
+    represented as an operand of the operation and a corresponding entry block
+    argument, providing an explicit mapping from the outer value to its use
+    inside the region.
+  }];
+
+  // Assembly format not defined because this clause must be processed together
+  // with the first region of the operation, as it defines entry block
+  // arguments.
+}
+
+def OpenMP_SharedClause : OpenMP_SharedClauseSkip<>;
+
+//===----------------------------------------------------------------------===//
 // V5.2: [5.4.3, 5.4.4, 5.4.5] `private`, `firstprivate`, `lastprivate` clauses
 //===----------------------------------------------------------------------===//
 
