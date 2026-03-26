@@ -1744,6 +1744,7 @@ func.func @omp_task(%ptr: !llvm.ptr) {
     // CHECK: omp.terminator
     omp.terminator
   }
+  return
 }
 
 // -----
@@ -1768,6 +1769,7 @@ func.func @omp_task(%ptr: !llvm.ptr) {
     // CHECK: omp.terminator
     omp.terminator
   }
+  return
 }
 
 // -----
@@ -2509,18 +2511,53 @@ func.func @omp_target_host_eval_loop1(%x : i32) {
 func.func @omp_target_host_eval_loop2(%x : i32) {
   // expected-error @below {{op host_eval argument only legal as loop bounds and steps in 'omp.loop_nest' when trip count must be evaluated in the host}}
   omp.target host_eval(%x -> %arg0 : i32) {
-    omp.teams {
-    ^bb0:
+    omp.teams shared(%arg0 -> %arg0_in : i32) {
       %0 = arith.constant 0 : i1
       llvm.cond_br %0, ^bb1, ^bb2
     ^bb1:
       omp.distribute {
-        omp.loop_nest (%iv) : i32 = (%arg0) to (%arg0) step (%arg0) {
+        omp.loop_nest (%iv) : i32 = (%arg0_in) to (%arg0_in) step (%arg0_in) {
           omp.yield
         }
       }
       llvm.br ^bb2
     ^bb2:
+      omp.terminator
+    }
+    omp.terminator
+  }
+  return
+}
+
+// -----
+
+func.func @omp_target_host_eval_teams_direct_and_shared_invalid(%x : i32) {
+  // expected-error @below {{op host_eval argument illegal use in 'arith.addi' operation}}
+  omp.target host_eval(%x -> %arg0 : i32) {
+    omp.teams thread_limit(%arg0 : i32) shared(%arg0 -> %arg0_in : i32) {
+      %0 = arith.addi %arg0_in, %arg0_in : i32
+      omp.terminator
+    }
+    omp.terminator
+  }
+  return
+}
+
+// -----
+
+func.func @omp_target_host_eval_parallel_direct_and_shared_invalid(%x : i32) {
+  // expected-error @below {{op host_eval argument illegal use in 'arith.addi' operation}}
+  omp.target host_eval(%x -> %arg0 : i32) {
+    omp.parallel num_threads(%arg0 : i32) shared(%arg0 -> %arg0_in : i32) {
+      %0 = arith.addi %arg0_in, %arg0_in : i32
+      %c0 = arith.constant 0 : i32
+      %c1 = arith.constant 1 : i32
+      %c2 = arith.constant 2 : i32
+      omp.wsloop {
+        omp.loop_nest (%iv) : i32 = (%c0) to (%c2) step (%c1) {
+          omp.yield
+        }
+      }
       omp.terminator
     }
     omp.terminator
@@ -2602,17 +2639,18 @@ func.func @omp_distribute_nested_wrapper3(%lb: index, %ub: index, %step: index) 
 // -----
 
 func.func @omp_distribute_nested_wrapper4(%lb: index, %ub: index, %step: index) -> () {
-  omp.parallel {
+  omp.parallel shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : index, index, index) {
     // expected-error @below {{an 'omp.wsloop' nested wrapper is only allowed when a composite 'omp.parallel' is the direct parent}}
     omp.distribute {
       "omp.wsloop"() ({
-        omp.loop_nest (%iv) : index = (%lb) to (%ub) step (%step) {
+        omp.loop_nest (%iv) : index = (%lb_in) to (%ub_in) step (%step_in) {
           "omp.yield"() : () -> ()
         }
       }) {omp.composite} : () -> ()
     } {omp.composite}
     omp.terminator
   }
+  return
 }
 
 // -----
@@ -2812,9 +2850,9 @@ func.func @masked_arg_count_mismatch(%arg0: i32, %arg1: i32) {
 // -----
 func.func @omp_parallel_missing_composite(%lb: index, %ub: index, %step: index) -> () {
   // expected-error @below {{'omp.composite' attribute missing from composite operation}}
-  omp.parallel {
+  omp.parallel shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : index, index, index) {
     omp.distribute {
-      omp.loop_nest (%iv) : index = (%lb) to (%ub) step (%step) {
+      omp.loop_nest (%iv) : index = (%lb_in) to (%ub_in) step (%step_in) {
         omp.yield
       }
     }
@@ -2826,9 +2864,9 @@ func.func @omp_parallel_missing_composite(%lb: index, %ub: index, %step: index) 
 // -----
 func.func @omp_parallel_invalid_composite(%lb: index, %ub: index, %step: index) -> () {
   // expected-error @below {{'omp.composite' attribute present in non-composite operation}}
-  omp.parallel {
+  omp.parallel shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : index, index, index) {
     omp.wsloop {
-      omp.loop_nest (%iv) : index = (%lb) to (%ub) step (%step) {
+      omp.loop_nest (%iv) : index = (%lb_in) to (%ub_in) step (%step_in) {
         omp.yield
       }
     }
@@ -2840,11 +2878,11 @@ func.func @omp_parallel_invalid_composite(%lb: index, %ub: index, %step: index) 
 // -----
 func.func @omp_parallel_invalid_composite2(%lb: index, %ub: index, %step: index) -> () {
   // expected-error @below {{unexpected OpenMP operation inside of composite 'omp.parallel': omp.barrier}}
-  omp.parallel {
+  omp.parallel shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : index, index, index) {
     omp.barrier
     omp.distribute {
       omp.wsloop {
-        omp.loop_nest (%iv) : index = (%lb) to (%ub) step (%step) {
+        omp.loop_nest (%iv) : index = (%lb_in) to (%ub_in) step (%step_in) {
           omp.yield
         }
       } {omp.composite}
@@ -2857,17 +2895,17 @@ func.func @omp_parallel_invalid_composite2(%lb: index, %ub: index, %step: index)
 // -----
 func.func @omp_parallel_invalid_composite3(%lb: index, %ub: index, %step: index) -> () {
   // expected-error @below {{multiple 'omp.distribute' nested inside of 'omp.parallel'}}
-  omp.parallel {
+  omp.parallel shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : index, index, index) {
     omp.distribute {
       omp.wsloop {
-        omp.loop_nest (%iv) : index = (%lb) to (%ub) step (%step) {
+        omp.loop_nest (%iv) : index = (%lb_in) to (%ub_in) step (%step_in) {
           omp.yield
         }
       } {omp.composite}
     } {omp.composite}
     omp.distribute {
       omp.wsloop {
-        omp.loop_nest (%iv) : index = (%lb) to (%ub) step (%step) {
+        omp.loop_nest (%iv) : index = (%lb_in) to (%ub_in) step (%step_in) {
           omp.yield
         }
       } {omp.composite}
@@ -2991,14 +3029,14 @@ func.func @omp_taskloop_missing_context(%lb: index, %ub: index, %step: index) ->
 // -----
 func.func @omp_taskloop_shared_context(%lb: index, %ub: index, %step: index) -> () {
   // expected-error @below {{'omp.taskloop.context' op expected exactly 1 TaskloopWrapperOp directly nested in the region, but 2 were found}}
-  omp.taskloop.context {
+  omp.taskloop.context shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : index, index, index) {
     omp.taskloop.wrapper {
-      omp.loop_nest (%i) : index = (%lb) to (%ub) step (%step)  {
+      omp.loop_nest (%i) : index = (%lb_in) to (%ub_in) step (%step_in)  {
         omp.yield
       }
     }
     omp.taskloop.wrapper {
-      omp.loop_nest (%i) : index = (%lb) to (%ub) step (%step)  {
+      omp.loop_nest (%i) : index = (%lb_in) to (%ub_in) step (%step_in)  {
         omp.yield
       }
     }
@@ -3042,9 +3080,9 @@ omp.private {type = private} @taskloop.bound.privatizer : index init {
 
 // -----
 func.func @omp_taskloop_local_loop_bounds_from_block_arg(%arg0: index) {
-  %c1 = arith.constant 1 : index
   // expected-error @below {{'omp.taskloop.context' op expects loop bounds and steps to be defined outside of the taskloop.context region or by pure, regionless operations that do not depend on block arguments}}
   omp.taskloop.context private(@taskloop.bound.privatizer %arg0 -> %arg1 : index) {
+    %c1 = arith.constant 1 : index
     %lb = arith.addi %arg1, %c1 : index
     %ub = arith.constant 10 : index
     %step = arith.constant 1 : index

@@ -100,8 +100,8 @@ func.func @parallel_only_terminator() {
 
 // CHECK-LABEL: func.func @parallel_no_side_effects
 func.func @parallel_no_side_effects(%a: i32, %b: i32) {
-  omp.parallel {
-    %x = arith.addi %a, %b : i32
+  omp.parallel shared(%a -> %a_in, %b -> %b_in : i32, i32) {
+    %x = arith.addi %a_in, %b_in : i32
     omp.terminator
   }
   return

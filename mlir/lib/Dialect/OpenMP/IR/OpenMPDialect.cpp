@@ -3604,17 +3604,13 @@ LogicalResult TaskloopContextOp::verifyRegions() {
     return failure();
 
   std::function<bool(Value)> isValidBoundValue = [&](Value value) -> bool {
-    Region *valueRegion = value.getParentRegion();
     // A loop bound value defined outside of the taskloop context region is
-    // valid. A region is considered an ancestor of itself.
-    if (!region.isAncestor(valueRegion))
-      return true;
-
-    // Values defined in the SHARED clause are another way of including values
-    // defined in an anscestor to the taskloop context region. Other block args
-    // are not valid.
-    if (auto blockArg = dyn_cast<BlockArgument>(value))
+    // valid. Outlined OpenMP operations are considered IsolatedFromAbove, so
+    // being defined outside the context region is communicated through the
+    // SHARED clause. Otherwise, values defined by block arguments are invalid.
+    if (auto blockArg = dyn_cast<BlockArgument>(value)) {
       return isSharedClauseBlockArg(getOperation(), blockArg);
+    }
 
     Operation *defOp = value.getDefiningOp();
     if (!defOp || defOp->getNumRegions() != 0 || !isPure(defOp))

@@ -192,7 +192,7 @@ def ParallelOp : OpenMP_Op<"parallel", traits = [
     AttrSizedOperandSegments, AutomaticAllocationScope,
     DeclareOpInterfaceMethods<ComposableOpInterface>,
     DeclareOpInterfaceMethods<OutlineableOpenMPOpInterface>,
-    RecursiveMemoryEffects
+    IsolatedFromAbove, RecursiveMemoryEffects
   ], clauses = [
     OpenMP_AllocateClause, OpenMP_IfClause, OpenMP_NumThreadsClause,
     OpenMP_PrivateClause, OpenMP_ProcBindClause, OpenMP_ReductionClause,
@@ -240,7 +240,8 @@ def TerminatorOp : OpenMP_Op<"terminator", [Terminator, Pure]> {
 // 2.7 teams Construct
 //===----------------------------------------------------------------------===//
 def TeamsOp : OpenMP_Op<"teams", traits = [
-    AttrSizedOperandSegments, RecursiveMemoryEffects, OutlineableOpenMPOpInterface
+    AttrSizedOperandSegments, IsolatedFromAbove, RecursiveMemoryEffects,
+    OutlineableOpenMPOpInterface
   ], clauses = [
     OpenMP_AllocateClause, OpenMP_IfClause, OpenMP_NumTeamsClause,
     OpenMP_PrivateClause, OpenMP_ReductionClause, OpenMP_SharedClause,
@@ -934,7 +935,7 @@ def DistributeOp : OpenMP_Op<"distribute", traits = [
 def TaskOp
     : OpenMP_Op<"task",
                 traits = [AttrSizedOperandSegments, AutomaticAllocationScope,
-                          OutlineableOpenMPOpInterface],
+                          IsolatedFromAbove, OutlineableOpenMPOpInterface],
                 clauses = [
                     // TODO: Complete clause list (detach).
                     OpenMP_AffinityClause, OpenMP_AllocateClause,
@@ -982,7 +983,7 @@ def TaskOp
 // relax this.
 def TaskloopContextOp : OpenMP_Op<"taskloop.context", traits = [
     AttrSizedOperandSegments, AutomaticAllocationScope,
-    RecursiveMemoryEffects, SingleBlock,
+    IsolatedFromAbove, RecursiveMemoryEffects, SingleBlock,
     DeclareOpInterfaceMethods<OutlineableOpenMPOpInterface>
   ], clauses = [
     OpenMP_AllocateClause, OpenMP_FinalClause, OpenMP_GrainsizeClause,

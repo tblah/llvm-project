@@ -176,7 +176,10 @@ def BlockArgOpenMPOpInterface : OpInterface<"BlockArgOpenMPOpInterface"> {
 def OutlineableOpenMPOpInterface : OpInterface<"OutlineableOpenMPOpInterface"> {
   let description = [{
     OpenMP operations whose region will be outlined will implement this
-    interface.
+    interface. All implementations of this interface must also carry the
+    `IsolatedFromAbove` trait: every value used inside the outlined region must
+    be passed explicitly through a clause block argument (e.g. `private`,
+    `shared`, `reduction`).
   }];
 
   let cppNamespace = "::mlir::omp";

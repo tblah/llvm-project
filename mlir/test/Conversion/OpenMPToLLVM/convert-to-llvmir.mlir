@@ -53,18 +53,17 @@ func.func @master_block_arg() {
 
 // CHECK-LABEL: llvm.func @branch_loop
 func.func @branch_loop() {
-  %start = arith.constant 0 : index
-  %end = arith.constant 0 : index
   // CHECK: omp.parallel
   omp.parallel {
-    // CHECK-NEXT: llvm.br ^[[BB1:.*]](%{{[0-9]+}}, %{{[0-9]+}} : i64, i64
-    cf.br ^bb1(%start, %end : index, index)
-  // CHECK-NEXT: ^[[BB1]](%[[ARG1:[0-9]+]]: i64, %[[ARG2:[0-9]+]]: i64):{{.*}}
+    %c0 = arith.constant 0 : index
+    // CHECK: llvm.br ^[[BB1:.*]](%{{[0-9]+}}, %{{[0-9]+}} : i64, i64
+    cf.br ^bb1(%c0, %c0 : index, index)
+    // CHECK-NEXT: ^[[BB1]](%[[ARG1:[0-9]+]]: i64, %[[ARG2:[0-9]+]]: i64):{{.*}}
   ^bb1(%0: index, %1: index):
     // CHECK-NEXT: %[[CMP:[0-9]+]] = llvm.icmp "slt" %[[ARG1]], %[[ARG2]] : i64
     %2 = arith.cmpi slt, %0, %1 : index
     // CHECK-NEXT: llvm.cond_br %[[CMP]], ^[[BB2:.*]](%{{[0-9]+}}, %{{[0-9]+}} : i64, i64), ^[[BB3:.*]]
-    cf.cond_br %2, ^bb2(%end, %end : index, index), ^bb3
+    cf.cond_br %2, ^bb2(%c0, %c0 : index, index), ^bb3
   // CHECK-NEXT: ^[[BB2]](%[[ARG3:[0-9]+]]: i64, %[[ARG4:[0-9]+]]: i64):
   ^bb2(%3: index, %4: index):
     // CHECK-NEXT: llvm.br ^[[BB1]](%[[ARG3]], %[[ARG4]] : i64, i64)
@@ -85,12 +84,12 @@ func.func @branch_loop() {
 // CHECK-LABEL: @wsloop
 // CHECK: (%[[ARG0:.*]]: i64, %[[ARG1:.*]]: i64, %[[ARG2:.*]]: i64, %[[ARG3:.*]]: i64, %[[ARG4:.*]]: i64, %[[ARG5:.*]]: i64)
 func.func @wsloop(%arg0: index, %arg1: index, %arg2: index, %arg3: index, %arg4: index, %arg5: index) {
-  // CHECK: omp.parallel
-  omp.parallel {
+  // CHECK: omp.parallel shared(%[[ARG0]] -> %[[S0:[^ ,)]+]], %[[ARG1]] -> %[[S1:[^ ,)]+]], %[[ARG2]] -> %[[S2:[^ ,)]+]], %[[ARG3]] -> %[[S3:[^ ,)]+]], %[[ARG4]] -> %[[S4:[^ ,)]+]], %[[ARG5]] -> %[[S5:[^ ,)]+]] : i64, i64, i64, i64, i64, i64)
+  omp.parallel shared(%arg0 -> %ws0, %arg1 -> %ws1, %arg2 -> %ws2, %arg3 -> %ws3, %arg4 -> %ws4, %arg5 -> %ws5 : index, index, index, index, index, index) {
     // CHECK: omp.wsloop {
     "omp.wsloop"() ({
-      // CHECK: omp.loop_nest (%[[ARG6:.*]], %[[ARG7:.*]]) : i64 = (%[[ARG0]], %[[ARG1]]) to (%[[ARG2]], %[[ARG3]]) step (%[[ARG4]], %[[ARG5]]) {
-      omp.loop_nest (%arg6, %arg7) : index = (%arg0, %arg1) to (%arg2, %arg3) step (%arg4, %arg5) {
+      // CHECK: omp.loop_nest (%[[ARG6:.*]], %[[ARG7:.*]]) : i64 = (%[[S0]], %[[S1]]) to (%[[S2]], %[[S3]]) step (%[[S4]], %[[S5]]) {
+      omp.loop_nest (%arg6, %arg7) : index = (%ws0, %ws1) to (%ws2, %ws3) step (%ws4, %ws5) {
         // CHECK-DAG: %[[CAST_ARG6:.*]] = builtin.unrealized_conversion_cast %[[ARG6]] : i64 to index
         // CHECK-DAG: %[[CAST_ARG7:.*]] = builtin.unrealized_conversion_cast %[[ARG7]] : i64 to index
         // CHECK: "test.payload"(%[[CAST_ARG6]], %[[CAST_ARG7]]) : (index, index) -> ()
@@ -371,15 +370,18 @@ llvm.func @_QPsimple_reduction(%arg0: !llvm.ptr {fir.bindc_name = "y"}) {
   %4 = llvm.alloca %3 x i32 {bindc_name = "x", uniq_name = "_QFsimple_reductionEx"} : (i64) -> !llvm.ptr
   %5 = llvm.zext %2 : i1 to i32
   llvm.store %5, %4 : i32, !llvm.ptr
-  omp.parallel {
-    %6 = llvm.alloca %3 x i32 {adapt.valuebyref, in_type = i32, operandSegmentSizes = array<i32: 0, 0>, pinned} : (i64) -> !llvm.ptr
-    omp.wsloop reduction(@eqv_reduction %4 -> %prv : !llvm.ptr) {
-      omp.loop_nest (%arg1) : i32 = (%1) to (%0) inclusive step (%1) {
+  omp.parallel shared(%4 -> %red_acc_in, %arg0 -> %arr_in : !llvm.ptr, !llvm.ptr) {
+    %inner_c100 = llvm.mlir.constant(100 : i32) : i32
+    %inner_c1i32 = llvm.mlir.constant(1 : i32) : i32
+    %inner_c1i64 = llvm.mlir.constant(1 : i64) : i64
+    %6 = llvm.alloca %inner_c1i64 x i32 {adapt.valuebyref, in_type = i32, operandSegmentSizes = array<i32: 0, 0>, pinned} : (i64) -> !llvm.ptr
+    omp.wsloop reduction(@eqv_reduction %red_acc_in -> %prv : !llvm.ptr) {
+      omp.loop_nest (%arg1) : i32 = (%inner_c1i32) to (%inner_c100) inclusive step (%inner_c1i32) {
         llvm.store %arg1, %6 : i32, !llvm.ptr
         %7 = llvm.load %6 : !llvm.ptr -> i32
         %8 = llvm.sext %7 : i32 to i64
-        %9 = llvm.sub %8, %3  : i64
-        %10 = llvm.getelementptr %arg0[0, %9] : (!llvm.ptr, i64) -> !llvm.ptr, !llvm.array<100 x i32>
+        %9 = llvm.sub %8, %inner_c1i64  : i64
+        %10 = llvm.getelementptr %arr_in[0, %9] : (!llvm.ptr, i64) -> !llvm.ptr, !llvm.array<100 x i32>
         %11 = llvm.load %10 : !llvm.ptr -> i32
         %12 = llvm.load %prv : !llvm.ptr -> i32
         %13 = llvm.icmp "eq" %11, %12 : i32
@@ -412,9 +414,9 @@ llvm.func @_QQmain() {
   ^bb2:  // pred: ^bb1
     llvm.store %6, %4 : i32, !llvm.ptr
 // CHECK: omp.task
-    omp.task   {
+    omp.task shared(%4 -> %ptr : !llvm.ptr) {
 // CHECK: llvm.call @[[CALL_FUNC:.*]]({{.*}}) :
-      llvm.call @_QFPdo_work(%4) : (!llvm.ptr) -> ()
+      llvm.call @_QFPdo_work(%ptr) : (!llvm.ptr) -> ()
 // CHECK: omp.terminator
       omp.terminator
     }
@@ -586,14 +588,18 @@ func.func @omp_ordered(%arg0 : index) -> () {
 // CHECK-LABEL: @omp_taskloop(
 // CHECK-SAME:  %[[ARG0:.*]]: i64, %[[ARG1:.*]]: !llvm.ptr, %[[ARG2:.*]]: !llvm.ptr, %[[ARG3:.*]]: i64)
 func.func @omp_taskloop(%arg0: index, %arg1 : memref<i32>) {
-  // CHECK: omp.parallel {
-  omp.parallel {
-    // CHECK: omp.taskloop.context allocate(%{{.*}} : !llvm.struct<(ptr, ptr, i64)> -> %{{.*}} : !llvm.struct<(ptr, ptr, i64)>) {
-    omp.taskloop.context allocate(%arg1 : memref<i32> -> %arg1 : memref<i32>) {
+  // CHECK: %[[DESC0:.*]] = llvm.mlir.poison : !llvm.struct<(ptr, ptr, i64)>
+  // CHECK: %[[DESC1:.*]] = llvm.insertvalue %[[ARG1]], %[[DESC0]][0] : !llvm.struct<(ptr, ptr, i64)>
+  // CHECK: %[[DESC2:.*]] = llvm.insertvalue %[[ARG2]], %[[DESC1]][1] : !llvm.struct<(ptr, ptr, i64)>
+  // CHECK: %[[DESC:.*]] = llvm.insertvalue %[[ARG3]], %[[DESC2]][2] : !llvm.struct<(ptr, ptr, i64)>
+  // CHECK: omp.parallel shared(%[[ARG0]] -> %[[ARG0_P:[^ ,)]+]], %[[DESC]] -> %[[ARG1_P:[^ ,)]+]] : i64, !llvm.struct<(ptr, ptr, i64)>)
+  omp.parallel shared(%arg0 -> %arg0_p, %arg1 -> %arg1_p : index, memref<i32>) {
+    // CHECK: omp.taskloop.context allocate(%[[ARG1_P]] : !llvm.struct<(ptr, ptr, i64)> -> %[[ARG1_P]] : !llvm.struct<(ptr, ptr, i64)>) shared(%[[ARG0_P]] -> %[[ARG0_TC:[^ ,)]+]] : i64) {
+    omp.taskloop.context allocate(%arg1_p : memref<i32> -> %arg1_p : memref<i32>) shared(%arg0_p -> %arg0_tc : index) {
       // CHECK: omp.taskloop.wrapper {
       omp.taskloop.wrapper {
-        // CHECK: omp.loop_nest (%[[IV:.*]]) : i64 = (%[[ARG0]]) to (%[[ARG0]]) step (%[[ARG0]]) {
-        omp.loop_nest (%iv) : index = (%arg0) to (%arg0) step (%arg0) {
+        // CHECK: omp.loop_nest (%[[IV:.*]]) : i64 = (%[[ARG0_TC]]) to (%[[ARG0_TC]]) step (%[[ARG0_TC]]) {
+        omp.loop_nest (%iv) : index = (%arg0_tc) to (%arg0_tc) step (%arg0_tc) {
           // CHECK-DAG: %[[CAST_IV:.*]] = builtin.unrealized_conversion_cast %[[IV]] : i64 to index
           // CHECK: "test.payload"(%[[CAST_IV]]) : (index) -> ()
           "test.payload"(%iv) : (index) -> ()
@@ -623,14 +629,15 @@ omp.declare_mapper @my_mapper : !llvm.struct<"_QFdeclare_mapperTmy_type", (i32)>
 // CHECK-LABEL: llvm.func @omp_dist_schedule(%arg0: i32) {
 func.func @omp_dist_schedule(%arg0: i32) {
   %c1_i32 = arith.constant 1 : i32
-  // CHECK: %1 = llvm.mlir.constant(1024 : i32) : i32
+  // CHECK: %[[C1024:.*]] = llvm.mlir.constant(1024 : i32) : i32
   %c1024_i32 = arith.constant 1024 : i32
   %c16_i32 = arith.constant 16 : i32
   %c8_i32 = arith.constant 8 : i32
-  omp.teams num_teams( to %c8_i32 : i32) thread_limit(%c16_i32 : i32) {
-    // CHECK: omp.distribute dist_schedule_static dist_schedule_chunk_size(%1 : i32) {
-    omp.distribute dist_schedule_static dist_schedule_chunk_size(%c1024_i32 : i32) {
-      omp.loop_nest (%arg1) : i32 = (%c1_i32) to (%arg0) inclusive step (%c1_i32) {
+  // CHECK: omp.teams{{.*}}shared(%[[C1024]] -> %[[S1024:[^ ,)]+]], %{{.*}} -> %[[S1:[^ ,)]+]], %arg0 -> %[[S0:[^ ,)]+]] : i32, i32, i32)
+  omp.teams num_teams( to %c8_i32 : i32) thread_limit(%c16_i32 : i32) shared(%c1024_i32 -> %s1024, %c1_i32 -> %s1, %arg0 -> %s0 : i32, i32, i32) {
+    // CHECK: omp.distribute dist_schedule_static dist_schedule_chunk_size(%[[S1024]] : i32) {
+    omp.distribute dist_schedule_static dist_schedule_chunk_size(%s1024 : i32) {
+      omp.loop_nest (%arg1) : i32 = (%s1) to (%s0) inclusive step (%s1) {
         omp.terminator
       }
     }
