@@ -4,7 +4,7 @@
 !CHECK-LABEL: func @_QPsb1
 subroutine sb1(arr)
   integer :: arr(:)
-!CHECK: omp.parallel  {
+!CHECK: omp.parallel shared(%{{.*}}) {
   !$omp parallel
 !CHECK: omp.workshare {
   !$omp workshare
@@ -18,7 +18,7 @@ end subroutine
 !CHECK-LABEL: func @_QPsb2
 subroutine sb2(arr)
   integer :: arr(:)
-!CHECK: omp.parallel  {
+!CHECK: omp.parallel shared({{.*}}) {
   !$omp parallel
 !CHECK: omp.workshare nowait {
   !$omp workshare
@@ -32,7 +32,7 @@ end subroutine
 !CHECK-LABEL: func @_QPsb3
 subroutine sb3(arr)
   integer :: arr(:)
-!CHECK: omp.parallel  {
+!CHECK: omp.parallel shared({{.*}}) {
 !CHECK: omp.workshare  {
   !$omp parallel workshare
     arr = 0

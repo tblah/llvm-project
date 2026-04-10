@@ -31,8 +31,8 @@ end subroutine s4
 ! CHECK:           %[[VAL_DERIVED_DECLARE:.*]]:2 = hlfir.declare %[[VAL_DERIVED_ALLOCA]] {{.*}}
 ! CHECK:           %[[ADDR:.*]] = fir.address_of(@_QQ_QFs4Ty3.DerivedInit) : !fir.ref<!fir.type<_QFs4Ty3{x:!fir.box<!fir.heap<i32>>}>>
 ! CHECK:           fir.copy %[[ADDR]] to %[[VAL_DERIVED_DECLARE]]#0 no_overlap : {{.*}}
-! CHECK:           omp.parallel {
-! CHECK:             omp.wsloop private(@[[DERIVED_PRIV]] %{{.*}}#0 -> %{{.*}}, @{{.*}} %{{.*}}#0 -> %{{.*}} : !fir.ref<!fir.type<_QFs4Ty3{x:!fir.box<!fir.heap<i32>>}>>, !fir.ref<i32>) {
+! CHECK:           omp.parallel shared(%[[VAL_DERIVED_DECLARE]]#0 -> %[[SHARED_V:.*]], %{{.*}}#0 -> %[[SHARED_I:.*]] : !fir.ref<!fir.type<_QFs4Ty3{x:!fir.box<!fir.heap<i32>>}>>, !fir.ref<i32>) {
+! CHECK:             omp.wsloop private(@[[DERIVED_PRIV]] %[[SHARED_V]] -> %[[PRIV_V:.*]], @{{.*}} %[[SHARED_I]] -> %[[PRIV_I:.*]] : !fir.ref<!fir.type<_QFs4Ty3{x:!fir.box<!fir.heap<i32>>}>>, !fir.ref<i32>) {
 ! CHECK:           }
 ! CHECK:           %[[VAL_39:.*]] = fir.embox %[[VAL_DERIVED_DECLARE]]#0 : (!fir.ref<!fir.type<_QFs4Ty3{x:!fir.box<!fir.heap<i32>>}>>) -> !fir.box<!fir.type<_QFs4Ty3{x:!fir.box<!fir.heap<i32>>}>>
 ! CHECK:           %[[VAL_40:.*]] = fir.convert %[[VAL_39]] : (!fir.box<!fir.type<_QFs4Ty3{x:!fir.box<!fir.heap<i32>>}>>) -> !fir.box<none>

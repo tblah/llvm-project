@@ -68,7 +68,7 @@ end subroutine
 ! CHECK:           %[[VAL_3:.*]]:2 = hlfir.declare %[[VAL_0]] dummy_scope %[[VAL_2]] arg {{[0-9]+}} {uniq_name = "_QFmax_array_reductionEl"} : (!fir.box<!fir.array<?xi32>>, !fir.dscope) -> (!fir.box<!fir.array<?xi32>>, !fir.box<!fir.array<?xi32>>)
 ! CHECK:           %[[VAL_4:.*]]:2 = hlfir.declare %[[VAL_1]] dummy_scope %[[VAL_2]] arg {{[0-9]+}} {uniq_name = "_QFmax_array_reductionEr"} : (!fir.box<!fir.array<?xi32>>, !fir.dscope) -> (!fir.box<!fir.array<?xi32>>, !fir.box<!fir.array<?xi32>>)
 ! CHECK:           fir.store %[[VAL_3]]#0 to %[[VAL_5]] : !fir.ref<!fir.box<!fir.array<?xi32>>>
-! CHECK:           omp.parallel reduction(byref @max_byref_box_Uxi32 %[[VAL_5]] -> %[[VAL_6:.*]] : !fir.ref<!fir.box<!fir.array<?xi32>>>) {
+! CHECK:           omp.parallel shared(%[[VAL_4]]#0 -> %[[R_SHARED:.*]] : !fir.box<!fir.array<?xi32>>) reduction(byref @max_byref_box_Uxi32 %[[VAL_5]] -> %[[VAL_6:.*]] : !fir.ref<!fir.box<!fir.array<?xi32>>>) {
 ! CHECK:             %[[VAL_7:.*]]:2 = hlfir.declare %[[VAL_6]] {uniq_name = "_QFmax_array_reductionEl"} : (!fir.ref<!fir.box<!fir.array<?xi32>>>) -> (!fir.ref<!fir.box<!fir.array<?xi32>>>, !fir.ref<!fir.box<!fir.array<?xi32>>>)
 ! CHECK:             %[[VAL_8:.*]] = fir.load %[[VAL_7]]#0 : !fir.ref<!fir.box<!fir.array<?xi32>>>
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 0 : index
@@ -83,7 +83,7 @@ end subroutine
 ! CHECK:               %[[VAL_18:.*]] = arith.addi %[[VAL_13]], %[[VAL_17]] : index
 ! CHECK-DAG:               %[[VAL_19:.*]] = hlfir.designate %[[VAL_8]] (%[[VAL_18]])  : (!fir.box<!fir.array<?xi32>>, index) -> !fir.ref<i32>
 ! CHECK-DAG:               %[[VAL_20:.*]] = fir.load %[[VAL_19]] : !fir.ref<i32>
-! CHECK-DAG:               %[[VAL_21:.*]] = hlfir.designate %[[VAL_4]]#0 (%[[VAL_13]])  : (!fir.box<!fir.array<?xi32>>, index) -> !fir.ref<i32>
+! CHECK-DAG:               %[[VAL_21:.*]] = hlfir.designate %[[R_SHARED]] (%[[VAL_13]])  : (!fir.box<!fir.array<?xi32>>, index) -> !fir.ref<i32>
 ! CHECK-DAG:               %[[VAL_22:.*]] = fir.load %[[VAL_21]] : !fir.ref<i32>
 ! CHECK:               %[[VAL_24:.*]] = arith.maxsi %[[VAL_20]], %[[VAL_22]] : i32
 ! CHECK:               hlfir.yield_element %[[VAL_24]] : i32

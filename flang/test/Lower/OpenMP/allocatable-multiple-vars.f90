@@ -19,7 +19,7 @@ end subroutine
 ! Verify that private versions of each variable are both allocated and freed
 ! within the parallel region.
 
-! CHECK:      omp.parallel {
+! CHECK:      omp.parallel shared(%[[VAR1_IN:.*]] -> %[[VAR1_SHARED:.*]], %[[VAR2_IN:.*]] -> %[[VAR2_SHARED:.*]] : !fir.ref<!fir.box<!fir.heap<i32>>>, !fir.ref<!fir.box<!fir.heap<i32>>>) {
 ! CHECK:        fir.allocmem
 ! CHECK:        fir.allocmem
 ! CHECK:        fir.freemem

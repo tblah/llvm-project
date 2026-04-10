@@ -7,7 +7,7 @@
 ! CHECK:           %[[VAL_2:.*]] = fir.embox %[[VAL_1]] : (!fir.heap<i32>) -> !fir.box<!fir.heap<i32>>
 ! CHECK:           fir.store %[[VAL_2]] to %[[VAL_0]] : !fir.ref<!fir.box<!fir.heap<i32>>>
 ! CHECK:           %[[VAL_3:.*]]:2 = hlfir.declare %[[VAL_0]] {fortran_attrs = {{.*}}<allocatable>, uniq_name = "_QFEa"} : (!fir.ref<!fir.box<!fir.heap<i32>>>) -> (!fir.ref<!fir.box<!fir.heap<i32>>>, !fir.ref<!fir.box<!fir.heap<i32>>>)
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_3]]#0 -> %[[SHARED_A:.*]], %{{.*}}#0 -> %[[SHARED_I:.*]] : !fir.ref<!fir.box<!fir.heap<i32>>>, !fir.ref<i32>) {
 ! CHECK:             omp.wsloop private(@{{.*}} %{{.*}} -> %{{.*}}, @{{.*}} %{{.*}} -> %[[VAL_17:.*]] : !fir.ref<!fir.box<!fir.heap<i32>>>, !fir.ref<i32>) private_barrier {
 ! CHECK:               omp.loop_nest
 ! CHECK:                   %[[VAL_16:.*]]:2 = hlfir.declare %{{.*}} {fortran_attrs = {{.*}}<allocatable>, uniq_name = "_QFEa"} : (!fir.ref<!fir.box<!fir.heap<i32>>>) -> (!fir.ref<!fir.box<!fir.heap<i32>>>, !fir.ref<!fir.box<!fir.heap<i32>>>)
@@ -22,7 +22,7 @@
 ! CHECK:                   %[[VAL_23:.*]] = fir.load %[[VAL_16]]#0 : !fir.ref<!fir.box<!fir.heap<i32>>>
 ! CHECK:                   %[[VAL_24:.*]] = fir.box_addr %[[VAL_23]] : (!fir.box<!fir.heap<i32>>) -> !fir.heap<i32>
 ! CHECK:                   %[[VAL_25:.*]] = fir.load %[[VAL_24]] : !fir.heap<i32>
-! CHECK:                   hlfir.assign %[[VAL_25]] to %[[VAL_3]]#0 realloc : i32, !fir.ref<!fir.box<!fir.heap<i32>>>
+! CHECK:                   hlfir.assign %[[VAL_25]] to %[[SHARED_A]] realloc : i32, !fir.ref<!fir.box<!fir.heap<i32>>>
 ! CHECK-NEXT:            }
 ! CHECK-NEXT:            omp.yield
 ! CHECK-NEXT:          }
@@ -42,7 +42,7 @@ end program
 ! CHECK:          %[[A:.*]]:2 = hlfir.declare %{{.*}} {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QFlastprivate_reallocEa"} :
 ! CHECK-SAME:       (!fir.ref<!fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>>) ->
 ! CHECK-SAME:       (!fir.ref<!fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>>)
-! CHECK:          omp.parallel {
+! CHECK:          omp.parallel shared(%[[A]]#0 -> %[[SHARED_A:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>>) {
 ! CHECK:            %[[A_PRIV:.*]]:2 = hlfir.declare %{{.*}} {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QFlastprivate_reallocEa"} :
 ! CHECK-SAME:         (!fir.ref<!fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>>) ->
 ! CHECK-SAME:         (!fir.ref<!fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>>)
@@ -50,7 +50,7 @@ end program
 ! CHECK:              omp.section {
 ! CHECK:                fir.load
 ! CHECK:                %[[TEMP:.*]] = fir.load %[[A_PRIV:.*]]#0 : !fir.ref<!fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>>
-! CHECK:                hlfir.assign %[[TEMP]] to %[[A]]#0 realloc : !fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>,
+! CHECK:                hlfir.assign %[[TEMP]] to %[[SHARED_A]] realloc : !fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>,
 ! CHECK-SAME:             !fir.ref<!fir.box<!fir.heap<!fir.array<?xcomplex<f32>>>>>
 ! CHECK:              }
 ! CHECK:            }

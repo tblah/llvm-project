@@ -50,8 +50,8 @@ program main
 end program main
 
 ! DEVICE: omp.target {{.*}} {
-! DEVICE: omp.teams {
-! COMMON: omp.parallel {
+! DEVICE: omp.teams shared(
+! COMMON: omp.parallel shared(
 ! COMMON:   %[[LOCAL_TEMP:.*]] = fir.alloca !fir.type<_QMstruct_modTtest_struct{x_:!fir.box<!fir.heap<i32>>}> {bindc_name = ".result"}
 ! DEVICE:   omp.distribute {
 ! COMMON:   omp.wsloop {

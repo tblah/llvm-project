@@ -57,25 +57,25 @@ end
 ! HOST-NOT: omp.target
 ! HOST-NOT: omp.teams
 
-! COMMON: omp.parallel {
+! COMMON: omp.parallel shared(
 
-! COMMON-NEXT: %[[ITER_VAR_I:.*]] = fir.alloca i32 {bindc_name = "i"}
-! COMMON-NEXT: %[[BINDING_I:.*]]:2 = hlfir.declare %[[ITER_VAR_I]] {uniq_name = "_QFEi"}
+! COMMON: %[[ITER_VAR_I:.*]] = fir.alloca i32 {bindc_name = "i"}
+! COMMON: %[[BINDING_I:.*]]:2 = hlfir.declare %[[ITER_VAR_I]] {uniq_name = "_QFEi"}
 
-! COMMON-NEXT: %[[ITER_VAR_J:.*]] = fir.alloca i32 {bindc_name = "j"}
-! COMMON-NEXT: %[[BINDING_J:.*]]:2 = hlfir.declare %[[ITER_VAR_J]] {uniq_name = "_QFEj"}
+! COMMON: %[[ITER_VAR_J:.*]] = fir.alloca i32 {bindc_name = "j"}
+! COMMON: %[[BINDING_J:.*]]:2 = hlfir.declare %[[ITER_VAR_J]] {uniq_name = "_QFEj"}
 
-! COMMON-NEXT: %[[ITER_VAR_K:.*]] = fir.alloca i32 {bindc_name = "k"}
-! COMMON-NEXT: %[[BINDING_K:.*]]:2 = hlfir.declare %[[ITER_VAR_K]] {uniq_name = "_QFEk"}
+! COMMON: %[[ITER_VAR_K:.*]] = fir.alloca i32 {bindc_name = "k"}
+! COMMON: %[[BINDING_K:.*]]:2 = hlfir.declare %[[ITER_VAR_K]] {uniq_name = "_QFEk"}
 
 ! DEVICE: omp.distribute
 
 ! COMMON: omp.wsloop {
 ! COMMON-NEXT: omp.loop_nest
 ! COMMON-SAME:   (%[[ARG0:[^[:space:]]+]], %[[ARG1:[^[:space:]]+]], %[[ARG2:[^[:space:]]+]])
-! COMMON-SAME:   : index = (%[[LB_I]], %[[LB_J]], %[[LB_K]])
-! COMMON-SAME:     to (%[[UB_I]], %[[UB_J]], %[[UB_K]]) inclusive
-! COMMON-SAME:     step (%[[STEP_I]], %[[STEP_J]], %[[STEP_K]]) collapse(3) {
+! COMMON-SAME:   : index = (%{{[^ ,)]+}}, %{{[^ ,)]+}}, %{{[^ ,)]+}})
+! COMMON-SAME:     to (%{{[^ ,)]+}}, %{{[^ ,)]+}}, %{{[^ ,)]+}}) inclusive
+! COMMON-SAME:     step (%{{[^ ,)]+}}, %{{[^ ,)]+}}, %{{[^ ,)]+}}) collapse(3) {
 
 ! COMMON-NEXT: %[[IV_IDX_I:.*]] = fir.convert %[[ARG0]]
 ! COMMON-NEXT: fir.store %[[IV_IDX_I]] to %[[BINDING_I]]#0

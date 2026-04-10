@@ -21,9 +21,9 @@ subroutine omp_task_nested_allocatable_firstprivate
 !CHECK-SAME:    uniq_name = "_QFomp_task_nested_allocatable_firstprivateEa"} :
 !CHECK-SAME:    (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) ->
 !CHECK-SAME:    (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>)
-!CHECK:       omp.task {
+!CHECK:       omp.task shared(%[[A]]#0 -> %[[SHARED_A:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
   !$omp task default(firstprivate)
-!CHECK:         omp.task private(@[[PRIVATIZER]] %[[A]]#0 -> %[[A_ARG:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
+!CHECK:         omp.task private(@[[PRIVATIZER]] %[[SHARED_A]] -> %[[A_ARG:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
 !CHECK:           %[[PRIV_A:.*]]:2 = hlfir.declare %{{.*}} {fortran_attrs = #fir.var_attrs<allocatable>,
 !CHECK-SAME:        uniq_name = "_QFomp_task_nested_allocatable_firstprivateEa"} :
 !CHECK-SAME:        (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) ->

@@ -12,6 +12,7 @@ program test
   integer, pointer :: a
   real, allocatable :: b
 
+!CHECK-LABEL: func.func @_QQmain() attributes {fir.bindc_name = "TEST"} {
 !CHECK-DAG:  %[[A:.*]] = fir.address_of(@_QFEa) : !fir.ref<!fir.box<!fir.ptr<i32>>>
 !CHECK-DAG:  %[[OMP_A:.*]] = omp.threadprivate %[[A]] : !fir.ref<!fir.box<!fir.ptr<i32>>> -> !fir.ref<!fir.box<!fir.ptr<i32>>>
 !CHECK-DAG:  %[[OMP_A_DECL:.*]]:2 = hlfir.declare %[[OMP_A]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFEa"} : (!fir.ref<!fir.box<!fir.ptr<i32>>>) -> (!fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<!fir.box<!fir.ptr<i32>>>)
@@ -43,24 +44,31 @@ program test
   print *, x, y, z, w, a, b
 
   !$omp parallel
-!CHECK-DAG:  %[[X_PVT:.*]] = omp.threadprivate %[[X]] : !fir.ref<i32> -> !fir.ref<i32>
-!CHECK-DAG:  %[[X_PVT_DECL:.*]]:2 = hlfir.declare %[[X_PVT]] {uniq_name = "_QFEx"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-!CHECK-DAG:  %[[Y_PVT:.*]] = omp.threadprivate %[[Y]] : !fir.ref<f32> -> !fir.ref<f32>
-!CHECK-DAG:  %[[Y_PVT_DECL:.*]]:2 = hlfir.declare %[[Y_PVT]] {uniq_name = "_QFEy"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
-!CHECK-DAG:  %[[Z_PVT:.*]] = omp.threadprivate %[[Z]] : !fir.ref<!fir.logical<4>> -> !fir.ref<!fir.logical<4>>
-!CHECK-DAG:  %[[Z_PVT_DECL:.*]]:2 = hlfir.declare %[[Z_PVT]] {uniq_name = "_QFEz"} : (!fir.ref<!fir.logical<4>>) -> (!fir.ref<!fir.logical<4>>, !fir.ref<!fir.logical<4>>)
-!CHECK-DAG:  %[[W_PVT:.*]] = omp.threadprivate %[[W]] : !fir.ref<complex<f32>> -> !fir.ref<complex<f32>>
-!CHECK-DAG:  %[[W_PVT_DECL:.*]]:2 = hlfir.declare %[[W_PVT]] {uniq_name = "_QFEw"} : (!fir.ref<complex<f32>>) -> (!fir.ref<complex<f32>>, !fir.ref<complex<f32>>)
-!CHECK-DAG:  %[[A_PVT:.*]] = omp.threadprivate %[[A]] : !fir.ref<!fir.box<!fir.ptr<i32>>> -> !fir.ref<!fir.box<!fir.ptr<i32>>>
-!CHECK-DAG:  %[[A_PVT_DECL:.*]]:2 = hlfir.declare %[[A_PVT]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFEa"} : (!fir.ref<!fir.box<!fir.ptr<i32>>>) -> (!fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<!fir.box<!fir.ptr<i32>>>)
-!CHECK-DAG:  %[[B_PVT:.*]] = omp.threadprivate %[[B]] : !fir.ref<!fir.box<!fir.heap<f32>>> -> !fir.ref<!fir.box<!fir.heap<f32>>>
-!CHECK-DAG:  %[[B_PVT_DECL:.*]]:2 = hlfir.declare %[[B_PVT]] {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QFEb"} : (!fir.ref<!fir.box<!fir.heap<f32>>>) -> (!fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<!fir.box<!fir.heap<f32>>>)
-!CHECK-DAG:  %{{.*}} = fir.load %[[X_PVT_DECL]]#0 : !fir.ref<i32>
-!CHECK-DAG:  %{{.*}} = fir.load %[[Y_PVT_DECL]]#0 : !fir.ref<f32>
-!CHECK-DAG:  %{{.*}} = fir.load %[[Z_PVT_DECL]]#0 : !fir.ref<!fir.logical<4>>
-!CHECK-DAG:  %{{.*}} = fir.load %[[W_PVT_DECL]]#0 : !fir.ref<complex<f32>>
-!CHECK-DAG:  %{{.*}} = fir.load %[[A_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<i32>>>
-!CHECK-DAG:  %{{.*}} = fir.load %[[B_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.heap<f32>>>
+!CHECK:      omp.parallel {
+!CHECK:      %[[X_INNER:.*]] = fir.address_of(@_QFEx) : !fir.ref<i32>
+!CHECK:      %[[Y_INNER:.*]] = fir.address_of(@_QFEy) : !fir.ref<f32>
+!CHECK:      %[[Z_INNER:.*]] = fir.address_of(@_QFEz) : !fir.ref<!fir.logical<4>>
+!CHECK:      %[[W_INNER:.*]] = fir.address_of(@_QFEw) : !fir.ref<complex<f32>>
+!CHECK:      %[[A_INNER:.*]] = fir.address_of(@_QFEa) : !fir.ref<!fir.box<!fir.ptr<i32>>>
+!CHECK:      %[[B_INNER:.*]] = fir.address_of(@_QFEb) : !fir.ref<!fir.box<!fir.heap<f32>>>
+!CHECK:      %[[X_PVT:.*]] = omp.threadprivate %[[X_INNER]] : !fir.ref<i32> -> !fir.ref<i32>
+!CHECK:      %[[X_PVT_DECL:.*]]:2 = hlfir.declare %[[X_PVT]] {uniq_name = "_QFEx"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
+!CHECK:      %[[Y_PVT:.*]] = omp.threadprivate %[[Y_INNER]] : !fir.ref<f32> -> !fir.ref<f32>
+!CHECK:      %[[Y_PVT_DECL:.*]]:2 = hlfir.declare %[[Y_PVT]] {uniq_name = "_QFEy"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
+!CHECK:      %[[Z_PVT:.*]] = omp.threadprivate %[[Z_INNER]] : !fir.ref<!fir.logical<4>> -> !fir.ref<!fir.logical<4>>
+!CHECK:      %[[Z_PVT_DECL:.*]]:2 = hlfir.declare %[[Z_PVT]] {uniq_name = "_QFEz"} : (!fir.ref<!fir.logical<4>>) -> (!fir.ref<!fir.logical<4>>, !fir.ref<!fir.logical<4>>)
+!CHECK:      %[[W_PVT:.*]] = omp.threadprivate %[[W_INNER]] : !fir.ref<complex<f32>> -> !fir.ref<complex<f32>>
+!CHECK:      %[[W_PVT_DECL:.*]]:2 = hlfir.declare %[[W_PVT]] {uniq_name = "_QFEw"} : (!fir.ref<complex<f32>>) -> (!fir.ref<complex<f32>>, !fir.ref<complex<f32>>)
+!CHECK:      %[[A_PVT:.*]] = omp.threadprivate %[[A_INNER]] : !fir.ref<!fir.box<!fir.ptr<i32>>> -> !fir.ref<!fir.box<!fir.ptr<i32>>>
+!CHECK:      %[[A_PVT_DECL:.*]]:2 = hlfir.declare %[[A_PVT]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFEa"} : (!fir.ref<!fir.box<!fir.ptr<i32>>>) -> (!fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<!fir.box<!fir.ptr<i32>>>)
+!CHECK:      %[[B_PVT:.*]] = omp.threadprivate %[[B_INNER]] : !fir.ref<!fir.box<!fir.heap<f32>>> -> !fir.ref<!fir.box<!fir.heap<f32>>>
+!CHECK:      %[[B_PVT_DECL:.*]]:2 = hlfir.declare %[[B_PVT]] {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QFEb"} : (!fir.ref<!fir.box<!fir.heap<f32>>>) -> (!fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<!fir.box<!fir.heap<f32>>>)
+!CHECK:      %{{.*}} = fir.load %[[X_PVT_DECL]]#0 : !fir.ref<i32>
+!CHECK:      %{{.*}} = fir.load %[[Y_PVT_DECL]]#0 : !fir.ref<f32>
+!CHECK:      %{{.*}} = fir.load %[[Z_PVT_DECL]]#0 : !fir.ref<!fir.logical<4>>
+!CHECK:      %{{.*}} = fir.load %[[W_PVT_DECL]]#0 : !fir.ref<complex<f32>>
+!CHECK:      %{{.*}} = fir.load %[[A_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<i32>>>
+!CHECK:      %{{.*}} = fir.load %[[B_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.heap<f32>>>
   print *, x, y, z, w, a, b
   !$omp end parallel
 

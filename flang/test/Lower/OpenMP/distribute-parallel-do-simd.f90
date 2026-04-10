@@ -28,7 +28,7 @@ end subroutine distribute_parallel_do_simd_num_threads
 subroutine distribute_parallel_do_simd_dist_schedule()
   !$omp teams
 
-  ! CHECK:      omp.parallel  {
+  ! CHECK:      omp.parallel shared(%[[PAR_IN:.*]] -> %[[PAR_SHARED:.*]] : !fir.ref<i32>) {
   ! CHECK:      omp.distribute dist_schedule_static dist_schedule_chunk_size({{.*}}) {
   ! CHECK-NEXT: omp.wsloop {
   ! DEFAULT-NEXT: omp.simd linear({{.*}}) private({{.*}}) {
@@ -46,7 +46,7 @@ end subroutine distribute_parallel_do_simd_dist_schedule
 subroutine distribute_parallel_do_simd_schedule()
   !$omp teams
 
-  ! CHECK:      omp.parallel {
+  ! CHECK:      omp.parallel shared(%[[PAR_IN:.*]] -> %[[PAR_SHARED:.*]] : !fir.ref<i32>) {
   ! CHECK:      omp.distribute {
   ! CHECK-NEXT: omp.wsloop schedule(static = {{.*}}) {
   ! DEFAULT-NEXT: omp.simd linear({{.*}}) private({{.*}}) {
@@ -64,7 +64,7 @@ end subroutine distribute_parallel_do_simd_schedule
 subroutine distribute_parallel_do_simd_simdlen()
   !$omp teams
 
-  ! CHECK:      omp.parallel {
+  ! CHECK:      omp.parallel shared(%[[PAR_IN:.*]] -> %[[PAR_SHARED:.*]] : !fir.ref<i32>) {
   ! CHECK:      omp.distribute {
   ! CHECK-NEXT: omp.wsloop {
   ! DEFAULT-NEXT: omp.simd linear({{.*}}) simdlen(4) private({{.*}}) {
@@ -86,16 +86,16 @@ subroutine distribute_parallel_do_simd_private()
   ! CHECK: %[[X:.*]]:2 = hlfir.declare %[[X_ALLOC]]
   integer(8) :: x
 
-  ! CHECK: omp.teams {
+  ! CHECK: omp.teams shared(%[[INDEX]]#0 -> %[[INDEX_SHARED:.*]], %[[X]]#0 -> %[[X_SHARED:.*]] : !fir.ref<i32>, !fir.ref<i64>) {
   !$omp teams
 
-  ! CHECK:      omp.parallel {
+  ! CHECK:      omp.parallel shared(%[[INDEX_SHARED]] -> %[[INDEX_PAR:.*]], %[[X_SHARED]] -> %[[X_PAR:.*]] : !fir.ref<i32>, !fir.ref<i64>) {
   ! CHECK:      omp.distribute {
   ! CHECK-NEXT: omp.wsloop {
-  ! DEFAULT-NEXT:  omp.simd linear(%{{.*}}) private(@{{.*}} %[[X]]#0 -> %[[X_ARG:[^,]+]],
-  ! DEFAULT-SAME:                   @{{.*}} %[[INDEX]]#0 -> %[[INDEX_ARG:.*]] : !fir.ref<i64>, !fir.ref<i32>) {
-  ! OPENMP52-NEXT: omp.simd linear(val(%{{.*}})) private(@{{.*}} %[[X]]#0 -> %[[X_ARG:[^,]+]],
-  ! OPENMP52-SAME:                  @{{.*}} %[[INDEX]]#0 -> %[[INDEX_ARG:.*]] : !fir.ref<i64>, !fir.ref<i32>) {
+  ! DEFAULT:       omp.simd linear(%[[INDEX_PAR]] : !fir.ref<i32> = {{.*}}) private(@{{.*}} %[[X_PAR]] -> %[[X_ARG:[^,]+]],
+  ! DEFAULT-SAME:                   @{{.*}} %[[INDEX_PAR]] -> %[[INDEX_ARG:.*]] : !fir.ref<i64>, !fir.ref<i32>) {
+  ! OPENMP52:      omp.simd linear(val(%[[INDEX_PAR]] : !fir.ref<i32> = {{.*}})) private(@{{.*}} %[[X_PAR]] -> %[[X_ARG:[^,]+]],
+  ! OPENMP52-SAME:                  @{{.*}} %[[INDEX_PAR]] -> %[[INDEX_ARG:.*]] : !fir.ref<i64>, !fir.ref<i32>) {
   ! CHECK-NEXT: omp.loop_nest
   ! CHECK:      %[[X_PRIV:.*]]:2 = hlfir.declare %[[X_ARG]]
   ! CHECK:      %[[INDEX_PRIV:.*]]:2 = hlfir.declare %[[INDEX_ARG]]
@@ -115,15 +115,15 @@ integer :: i,j
 
 ! CHECK:           omp.target {{.*}} {
 ! CHECK:             %[[X_MAX_MAPPED:.*]]:2 = hlfir.declare %{{.*}} {uniq_name = "{{.*}}x_max"}
-! CHECK:             omp.teams {
-! CHECK:               omp.parallel {
+! CHECK:             omp.teams shared(%{{.*}} -> %{{.*}}, %[[X_MAX_MAPPED]]#0 -> %[[X_MAX_TEAM:.*]], %{{.*}} -> %{{.*}}, %{{.*}} -> %[[I_TEAM:.*]], %{{.*}} -> %[[J_TEAM:.*]], %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %{{.*}} -> %[[Y_MAX_TEAM:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, i32, i32, i32, i32, i32, i32, !fir.ref<i32>) {
+! CHECK:               omp.parallel shared(%{{.*}} -> %{{.*}}, %[[X_MAX_TEAM]] -> %[[X_MAX_PAR:.*]], %{{.*}} -> %{{.*}}, %[[I_TEAM]] -> %[[I_PAR:.*]], %[[J_TEAM]] -> %[[J_PAR:.*]], %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %{{.*}} -> %{{.*}}, %[[Y_MAX_TEAM]] -> %[[Y_MAX_PAR:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, i32, i32, i32, i32, i32, i32, !fir.ref<i32>) {
 ! CHECK:                 omp.distribute {
 ! CHECK:                   omp.wsloop {
-! CHECK:                     omp.simd private({{.*}}) {
+! CHECK:                     omp.simd private(@{{.*}} %[[Y_MAX_PAR]] -> %[[Y_MAX_ARG:.*]], @{{.*}} %[[I_PAR]] -> %{{.*}}, @{{.*}} %[[J_PAR]] -> %{{.*}} : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:                       omp.loop_nest (%[[I_IV:.*]], %[[J_IV:.*]]) : i32 = ({{.*}}) to ({{.*}}) inclusive step ({{.*}}) collapse(2) {
-! CHECK:                         %[[Y_MAX_PRIV:.*]]:2 = hlfir.declare %{{.*}} {uniq_name = "{{.*}}y_max"}
+! CHECK:                         %[[Y_MAX_PRIV:.*]]:2 = hlfir.declare %[[Y_MAX_ARG]] {uniq_name = "{{.*}}y_max"}
 
-! CHECK:                         %[[I_UB:.*]] = fir.load %[[X_MAX_MAPPED]]#0 : !fir.ref<i32>
+! CHECK:                         %[[I_UB:.*]] = fir.load %[[X_MAX_PAR]] : !fir.ref<i32>
 ! CHECK:                         %[[I_STEP:.*]] = arith.constant 1 : i32
 ! CHECK:                         %[[J_UB:.*]] = fir.load %[[Y_MAX_PRIV]]#0 : !fir.ref<i32>
 ! CHECK:                         %[[J_STEP:.*]] = arith.constant 1 : i32

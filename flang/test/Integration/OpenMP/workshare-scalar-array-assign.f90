@@ -17,16 +17,16 @@ subroutine sb1(a, x)
   !$omp end parallel workshare
 end subroutine
 
-! HLFIR:     omp.parallel {
+! HLFIR:     omp.parallel shared(%1#0 -> %[[A_SHARED:.*]], %2#0 -> %[[X_SHARED:.*]] : !fir.ref<i32>, !fir.box<!fir.array<?xi32>>) {
 ! HLFIR:       omp.workshare {
-! HLFIR:         %[[SCALAR:.*]] = fir.load %1#0 : !fir.ref<i32>
-! HLFIR:         hlfir.assign %[[SCALAR]] to
+! HLFIR:         %[[SCALAR:.*]] = fir.load %[[A_SHARED]] : !fir.ref<i32>
+! HLFIR:         hlfir.assign %[[SCALAR]] to %[[X_SHARED]] : i32, !fir.box<!fir.array<?xi32>>
 ! HLFIR:         omp.terminator
 ! HLFIR:       }
 ! HLFIR:       omp.terminator
 ! HLFIR:     }
 
-! FIR:     omp.parallel {
+! FIR:     omp.parallel shared(%{{.*}} -> %[[A_SHARED:.*]], %{{.*}} -> %[[X_SHARED:.*]] : !fir.ref<i32>, !fir.box<!fir.array<?xi32>>) {
 ! FIR:       %[[SCALAR_ALLOCA:.*]] = fir.alloca i32
 ! FIR:       omp.single copyprivate(%[[SCALAR_ALLOCA]] -> @_workshare_copy_i32 : !fir.ref<i32>) {
 ! FIR:         %[[SCALAR_LOAD:.*]] = fir.load %{{.*}} : !fir.ref<i32>
@@ -34,9 +34,9 @@ end subroutine
 ! FIR:         omp.terminator
 ! FIR:       }
 ! FIR:       %[[SCALAR_RELOAD:.*]] = fir.load %[[SCALAR_ALLOCA]] : !fir.ref<i32>
-! FIR:       %6:3 = fir.box_dims %3, %c0 : (!fir.box<!fir.array<?xi32>>, index) -> (index, index, index)
+! FIR:       %6:3 = fir.box_dims %[[X_SHARED]], %c0 : (!fir.box<!fir.array<?xi32>>, index) -> (index, index, index)
 ! FIR:       omp.wsloop nowait {
-! FIR:         omp.loop_nest (%arg2) : index = (%c1) to (%6#1) inclusive step (%c1) {
+! FIR:         omp.loop_nest (%[[IV:.*]]) : index = (%c1) to (%6#1) inclusive step (%c1) {
 ! FIR:           fir.store %[[SCALAR_RELOAD]]
 ! FIR:           omp.yield
 ! FIR:         }

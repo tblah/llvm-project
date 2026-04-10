@@ -46,8 +46,10 @@
 #include "flang/Support/Flags.h"
 #include "flang/Support/OpenMP-utils.h"
 #include "flang/Utils/OpenMP.h"
+#include "flang/Optimizer/OpenMP/Utils.h"
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/OpenMP/OpenMPDialect.h"
+#include "mlir/IR/PatternMatch.h"
 #include "mlir/Support/StateStack.h"
 #include "mlir/Transforms/RegionUtils.h"
 #include "llvm/ADT/STLExtras.h"
@@ -59,6 +61,24 @@ using namespace Fortran::utils::openmp;
 //===----------------------------------------------------------------------===//
 // Code generation helper functions
 //===----------------------------------------------------------------------===//
+
+/// Isolate an outlineable OpenMP op's region from above by threading any
+/// non-clonable values used inside the region but defined outside through
+/// the op's \c shared_vars clause (and corresponding block arguments).
+///
+/// makeRegionIsolatedFromAbove merges and erases the op's original entry block.
+/// Since createBodyOfOp leaves the FirOpBuilder's insertion point inside that
+/// block, we must move it to a safe location first.
+template <typename OpTy>
+static void isolateRegionFromAbove(OpTy container,
+                                   fir::FirOpBuilder &firOpBuilder) {
+  // Move the builder out of the op's region before the block reorganization
+  // erases the original entry block (which createBodyOfOp pointed into).
+  firOpBuilder.setInsertionPointAfter(container);
+  mlir::IRRewriter rewriter(firOpBuilder.getContext());
+  rewriter.setInsertionPointAfter(container);
+  flangomp::isolateOutlineableOpFromAbove(container, rewriter);
+}
 
 static void genOMPDispatch(lower::AbstractConverter &converter,
                            lower::SymMap &symTable,
@@ -3016,12 +3036,15 @@ genTaskOp(lower::AbstractConverter &converter, lower::SymMap &symTable,
   genTaskClauses(converter, semaCtx, symTable, stmtCtx, item->clauses, loc,
                  clauseOps, inReductionSyms);
 
-  if (!enableDelayedPrivatization)
-    return genOpWithBody<mlir::omp::TaskOp>(
+  if (!enableDelayedPrivatization) {
+    auto taskOp = genOpWithBody<mlir::omp::TaskOp>(
         OpWithBodyGenInfo(converter, symTable, semaCtx, loc, eval,
                           llvm::omp::Directive::OMPD_task)
             .setClauses(&item->clauses),
         queue, item, clauseOps);
+    isolateRegionFromAbove(taskOp, converter.getFirOpBuilder());
+    return taskOp;
+  }
 
   DataSharingProcessor dsp(converter, semaCtx, item->clauses, eval,
                            lower::omp::isLastItemInQueue(item, queue),
@@ -3034,13 +3057,15 @@ genTaskOp(lower::AbstractConverter &converter, lower::SymMap &symTable,
   taskArgs.inReduction.syms = inReductionSyms;
   taskArgs.inReduction.vars = clauseOps.inReductionVars;
 
-  return genOpWithBody<mlir::omp::TaskOp>(
+  auto taskOp = genOpWithBody<mlir::omp::TaskOp>(
       OpWithBodyGenInfo(converter, symTable, semaCtx, loc, eval,
                         llvm::omp::Directive::OMPD_task)
           .setClauses(&item->clauses)
           .setDataSharingProcessor(&dsp)
           .setEntryBlockArgs(&taskArgs),
       queue, item, clauseOps);
+  isolateRegionFromAbove(taskOp, converter.getFirOpBuilder());
+  return taskOp;
 }
 
 static mlir::omp::TaskgroupOp
@@ -3119,12 +3144,14 @@ genTeamsOp(lower::AbstractConverter &converter, lower::SymMap &symTable,
   // TODO: Add private syms and vars.
   args.reduction.syms = reductionSyms;
   args.reduction.vars = clauseOps.reductionVars;
-  return genOpWithBody<mlir::omp::TeamsOp>(
+  auto teamsOp = genOpWithBody<mlir::omp::TeamsOp>(
       OpWithBodyGenInfo(converter, symTable, semaCtx, loc, eval,
                         llvm::omp::Directive::OMPD_teams)
           .setClauses(&item->clauses)
           .setEntryBlockArgs(&args),
       queue, item, clauseOps);
+  isolateRegionFromAbove(teamsOp, converter.getFirOpBuilder());
+  return teamsOp;
 }
 
 static mlir::omp::WorkdistributeOp genWorkdistributeOp(
@@ -3233,9 +3260,12 @@ static mlir::omp::ParallelOp genStandaloneParallel(
   parallelArgs.priv.vars = parallelClauseOps.privateVars;
   parallelArgs.reduction.syms = parallelReductionSyms;
   parallelArgs.reduction.vars = parallelClauseOps.reductionVars;
-  return genParallelOp(converter, symTable, semaCtx, eval, loc, queue, item,
-                       parallelClauseOps, parallelArgs,
-                       enableDelayedPrivatization ? &dsp.value() : nullptr);
+  auto parallelOp = genParallelOp(
+      converter, symTable, semaCtx, eval, loc, queue, item, parallelClauseOps,
+      parallelArgs, enableDelayedPrivatization ? &dsp.value() : nullptr);
+
+  isolateRegionFromAbove(parallelOp, converter.getFirOpBuilder());
+  return parallelOp;
 }
 
 static mlir::omp::SimdOp
@@ -3322,6 +3352,7 @@ static mlir::omp::TaskloopContextOp genStandaloneTaskloop(
 
   firOpBuilder.setInsertionPointAfter(taskLoopWrapperOp);
   mlir::omp::TerminatorOp::create(firOpBuilder, loc);
+  isolateRegionFromAbove(taskLoopContextOp, firOpBuilder);
   return taskLoopContextOp;
 }
 
@@ -3355,8 +3386,9 @@ static mlir::omp::DistributeOp genCompositeDistributeParallelDo(
   parallelArgs.priv.vars = parallelClauseOps.privateVars;
   parallelArgs.reduction.syms = parallelReductionSyms;
   parallelArgs.reduction.vars = parallelClauseOps.reductionVars;
-  genParallelOp(converter, symTable, semaCtx, eval, loc, queue, parallelItem,
-                parallelClauseOps, parallelArgs, &dsp, /*isComposite=*/true);
+  auto parallelOp = genParallelOp(converter, symTable, semaCtx, eval, loc,
+                                  queue, parallelItem, parallelClauseOps,
+                                  parallelArgs, &dsp, /*isComposite=*/true);
 
   // Clause processing.
   mlir::omp::DistributeOperands distributeClauseOps;
@@ -3392,6 +3424,8 @@ static mlir::omp::DistributeOp genCompositeDistributeParallelDo(
                 loopNestClauseOps, iv,
                 {{distributeOp, distributeArgs}, {wsloopOp, wsloopArgs}},
                 llvm::omp::Directive::OMPD_distribute_parallel_do, dsp);
+
+  isolateRegionFromAbove(parallelOp, converter.getFirOpBuilder());
   return distributeOp;
 }
 
@@ -3423,9 +3457,10 @@ static mlir::omp::DistributeOp genCompositeDistributeParallelDoSimd(
   parallelArgs.priv.vars = parallelClauseOps.privateVars;
   parallelArgs.reduction.syms = parallelReductionSyms;
   parallelArgs.reduction.vars = parallelClauseOps.reductionVars;
-  genParallelOp(converter, symTable, semaCtx, eval, loc, queue, parallelItem,
-                parallelClauseOps, parallelArgs, &parallelItemDSP,
-                /*isComposite=*/true);
+  auto parallelOp = genParallelOp(converter, symTable, semaCtx, eval, loc,
+                                  queue, parallelItem, parallelClauseOps,
+                                  parallelArgs, &parallelItemDSP,
+                                  /*isComposite=*/true);
 
   // Clause processing.
   mlir::omp::DistributeOperands distributeClauseOps;
@@ -3485,6 +3520,8 @@ static mlir::omp::DistributeOp genCompositeDistributeParallelDoSimd(
                  {simdOp, simdArgs}},
                 llvm::omp::Directive::OMPD_distribute_parallel_do_simd,
                 simdItemDSP);
+
+  isolateRegionFromAbove(parallelOp, converter.getFirOpBuilder());
   return distributeOp;
 }
 

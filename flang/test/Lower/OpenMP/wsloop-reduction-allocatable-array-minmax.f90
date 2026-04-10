@@ -216,16 +216,16 @@ end program
 ! CHECK:             fir.result %[[VAL_53]] : i32
 ! CHECK:           }
 ! CHECK:           fir.store %[[VAL_54:.*]] to %[[VAL_3]]#0 : !fir.ref<i32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_ARR_MAX:.*]], %[[VAL_3]]#0 -> %[[SHARED_I_MAX:.*]], %[[VAL_5]]#0 -> %[[SHARED_MAXES:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>, !fir.ref<i32>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
 ! CHECK:             %[[VAL_57:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_58:.*]] = arith.constant 10 : i32
 ! CHECK:             %[[VAL_59:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_55:.*]] : !fir.ref<i32>) reduction(byref @max_byref_box_heap_Uxi32 %[[VAL_5]]#0 -> %[[VAL_60:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_MAX]] -> %[[VAL_55:.*]] : !fir.ref<i32>) reduction(byref @max_byref_box_heap_Uxi32 %[[SHARED_MAXES]] -> %[[VAL_60:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
 ! CHECK:               omp.loop_nest (%[[VAL_61:.*]]) : i32 = (%[[VAL_57]]) to (%[[VAL_58]]) inclusive step (%[[VAL_59]]) {
 ! CHECK:                 %[[VAL_56:.*]]:2 = hlfir.declare %[[VAL_55]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_62:.*]]:2 = hlfir.declare %[[VAL_60]] {fortran_attrs = {{.*}}<allocatable>, uniq_name = "_QFEmaxes"} : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>)
 ! CHECK:                 hlfir.assign %[[VAL_61]] to %[[VAL_56]]#0 : i32, !fir.ref<i32>
-! CHECK-DAG:             %[[VAL_63:.*]] = fir.load %[[VAL_1]]#0 : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
+! CHECK-DAG:             %[[VAL_63:.*]] = fir.load %[[SHARED_ARR_MAX]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
 ! CHECK-DAG:             %[[VAL_64:.*]] = arith.constant 0 : index
 ! CHECK-DAG:             %[[VAL_65:.*]]:3 = fir.box_dims %[[VAL_63]], %[[VAL_64]] : (!fir.box<!fir.heap<!fir.array<?xi32>>>, index) -> (index, index, index)
 ! CHECK-DAG:             %[[VAL_66:.*]] = fir.shape %[[VAL_65]]#1 : (index) -> !fir.shape<1>
@@ -256,16 +256,16 @@ end program
 ! CHECK:             }
 ! CHECK:             omp.terminator
 ! CHECK:           }
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_ARR_MIN:.*]], %[[VAL_3]]#0 -> %[[SHARED_I_MIN:.*]], %[[VAL_7]]#0 -> %[[SHARED_MINS:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>, !fir.ref<i32>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
 ! CHECK:             %[[VAL_89:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_90:.*]] = arith.constant 10 : i32
 ! CHECK:             %[[VAL_91:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_87:.*]] : !fir.ref<i32>) reduction(byref @min_byref_box_heap_Uxi32 %[[VAL_7]]#0 -> %[[VAL_92:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_MIN]] -> %[[VAL_87:.*]] : !fir.ref<i32>) reduction(byref @min_byref_box_heap_Uxi32 %[[SHARED_MINS]] -> %[[VAL_92:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
 ! CHECK:               omp.loop_nest (%[[VAL_93:.*]]) : i32 = (%[[VAL_89]]) to (%[[VAL_90]]) inclusive step (%[[VAL_91]]) {
 ! CHECK:                 %[[VAL_88:.*]]:2 = hlfir.declare %[[VAL_87]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_94:.*]]:2 = hlfir.declare %[[VAL_92]] {fortran_attrs = {{.*}}<allocatable>, uniq_name = "_QFEmins"} : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>)
 ! CHECK:                 hlfir.assign %[[VAL_93]] to %[[VAL_88]]#0 : i32, !fir.ref<i32>
-! CHECK-DAG:                 %[[VAL_95:.*]] = fir.load %[[VAL_1]]#0 : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
+! CHECK-DAG:                 %[[VAL_95:.*]] = fir.load %[[SHARED_ARR_MIN]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
 ! CHECK-DAG:                 %[[VAL_96:.*]] = arith.constant 0 : index
 ! CHECK-DAG:                 %[[VAL_97:.*]]:3 = fir.box_dims %[[VAL_95]], %[[VAL_96]] : (!fir.box<!fir.heap<!fir.array<?xi32>>>, index) -> (index, index, index)
 ! CHECK-DAG:                 %[[VAL_98:.*]] = fir.shape %[[VAL_97]]#1 : (index) -> !fir.shape<1>

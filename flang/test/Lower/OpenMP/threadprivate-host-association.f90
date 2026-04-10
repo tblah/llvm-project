@@ -16,8 +16,8 @@
 !CHECK:   %[[A_DECL:.*]]:2 = hlfir.declare %[[A]] {uniq_name = "_QFEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK:   %[[TP_A:.*]] = omp.threadprivate %[[A_DECL]]#0 : !fir.ref<i32> -> !fir.ref<i32>
 !CHECK:   %[[TP_A_DECL:.*]]:2 = hlfir.declare %[[TP_A]] {uniq_name = "_QFEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-!CHECK:   omp.parallel {
-!CHECK:     %[[PAR_TP_A:.*]] = omp.threadprivate %[[A_DECL]]#0 : !fir.ref<i32> -> !fir.ref<i32>
+!CHECK:   omp.parallel shared(%[[A_DECL]]#0 -> %[[PAR_SHARED_A:.*]] : !fir.ref<i32>) {
+!CHECK:     %[[PAR_TP_A:.*]] = omp.threadprivate %[[PAR_SHARED_A]] : !fir.ref<i32> -> !fir.ref<i32>
 !CHECK:     %[[PAR_TP_A_DECL:.*]]:2 = hlfir.declare %[[PAR_TP_A]] {uniq_name = "_QFEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK:     %{{.*}} = fir.load %[[PAR_TP_A_DECL]]#0 : !fir.ref<i32>
 !CHECK:     omp.terminator

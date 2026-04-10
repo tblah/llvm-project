@@ -78,13 +78,13 @@ end program
 ! CHECK:           %[[VAL_1:.*]] = fir.address_of(@_QFFreduceEi) : !fir.ref<i32>
 ! CHECK:           %[[VAL_2:.*]]:2 = hlfir.declare %[[VAL_1]] {uniq_name = "_QFFreduceEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:           %[[VAL_3:.*]]:2 = hlfir.declare %[[VAL_0]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {fortran_attrs = {{.*}}, uniq_name = "_QFFreduceEr"} : (!fir.box<!fir.array<?xf64>>, !fir.dscope) -> (!fir.box<!fir.array<?xf64>>, !fir.box<!fir.array<?xf64>>)
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_3]]#0 -> %[[SHARED_R:.*]], %[[VAL_2]]#0 -> %[[SHARED_I:.*]] : !fir.box<!fir.array<?xf64>>, !fir.ref<i32>) {
 ! CHECK:             %[[VAL_4:.*]] = fir.alloca !fir.box<!fir.array<?xf64>>
-! CHECK:             fir.store %[[VAL_3]]#0 to %[[VAL_4]] : !fir.ref<!fir.box<!fir.array<?xf64>>>
+! CHECK:             fir.store %[[SHARED_R]] to %[[VAL_4]] : !fir.ref<!fir.box<!fir.array<?xf64>>>
 ! CHECK:             %[[VAL_7:.*]] = arith.constant 0 : i32
 ! CHECK:             %[[VAL_8:.*]] = arith.constant 10 : i32
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_Uxf64 %[[VAL_4]] -> %[[VAL_10:.*]] : !fir.ref<!fir.box<!fir.array<?xf64>>>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I]] -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_Uxf64 %[[VAL_4]] -> %[[VAL_10:.*]] : !fir.ref<!fir.box<!fir.array<?xf64>>>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_11:.*]]) : i32 = (%[[VAL_7]]) to (%[[VAL_8]]) inclusive step (%[[VAL_9]]) {
 ! CHECK:                 %[[VAL_6:.*]]:2 = hlfir.declare %[[VAL_5]] {uniq_name = "_QFFreduceEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_12:.*]]:2 = hlfir.declare %[[VAL_10]] {fortran_attrs = {{.*}}, uniq_name = "_QFFreduceEr"} : (!fir.ref<!fir.box<!fir.array<?xf64>>>) -> (!fir.ref<!fir.box<!fir.array<?xf64>>>, !fir.ref<!fir.box<!fir.array<?xf64>>>)

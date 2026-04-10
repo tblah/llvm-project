@@ -47,26 +47,22 @@ program do_concurrent_basic
     ! CHECK-SAME:             %[[A_MAP_INFO]] -> %[[A_ARG:.[[:alnum:]]+]]
 
     ! CHECK: %[[A_DEV_DECL:.*]]:2 = hlfir.declare %[[A_ARG]]
-    ! CHECK: omp.teams {
-    ! CHECK-NEXT: omp.parallel {
-
+    ! CHECK: omp.teams shared(%[[A_DEV_DECL]]#0 -> %[[TEAMS_ARR:[[:alnum:]]+]], %[[LB]] -> %[[TEAMS_LB:[[:alnum:]]+]], %[[UB]] -> %[[TEAMS_UB:[[:alnum:]]+]], %[[STEP]] -> %[[TEAMS_STEP:[[:alnum:]]+]] : !fir.ref<!fir.array<10xi32>>, index, index, index) {
+    ! CHECK-NEXT: omp.parallel shared(%[[TEAMS_ARR]] -> %[[PAR_ARR:[[:alnum:]]+]], %[[TEAMS_LB]] -> %[[PAR_LB:[[:alnum:]]+]], %[[TEAMS_UB]] -> %[[PAR_UB:[[:alnum:]]+]], %[[TEAMS_STEP]] -> %[[PAR_STEP:[[:alnum:]]+]] : !fir.ref<!fir.array<10xi32>>, index, index, index) {
     ! CHECK-NEXT: %[[ITER_VAR:.*]] = fir.alloca i32 {bindc_name = "i"}
     ! CHECK-NEXT: %[[BINDING:.*]]:2 = hlfir.declare %[[ITER_VAR]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-
     ! CHECK-NEXT: omp.distribute {
     ! CHECK-NEXT: omp.wsloop {
-
-    ! CHECK-NEXT: omp.loop_nest (%[[ARG0:.*]]) : index = (%[[LB]]) to (%[[UB]]) inclusive step (%[[STEP]]) {
+    ! CHECK-NEXT: omp.loop_nest (%[[ARG0:.*]]) : index = (%[[PAR_LB]]) to (%[[PAR_UB]]) inclusive step (%[[PAR_STEP]]) {
     ! CHECK-NEXT: %[[IV_IDX:.*]] = fir.convert %[[ARG0]] : (index) -> i32
     ! CHECK-NEXT: fir.store %[[IV_IDX]] to %[[BINDING]]#0 : !fir.ref<i32>
     ! CHECK-NEXT: %[[IV_VAL1:.*]] = fir.load %[[BINDING]]#0 : !fir.ref<i32>
     ! CHECK-NEXT: %[[IV_VAL2:.*]] = fir.load %[[BINDING]]#0 : !fir.ref<i32>
     ! CHECK-NEXT: %[[IV_VAL_I64:.*]] = fir.convert %[[IV_VAL2]] : (i32) -> i64
-    ! CHECK-NEXT: %[[ARR_ACCESS:.*]] = hlfir.designate %[[A_DEV_DECL]]#0 (%[[IV_VAL_I64]])  : (!fir.ref<!fir.array<10xi32>>, i64) -> !fir.ref<i32>
+    ! CHECK-NEXT: %[[ARR_ACCESS:.*]] = hlfir.designate %[[PAR_ARR]] (%[[IV_VAL_I64]])  : (!fir.ref<!fir.array<10xi32>>, i64) -> !fir.ref<i32>
     ! CHECK-NEXT: hlfir.assign %[[IV_VAL1]] to %[[ARR_ACCESS]] : i32, !fir.ref<i32>
     ! CHECK-NEXT: omp.yield
     ! CHECK-NEXT: }
-
     ! CHECK-NEXT: } {omp.composite}
     ! CHECK-NEXT: } {omp.composite}
     ! CHECK-NEXT: omp.terminator

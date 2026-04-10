@@ -24,19 +24,16 @@ end program main
 
 ! CHECK: fir.load
 
-! CHECK: %[[LB:.*]] = fir.convert %{{c1_.*}} : (i32) -> index
 ! CHECK: %[[N_VAL:.*]] = fir.load %[[N_DECL]]#0 : !fir.ref<i32>
-! CHECK: %[[UB:.*]] = fir.convert %[[N_VAL]] : (i32) -> index
-! CHECK: %[[C1:.*]] = arith.constant 1 : index
 
-! CHECK: omp.parallel {
+! CHECK: omp.parallel shared(%{{.*}} -> %{{.*}}, %[[N_VAL]] -> %[[PAR_N:.*]] : !fir.box<!fir.array<?xi32>>, i32) {
 
+! Verify that the non-const upper bound (N) is passed as a shared var and
+! converted to index inside the parallel region.
 
-! Verify that we resort to using the outside value for the upper bound since it
-! is not originally a constant.
-
+! CHECK:   %[[UB:.*]] = fir.convert %[[PAR_N]] : (i32) -> index
 ! CHECK:   omp.wsloop {
-! CHECK:     omp.loop_nest (%{{.*}}) : index = (%[[LB]]) to (%[[UB]]) inclusive step (%{{.*}}) {
+! CHECK:     omp.loop_nest (%{{.*}}) : index = (%{{.*}}) to (%[[UB]]) inclusive step (%{{.*}}) {
 ! CHECK:       omp.yield
 ! CHECK:     }
 ! CHECK:   }

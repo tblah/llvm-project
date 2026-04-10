@@ -20,10 +20,10 @@ end subroutine wsloop_private
 ! CHECK:   %[[I_DECL:.*]]:2 = hlfir.declare %{{.*}} {uniq_name = "{{.*}}i"}
 ! CHECK:   %[[X_DECL:.*]]:2 = hlfir.declare %{{.*}} {uniq_name = "{{.*}}x"}
 
-! CHECK:   omp.parallel {
+! CHECK:   omp.parallel shared(%[[X_DECL]]#0 -> %[[X_SHARED:.*]], %[[I_DECL]]#0 -> %[[I_SHARED:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:     omp.wsloop private(
-! CHECK-SAME:  @[[X_PRIVATIZER]] %[[X_DECL]]#0 -> %[[X_ARG:[^[:space:]]+]],
-! CHECK-SAME:  @[[I_PRIVATIZER]] %[[I_DECL]]#0 -> %[[I_ARG:.*]] : {{.*}}) {
+! CHECK-SAME:  @[[X_PRIVATIZER]] %[[X_SHARED]] -> %[[X_ARG:[^[:space:]]+]],
+! CHECK-SAME:  @[[I_PRIVATIZER]] %[[I_SHARED]] -> %[[I_ARG:.*]] : {{.*}}) {
 
 ! CHECK:       omp.loop_nest (%[[IV:.*]]) : i32 = {{.*}} {
 ! CHECK:         %[[X_PRIV_DECL:.*]]:2 = hlfir.declare %[[X_ARG]] {uniq_name = "{{.*}}x"}

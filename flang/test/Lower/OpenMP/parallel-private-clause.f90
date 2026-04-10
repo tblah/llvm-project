@@ -191,11 +191,14 @@ subroutine private_clause_real_call_allocatable
 end subroutine
 
 !FIRDialect:  func.func @_QPincrement_list_items(%arg0: !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>> {fir.bindc_name = "head"}) {
+!FIRDialect:    %[[HEAD_DECL:.*]]:2 = hlfir.declare %arg0 dummy_scope %{{.*}} arg 1 {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFincrement_list_itemsEhead"} : (!fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>, !fir.dscope) -> (!fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>)
 !FIRDialect:    %[[P:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>> {bindc_name = "p", uniq_name = "_QFincrement_list_itemsEp"}
 !FIRDialect:    %[[P_DECL:.*]]:2 = hlfir.declare %[[P]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFincrement_list_itemsEp"} : (!fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>) -> (!fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>)
-!FIRDialect: omp.parallel private(@{{.*}} %{{.*}}#0 -> %[[P_PVT:.*]] : {{.*}}) {
+!FIRDialect: omp.parallel private(@{{.*}} %{{.*}}#0 -> %[[P_PVT:.*]] : {{.*}}) shared(%[[HEAD_DECL]]#0 -> %[[HEAD_SHARED:.*]] : !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>) {
 !FIRDialect:      %[[P_PVT_DECL:.*]]:2 = hlfir.declare %[[P_PVT]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFincrement_list_itemsEp"} : (!fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>) -> (!fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>)
 !FIRDialect:      omp.single   {
+!FIRDialect:        %[[HEAD_LOAD:.*]] = fir.load %[[HEAD_SHARED]] : !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>
+!FIRDialect:        fir.store %[[HEAD_LOAD]] to %[[P_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode{payload:i32,next:!fir.box<!fir.ptr<!fir.type<_QFincrement_list_itemsTnode>>>}>>>>
 
 !FIRDialect:         omp.terminator
 !FIRDialect:       omp.terminator
@@ -232,13 +235,14 @@ end subroutine increment_list_items
 !FIRDialect-DAG: %[[Z1_DECL:.*]]:2 = hlfir.declare %[[Z1]] {fortran_attrs = #fir.var_attrs<target>, uniq_name = "_QFparallel_pointerEz1"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !FIRDialect-DAG:  %[[Z2:.*]] = fir.alloca !fir.array<10xi32> {bindc_name = "z2", fir.target, uniq_name = "_QFparallel_pointerEz2"}
 !FIRDialect-DAG:  %[[Z2_DECL:.*]]:2 = hlfir.declare %[[Z2]](%[[Z2_SHAPE:.*]]) {fortran_attrs = #fir.var_attrs<target>, uniq_name = "_QFparallel_pointerEz2"} : (!fir.ref<!fir.array<10xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<10xi32>>, !fir.ref<!fir.array<10xi32>>)
-!FIRDialect:      omp.parallel private(@{{.*}} %{{.*}}#0 -> %[[Y1_PVT:.*]], @{{.*}} %{{.*}}#0 -> %[[Y2_PVT:.*]] : {{.*}}) {
+!FIRDialect:      omp.parallel private(@{{.*}} %[[Y1_DECL]]#0 -> %[[Y1_PVT:.*]], @{{.*}} %[[Y2_DECL]]#0 -> %[[Y2_PVT:.*]] : !fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>) shared(%[[Z1_DECL]]#0 -> %[[Z1_SHARED:.*]], %[[Z2_DECL]]#0 -> %[[Z2_SHARED:.*]] : !fir.ref<i32>, !fir.ref<!fir.array<10xi32>>) {
 !FIRDialect-DAG:    %[[Y1_PVT_DECL:.*]]:2 = hlfir.declare %[[Y1_PVT]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFparallel_pointerEy1"} : (!fir.ref<!fir.box<!fir.ptr<i32>>>) -> (!fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<!fir.box<!fir.ptr<i32>>>)
 !FIRDialect-DAG:    %[[Y2_PVT_DECL:.*]]:2 = hlfir.declare %[[Y2_PVT]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFparallel_pointerEy2"} : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>) -> (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>)
-!FIRDialect-DAG:    %[[PP18:.*]] = fir.embox %[[Z1_DECL]]#0 : (!fir.ref<i32>) -> !fir.box<!fir.ptr<i32>>
+!FIRDialect-DAG:    %[[INNER_Z2_SHAPE:.*]] = fir.shape %{{.*}} : (index) -> !fir.shape<1>
+!FIRDialect-DAG:    %[[PP18:.*]] = fir.embox %[[Z1_SHARED]] : (!fir.ref<i32>) -> !fir.box<!fir.ptr<i32>>
 !FIRDialect:       fir.store %[[PP18]] to %[[Y1_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<i32>>>
-!FIRDialect:       %[[Z2_CAST:.*]] = fir.convert %[[Z2_DECL]]#0 : (!fir.ref<!fir.array<10xi32>>) -> !fir.ref<!fir.array<?xi32>>
-!FIRDialect-DAG:    %[[PP20:.*]] = fir.embox %[[Z2_CAST]](%[[Z2_SHAPE]]) : (!fir.ref<!fir.array<?xi32>>, !fir.shape<1>) -> !fir.box<!fir.ptr<!fir.array<?xi32>>>
+!FIRDialect:       %[[Z2_CAST:.*]] = fir.convert %[[Z2_SHARED]] : (!fir.ref<!fir.array<10xi32>>) -> !fir.ref<!fir.array<?xi32>>
+!FIRDialect-DAG:    %[[PP20:.*]] = fir.embox %[[Z2_CAST]](%[[INNER_Z2_SHAPE]]) : (!fir.ref<!fir.array<?xi32>>, !fir.shape<1>) -> !fir.box<!fir.ptr<!fir.array<?xi32>>>
 !FIRDialect:        fir.store %[[PP20]] to %[[Y2_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>
 !FIRDialect:       omp.terminator
 !FIRDialect:     }
@@ -259,7 +263,7 @@ end subroutine parallel_pointer
 subroutine simple_loop_1
   integer :: i
   real, allocatable :: r;
-   !FIRDialect:    omp.parallel private(@{{.*}} %{{.*}}#0 -> %[[R:.*]] : {{.*}}) {
+   !FIRDialect:    omp.parallel private(@{{.*}} %{{.*}}#0 -> %[[R:.*]] : {{.*}}) shared(%[[I_DECL:.*]]#0 -> %[[I_SHARED:.*]] : !fir.ref<i32>) {
   !$OMP PARALLEL PRIVATE(r)
   ! FIRDialect:      %[[R_DECL:.*]]:2 = hlfir.declare %[[R]] {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QFsimple_loop_1Er"} : (!fir.ref<!fir.box<!fir.heap<f32>>>) -> (!fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<!fir.box<!fir.heap<f32>>>)
 
@@ -268,7 +272,7 @@ subroutine simple_loop_1
   ! FIRDialect:      %[[WS_UB:.*]] = arith.constant 9 : i32
   ! FIRDialect:      %[[WS_STEP:.*]] = arith.constant 1 : i32
 
-  ! FIRDialect:      omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
+  ! FIRDialect:      omp.wsloop private(@{{.*}} %[[I_SHARED]] -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
   ! FIRDialect-NEXT: omp.loop_nest (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) inclusive step (%[[WS_STEP]]) {
   !$OMP DO
   do i=1, 9
@@ -288,14 +292,14 @@ end subroutine
 subroutine simple_loop_2
   integer :: i
   real, allocatable :: r;
-  ! FIRDialect:  omp.parallel
+  ! FIRDialect:  omp.parallel shared(%[[R_DECL:.*]]#0 -> %[[R_SHARED:.*]], %[[I_DECL:.*]]#0 -> %[[I_SHARED:.*]] : !fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<i32>)
   !$OMP PARALLEL
 
   ! FIRDialect:      %[[WS_LB:.*]] = arith.constant 1 : i32
   ! FIRDialect:      %[[WS_UB:.*]] = arith.constant 9 : i32
   ! FIRDialect:      %[[WS_STEP:.*]] = arith.constant 1 : i32
 
-  ! FIRDialect:      omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[R:.*]], @{{.*}} %{{.*}}#0 -> %[[ALLOCA_IV:.*]] : !fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<i32>) {
+  ! FIRDialect:      omp.wsloop private(@{{.*}} %[[R_SHARED]] -> %[[R:.*]], @{{.*}} %[[I_SHARED]] -> %[[ALLOCA_IV:.*]] : !fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<i32>) {
   ! FIRDialect-NEXT: omp.loop_nest (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) inclusive step (%[[WS_STEP]]) {
   !$OMP DO PRIVATE(r)
   do i=1, 9
@@ -316,12 +320,12 @@ end subroutine
 subroutine simple_loop_3
   integer :: i
   real, allocatable :: r;
-  ! FIRDialect:  omp.parallel
+  ! FIRDialect:  omp.parallel shared(%[[R_DECL:.*]]#0 -> %[[R_SHARED:.*]], %[[I_DECL:.*]]#0 -> %[[I_SHARED:.*]] : !fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<i32>)
   ! FIRDialect:      %[[WS_LB:.*]] = arith.constant 1 : i32
   ! FIRDialect:      %[[WS_UB:.*]] = arith.constant 9 : i32
   ! FIRDialect:      %[[WS_STEP:.*]] = arith.constant 1 : i32
 
-  ! FIRDialect:      omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[R:.*]], @{{.*}} %{{.*}}#0 -> %[[ALLOCA_IV:.*]] : !fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<i32>) {
+  ! FIRDialect:      omp.wsloop private(@{{.*}} %[[R_SHARED]] -> %[[R:.*]], @{{.*}} %[[I_SHARED]] -> %[[ALLOCA_IV:.*]] : !fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<i32>) {
   ! FIRDialect-NEXT: omp.loop_nest (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) inclusive step (%[[WS_STEP]]) {
   !$OMP PARALLEL DO PRIVATE(r)
   do i=1, 9

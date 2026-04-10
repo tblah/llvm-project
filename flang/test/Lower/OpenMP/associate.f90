@@ -3,10 +3,10 @@
 ! RUN: %flang_fc1 -emit-hlfir -fopenmp -o - %s 2>&1 | FileCheck %s
 
 !CHECK-LABEL: func @_QPtest_parallel_assoc
-!CHECK:         omp.parallel {
+!CHECK:         omp.parallel shared(%[[A_DECL:.*]]#0 -> %[[A_SHARED:.*]], %[[I_DECL:.*]]#0 -> %[[I_SHARED:.*]] : !fir.ref<!fir.array<3xi32>>, !fir.ref<i32>) {
 !CHECK-NOT:       hlfir.declare {{.*}} {uniq_name = "_QFtest_parallel_assocEa"}
 !CHECK-NOT:       hlfir.declare {{.*}} {uniq_name = "_QFtest_parallel_assocEb"}
-!CHECK:           omp.wsloop private({{.*}}) {
+!CHECK:           omp.wsloop private(@_QFtest_parallel_assocEi_private_i32 %[[I_SHARED]] -> %[[I_PRIV:.*]] : !fir.ref<i32>) {
 !CHECK:           }
 !CHECK:         }
 !CHECK:         omp.parallel {{.*}} {

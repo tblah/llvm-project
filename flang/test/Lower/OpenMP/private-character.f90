@@ -18,7 +18,7 @@ subroutine test_dynlen_char_ptr(i)
 end subroutine
 
 !CHECK-LABEL: func @_QPtest_dynlen_char_ptr_array
-!CHECK:         omp.parallel private(@{{.*}} %{{.*}}#0 -> %[[A:.*]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>>) {
+!CHECK:         omp.parallel private(@{{.*}} %{{.*}}#0 -> %[[A:.*]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>>) shared(%{{.*}}#0 -> %[[SHARED_I:.*]] : !fir.ref<i32>) {
 !CHECK:           %[[A_DECL:.*]]:2 = hlfir.declare %[[A]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFtest_dynlen_char_ptr_arrayEa"} : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>>) -> (!fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>>)
 !CHECK:           %[[A_VAL:.*]] = fir.load %[[A_DECL]]#0
 !CHECK:           %[[LEN:.*]] = fir.box_elesize %[[A_VAL]]

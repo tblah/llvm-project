@@ -19,7 +19,8 @@
 !CHECK:   %[[TP_A:.*]] = omp.threadprivate %[[A_ADDR]] : !fir.ref<i32> -> !fir.ref<i32>
 !CHECK:   %[[TP_A_DECL:.*]]:2 = hlfir.declare %[[TP_A]] {uniq_name = "_QFEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK:   omp.parallel {
-!CHECK:     %[[PAR_TP_A:.*]] = omp.threadprivate %[[A_ADDR]] : !fir.ref<i32> -> !fir.ref<i32>
+!CHECK:     %[[PAR_A_ADDR:.*]] = fir.address_of(@_QFEa) : !fir.ref<i32>
+!CHECK:     %[[PAR_TP_A:.*]] = omp.threadprivate %[[PAR_A_ADDR]] : !fir.ref<i32> -> !fir.ref<i32>
 !CHECK:     %[[PAR_TP_A_DECL:.*]]:2 = hlfir.declare %[[PAR_TP_A]] {uniq_name = "_QFEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK:     %{{.*}} = fir.load %[[PAR_TP_A_DECL]]#0 : !fir.ref<i32>
 !CHECK:     omp.terminator

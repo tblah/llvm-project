@@ -28,7 +28,7 @@ subroutine workshare_forall_sliced(a1)
 end subroutine
 
 ! HLFIR-LABEL: func.func @_QPworkshare_forall_sliced
-! HLFIR:       omp.parallel {
+! HLFIR:       omp.parallel shared({{.*}}) {
 ! HLFIR:         omp.workshare {
 ! HLFIR:           hlfir.forall
 ! HLFIR:             hlfir.forall
@@ -44,7 +44,7 @@ end subroutine
 ! executes correctly.
 
 ! FIR-LABEL: func.func @_QPworkshare_forall_sliced
-! FIR:       omp.parallel {
+! FIR:       omp.parallel shared(%{{.*}}) {
 ! FIR:         omp.single
 ! FIR:           fir.do_loop
 ! FIR:             fir.do_loop

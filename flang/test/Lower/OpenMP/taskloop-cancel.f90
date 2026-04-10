@@ -8,11 +8,11 @@
 ! CHECK:         %[[VAL_0:.*]] = fir.dummy_scope : !fir.dscope
 ! CHECK:         %[[ALLOCA_I:.*]] = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFomp_taskloopEi"}
 ! CHECK:         %[[DECL_I:.*]]:2 = hlfir.declare %1 {uniq_name = "_QFomp_taskloopEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-! CHECK:         omp.parallel {
+! CHECK:         omp.parallel shared(%[[DECL_I]]#0 -> %[[SHARED_I:.*]] : !fir.ref<i32>) {
+! CHECK:           omp.taskloop.context private(@[[I_PRIVATE]] %[[SHARED_I]] -> %[[ARG0:.*]] : !fir.ref<i32>) {
 ! CHECK:           %[[C1_I32:.*]] = arith.constant 1 : i32
 ! CHECK:           %[[C10_I32:.*]] = arith.constant 10 : i32
 ! CHECK:           %[[C1_I32_0:.*]] = arith.constant 1 : i32
-! CHECK:           omp.taskloop.context private(@[[I_PRIVATE]] %2#0 -> %[[ARG0:.*]] : !fir.ref<i32>) {
 ! CHECK:             omp.taskloop.wrapper {
 ! CHECK:               omp.loop_nest (%[[ARG1:.*]]) : i32 = (%[[C1_I32]]) to (%[[C10_I32]]) inclusive step (%[[C1_I32_0]]) {
 ! CHECK:                 %[[IDX:.*]]:2 = hlfir.declare %[[ARG0]] {uniq_name = "_QFomp_taskloopEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)

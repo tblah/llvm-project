@@ -1,19 +1,19 @@
 // RUN: fir-opt --split-input-file --cfg-conversion --fir-to-llvm-ir="target=aarch64-unknown-linux-gnu" %s | FileCheck %s
 
 func.func @_QPsb1(%arg0: !fir.ref<i32> {fir.bindc_name = "n"}, %arg1: !fir.ref<!fir.array<?xi32>> {fir.bindc_name = "arr"}) {
-  %c1_i64 = arith.constant 1 : i64
-  %c1_i32 = arith.constant 1 : i32
   %0 = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFsbEi"}
-  omp.parallel  {
+  omp.parallel shared(%arg0 -> %shared_n, %arg1 -> %shared_arr : !fir.ref<i32>, !fir.ref<!fir.array<?xi32>>) {
+    %c1_i64 = arith.constant 1 : i64
+    %c1_i32 = arith.constant 1 : i32
     %1 = fir.alloca i32 {adapt.valuebyref, pinned}
-    %2 = fir.load %arg0 : !fir.ref<i32>
+    %2 = fir.load %shared_n : !fir.ref<i32>
     omp.wsloop nowait {
       omp.loop_nest (%arg2) : i32 = (%c1_i32) to (%2) inclusive step (%c1_i32)  {
         fir.store %arg2 to %1 : !fir.ref<i32>
         %3 = fir.load %1 : !fir.ref<i32>
         %4 = fir.convert %3 : (i32) -> i64
         %5 = arith.subi %4, %c1_i64 : i64
-        %6 = fir.coordinate_of %arg1, %5 : (!fir.ref<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
+        %6 = fir.coordinate_of %shared_arr, %5 : (!fir.ref<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
         fir.store %3 to %6 : !fir.ref<i32>
         omp.yield
       }
@@ -25,20 +25,19 @@ func.func @_QPsb1(%arg0: !fir.ref<i32> {fir.bindc_name = "n"}, %arg1: !fir.ref<!
 
 // CHECK-LABEL:  _QPsb1
 // CHECK-SAME: %[[N_REF:.*]]: !llvm.ptr {fir.bindc_name = "n"}, %[[ARR_REF:.*]]: !llvm.ptr {fir.bindc_name = "arr"}) {
-// CHECK:    %[[ONE_0:.*]] = llvm.mlir.constant(1 : i64) : i64
-// CHECK:    %[[ONE_1:.*]] = llvm.mlir.constant(1 : i64) : i64
-// CHECK:    %[[ONE_2:.*]] = llvm.mlir.constant(1 : i32) : i32
-// CHECK: omp.parallel   {
-// CHECK:      %[[ONE_3:.*]] = llvm.mlir.constant(1 : i64) : i64
-// CHECK:      %[[I_VAR:.*]] = llvm.alloca %[[ONE_3]] x i32 {pinned} : (i64) -> !llvm.ptr
-// CHECK:      %[[N:.*]] = llvm.load %[[N_REF]] : !llvm.ptr -> i32
+// CHECK: omp.parallel shared(%[[N_REF]] -> %[[SHARED_N:.*]], %[[ARR_REF]] -> %[[SHARED_ARR:.*]] : !llvm.ptr, !llvm.ptr) {
+// CHECK:      %[[ALLOCA_SIZE:.*]] = llvm.mlir.constant(1 : i64) : i64
+// CHECK:      %[[I_VAR:.*]] = llvm.alloca %[[ALLOCA_SIZE]] x i32 {pinned} : (i64) -> !llvm.ptr
+// CHECK:      %[[ONE_0:.*]] = llvm.mlir.constant(1 : i64) : i64
+// CHECK:      %[[ONE_1:.*]] = llvm.mlir.constant(1 : i32) : i32
+// CHECK:      %[[N:.*]] = llvm.load %[[SHARED_N]] : !llvm.ptr -> i32
 // CHECK: omp.wsloop nowait
-// CHECK-NEXT: omp.loop_nest (%[[I:.*]]) : i32 = (%[[ONE_2]]) to (%[[N]]) inclusive step (%[[ONE_2]]) {
+// CHECK-NEXT: omp.loop_nest (%[[I:.*]]) : i32 = (%[[ONE_1]]) to (%[[N]]) inclusive step (%[[ONE_1]]) {
 // CHECK:   llvm.store %[[I]], %[[I_VAR]] : i32, !llvm.ptr
 // CHECK:   %[[I1:.*]] = llvm.load %[[I_VAR]] : !llvm.ptr -> i32
 // CHECK:   %[[I1_EXT:.*]] = llvm.sext %[[I1]] : i32 to i64
-// CHECK:   %[[I_CSTYLE:.*]] = llvm.sub %[[I1_EXT]], %[[ONE_1]]  : i64
-// CHECK:   %[[ARR_I_REF:.*]] = llvm.getelementptr %[[ARR_REF]][%[[I_CSTYLE]]] : (!llvm.ptr, i64) -> !llvm.ptr
+// CHECK:   %[[I_CSTYLE:.*]] = llvm.sub %[[I1_EXT]], %[[ONE_0]]  : i64
+// CHECK:   %[[ARR_I_REF:.*]] = llvm.getelementptr %[[SHARED_ARR]][%[[I_CSTYLE]]] : (!llvm.ptr, i64) -> !llvm.ptr
 // CHECK:   llvm.store %[[I1]], %[[ARR_I_REF]] : i32, !llvm.ptr
 // CHECK: omp.yield
 // CHECK: }
@@ -51,10 +50,10 @@ func.func @_QPsb1(%arg0: !fir.ref<i32> {fir.bindc_name = "n"}, %arg1: !fir.ref<!
 // -----
 
 func.func @_QPsb2(%arg0: !fir.ref<i32> {fir.bindc_name = "x"}, %arg1: !fir.ref<i32> {fir.bindc_name = "n"}) {
-  omp.parallel  {
+  omp.parallel shared(%arg0 -> %shared_x, %arg1 -> %shared_n : !fir.ref<i32>, !fir.ref<i32>) {
     omp.master  {
-      %0 = fir.load %arg1 : !fir.ref<i32>
-      fir.store %0 to %arg0 : !fir.ref<i32>
+      %0 = fir.load %shared_n : !fir.ref<i32>
+      fir.store %0 to %shared_x : !fir.ref<i32>
       omp.terminator
     }
     omp.terminator
@@ -64,10 +63,10 @@ func.func @_QPsb2(%arg0: !fir.ref<i32> {fir.bindc_name = "x"}, %arg1: !fir.ref<i
 
 // CHECK-LABEL: _QPsb2
 // CHECK-SAME: %[[X_REF:.*]]: !llvm.ptr {fir.bindc_name = "x"}, %[[N_REF:.*]]: !llvm.ptr {fir.bindc_name = "n"}) {
-// CHECK: omp.parallel   {
+// CHECK: omp.parallel shared(%[[X_REF]] -> %[[SHARED_X:.*]], %[[N_REF]] -> %[[SHARED_N:.*]] : !llvm.ptr, !llvm.ptr) {
 // CHECK:   omp.master {
-// CHECK:     %[[N:.*]] = llvm.load %[[N_REF]] : !llvm.ptr -> i32
-// CHECK:     llvm.store %[[N]], %[[X_REF]] : i32, !llvm.ptr
+// CHECK:     %[[N:.*]] = llvm.load %[[SHARED_N]] : !llvm.ptr -> i32
+// CHECK:     llvm.store %[[N]], %[[SHARED_X]] : i32, !llvm.ptr
 // CHECK:     omp.terminator
 // CHECK:   }
 // CHECK:   omp.terminator
@@ -79,7 +78,7 @@ func.func @_QPsb2(%arg0: !fir.ref<i32> {fir.bindc_name = "x"}, %arg1: !fir.ref<i
 
 func.func @_QPsb(%arr: !fir.box<!fir.array<?xi32>> {fir.bindc_name = "arr"}) {
   %0 = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFsbEi"}
-  omp.parallel   {
+  omp.parallel shared(%arr -> %shared_arr : !fir.box<!fir.array<?xi32>>) {
     %c1 = arith.constant 1 : i32
     %c50 = arith.constant 50 : i32
     omp.wsloop {
@@ -87,7 +86,7 @@ func.func @_QPsb(%arr: !fir.box<!fir.array<?xi32>> {fir.bindc_name = "arr"}) {
         %1 = fir.convert %indx : (i32) -> i64
         %c1_i64 = arith.constant 1 : i64
         %2 = arith.subi %1, %c1_i64 : i64
-        %3 = fir.coordinate_of %arr, %2 : (!fir.box<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
+        %3 = fir.coordinate_of %shared_arr, %2 : (!fir.box<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
         fir.store %indx to %3 : !fir.ref<i32>
         omp.yield
       }
@@ -99,8 +98,8 @@ func.func @_QPsb(%arr: !fir.box<!fir.array<?xi32>> {fir.bindc_name = "arr"}) {
 
 // Check only for the structure of the OpenMP portion and the feasibility of the conversion
 // CHECK-LABEL: @_QPsb
-// CHECK-SAME: %{{.*}}: !llvm.ptr {fir.bindc_name = "arr"}
-// CHECK:    omp.parallel   {
+// CHECK-SAME: %[[ARR_REF:.*]]: !llvm.ptr {fir.bindc_name = "arr"}
+// CHECK:    omp.parallel shared(%[[ARR_REF]] -> %[[SHARED_ARR:.*]] : !llvm.ptr) {
 // CHECK:      %[[C1:.*]] = llvm.mlir.constant(1 : i32) : i32
 // CHECK:      %[[C50:.*]] = llvm.mlir.constant(50 : i32) : i32
 // CHECK:      omp.wsloop {
@@ -180,19 +179,19 @@ func.func @sections_data_without_clauses(%arg0: !fir.ref<i32> {fir.bindc_name = 
 // -----
 
 func.func @_QPsimd1(%arg0: !fir.ref<i32> {fir.bindc_name = "n"}, %arg1: !fir.ref<!fir.array<?xi32>> {fir.bindc_name = "arr"}) {
-  %c1_i64 = arith.constant 1 : i64
-  %c1_i32 = arith.constant 1 : i32
   %0 = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFsbEi"}
-  omp.parallel  {
+  omp.parallel shared(%arg0 -> %shared_n, %arg1 -> %shared_arr : !fir.ref<i32>, !fir.ref<!fir.array<?xi32>>) {
+    %c1_i64 = arith.constant 1 : i64
+    %c1_i32 = arith.constant 1 : i32
     %1 = fir.alloca i32 {adapt.valuebyref, pinned}
-    %2 = fir.load %arg0 : !fir.ref<i32>
+    %2 = fir.load %shared_n : !fir.ref<i32>
     omp.simd {
       omp.loop_nest (%arg2) : i32 = (%c1_i32) to (%2) step (%c1_i32) {
         fir.store %arg2 to %1 : !fir.ref<i32>
         %3 = fir.load %1 : !fir.ref<i32>
         %4 = fir.convert %3 : (i32) -> i64
         %5 = arith.subi %4, %c1_i64 : i64
-        %6 = fir.coordinate_of %arg1, %5 : (!fir.ref<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
+        %6 = fir.coordinate_of %shared_arr, %5 : (!fir.ref<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
         fir.store %3 to %6 : !fir.ref<i32>
         omp.yield
       }
@@ -204,20 +203,19 @@ func.func @_QPsimd1(%arg0: !fir.ref<i32> {fir.bindc_name = "n"}, %arg1: !fir.ref
 
 // CHECK-LABEL:  _QPsimd1
 // CHECK-SAME: %[[N_REF:.*]]: !llvm.ptr {fir.bindc_name = "n"}, %[[ARR_REF:.*]]: !llvm.ptr {fir.bindc_name = "arr"}) {
-// CHECK:    %[[ONE_0:.*]] = llvm.mlir.constant(1 : i64) : i64
-// CHECK:    %[[ONE_1:.*]] = llvm.mlir.constant(1 : i64) : i64
-// CHECK:    %[[ONE_2:.*]] = llvm.mlir.constant(1 : i32) : i32
-// CHECK: omp.parallel   {
-// CHECK:      %[[ONE_3:.*]] = llvm.mlir.constant(1 : i64) : i64
-// CHECK:      %[[I_VAR:.*]] = llvm.alloca %[[ONE_3]] x i32 {pinned} : (i64) -> !llvm.ptr
-// CHECK:      %[[N:.*]] = llvm.load %[[N_REF]] : !llvm.ptr -> i32
+// CHECK: omp.parallel shared(%[[N_REF]] -> %[[SHARED_N:.*]], %[[ARR_REF]] -> %[[SHARED_ARR:.*]] : !llvm.ptr, !llvm.ptr) {
+// CHECK:      %[[ALLOCA_SIZE:.*]] = llvm.mlir.constant(1 : i64) : i64
+// CHECK:      %[[I_VAR:.*]] = llvm.alloca %[[ALLOCA_SIZE]] x i32 {pinned} : (i64) -> !llvm.ptr
+// CHECK:      %[[ONE_0:.*]] = llvm.mlir.constant(1 : i64) : i64
+// CHECK:      %[[ONE_1:.*]] = llvm.mlir.constant(1 : i32) : i32
+// CHECK:      %[[N:.*]] = llvm.load %[[SHARED_N]] : !llvm.ptr -> i32
 // CHECK: omp.simd {
-// CHECK-NEXT: omp.loop_nest (%[[I:.*]]) : i32 = (%[[ONE_2]]) to (%[[N]]) step (%[[ONE_2]]) {
+// CHECK-NEXT: omp.loop_nest (%[[I:.*]]) : i32 = (%[[ONE_1]]) to (%[[N]]) step (%[[ONE_1]]) {
 // CHECK:   llvm.store %[[I]], %[[I_VAR]] : i32, !llvm.ptr
 // CHECK:   %[[I1:.*]] = llvm.load %[[I_VAR]] : !llvm.ptr -> i32
 // CHECK:   %[[I1_EXT:.*]] = llvm.sext %[[I1]] : i32 to i64
-// CHECK:   %[[I_CSTYLE:.*]] = llvm.sub %[[I1_EXT]], %[[ONE_1]]  : i64
-// CHECK:   %[[ARR_I_REF:.*]] = llvm.getelementptr %[[ARR_REF]][%[[I_CSTYLE]]] : (!llvm.ptr, i64) -> !llvm.ptr
+// CHECK:   %[[I_CSTYLE:.*]] = llvm.sub %[[I1_EXT]], %[[ONE_0]]  : i64
+// CHECK:   %[[ARR_I_REF:.*]] = llvm.getelementptr %[[SHARED_ARR]][%[[I_CSTYLE]]] : (!llvm.ptr, i64) -> !llvm.ptr
 // CHECK:   llvm.store %[[I1]], %[[ARR_I_REF]] : i32, !llvm.ptr
 // CHECK: omp.yield
 // CHECK: }
@@ -579,8 +577,8 @@ func.func @_QQmain() {
     cf.cond_br %4, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
     fir.store %2 to %0 : !fir.ref<i32>
-    omp.task   {
-      fir.call @_QFPdo_work(%0) : (!fir.ref<i32>) -> ()
+    omp.task shared(%0 -> %task_i : !fir.ref<i32>) {
+      fir.call @_QFPdo_work(%task_i) : (!fir.ref<i32>) -> ()
       omp.terminator
     }
     %5 = fir.load %0 : !fir.ref<i32>
@@ -597,8 +595,8 @@ func.func private @_QFPdo_work(!fir.ref<i32>)
 
 // CHECK-LABEL: llvm.func @_QQmain
 // CHECK:          omp.taskgroup   {
-// CHECK:            omp.task   {
-// CHECK:              llvm.call @_QFPdo_work({{.*}}) : (!llvm.ptr) -> ()
+// CHECK:            omp.task shared(%[[TASK_I:.*]] -> %[[TASK_SHARED_I:.*]] : !llvm.ptr) {
+// CHECK:              llvm.call @_QFPdo_work(%[[TASK_SHARED_I]]) : (!llvm.ptr) -> ()
 // CHECK:              omp.terminator
 // CHECK:            }
 // CHECK:            omp.terminator
@@ -712,10 +710,10 @@ func.func @_QPsb() {
 // CHECK-SAME: %[[ARRAY_REF:.*]]: !llvm.ptr
 // CHECK:    %[[VAL_1:.*]] = llvm.mlir.constant(1 : i64) : i64
 // CHECK:    %[[RED_ACCUMULATOR:.*]] = llvm.alloca %[[VAL_1]] x i32 {bindc_name = "x"} : (i64) -> !llvm.ptr
-// CHECK:    omp.parallel   {
-// CHECK:      omp.wsloop reduction(@[[EQV_REDUCTION]] %[[RED_ACCUMULATOR]] -> %[[PRV:.+]] : !llvm.ptr) {
+// CHECK:    omp.parallel shared(%[[ARRAY_REF]] -> %[[SHARED_ARRAY:.*]], %[[RED_ACCUMULATOR]] -> %[[SHARED_RED:.*]] : !llvm.ptr, !llvm.ptr) {
+// CHECK:      omp.wsloop reduction(@[[EQV_REDUCTION]] %[[SHARED_RED]] -> %[[PRV:.+]] : !llvm.ptr) {
 // CHECK-NEXT:   omp.loop_nest
-// CHECK:          %[[ARRAY_ELEM_REF:.*]] = llvm.getelementptr %[[ARRAY_REF]][0, %{{.*}}] : (!llvm.ptr, i64) -> !llvm.ptr
+// CHECK:          %[[ARRAY_ELEM_REF:.*]] = llvm.getelementptr %[[SHARED_ARRAY]][0, %{{.*}}] : (!llvm.ptr, i64) -> !llvm.ptr
 // CHECK:          %[[ARRAY_ELEM:.*]] = llvm.load %[[ARRAY_ELEM_REF]] : !llvm.ptr -> i32
 // CHECK:          %[[LPRV:.+]] = llvm.load %[[PRV]] : !llvm.ptr -> i32
 // CHECK:          %[[ZERO_1:.*]] = llvm.mlir.constant(0 : i64) : i32
@@ -748,19 +746,19 @@ func.func @_QPsimple_reduction(%arg0: !fir.ref<!fir.array<100x!fir.logical<4>>> 
   %true = arith.constant true
   %2 = fir.convert %true : (i1) -> !fir.logical<4>
   fir.store %2 to %1 : !fir.ref<!fir.logical<4>>
-  omp.parallel   {
+  omp.parallel shared(%arg0 -> %shared_y, %1 -> %shared_x : !fir.ref<!fir.array<100x!fir.logical<4>>>, !fir.ref<!fir.logical<4>>) {
     %3 = fir.alloca i32 {adapt.valuebyref, pinned}
     %c1_i32 = arith.constant 1 : i32
     %c100_i32 = arith.constant 100 : i32
     %c1_i32_0 = arith.constant 1 : i32
-    omp.wsloop reduction(@eqv_reduction %1 -> %prv : !fir.ref<!fir.logical<4>>) {
+    omp.wsloop reduction(@eqv_reduction %shared_x -> %prv : !fir.ref<!fir.logical<4>>) {
       omp.loop_nest (%arg1) : i32 = (%c1_i32) to (%c100_i32) inclusive step (%c1_i32_0) {
         fir.store %arg1 to %3 : !fir.ref<i32>
         %4 = fir.load %3 : !fir.ref<i32>
         %5 = fir.convert %4 : (i32) -> i64
         %c1_i64 = arith.constant 1 : i64
         %6 = arith.subi %5, %c1_i64 : i64
-        %7 = fir.coordinate_of %arg0, %6 : (!fir.ref<!fir.array<100x!fir.logical<4>>>, i64) -> !fir.ref<!fir.logical<4>>
+        %7 = fir.coordinate_of %shared_y, %6 : (!fir.ref<!fir.array<100x!fir.logical<4>>>, i64) -> !fir.ref<!fir.logical<4>>
         %8 = fir.load %7 : !fir.ref<!fir.logical<4>>
         %lprv = fir.load %prv : !fir.ref<!fir.logical<4>>
         %lprv1 = fir.convert %lprv : (!fir.logical<4>) -> i1
@@ -794,11 +792,11 @@ func.func @_QPs(%arg0: !fir.ref<complex<f32>> {fir.bindc_name = "x"}) {
 //CHECK:  %[[CONST0:.*]] = llvm.mlir.constant(1 : i64) : i64
 //CHECK:  %[[CONST:.*]] = llvm.mlir.constant(1 : i64) : i64
 //CHECK:  %[[ALLOCA:.*]] = llvm.alloca %[[CONST]] x !llvm.struct<(ptr, i64, i32, i8, i8, i8, i8)> {bindc_name = "iattr"} : (i64) -> !llvm.ptr
-//CHECK:  omp.parallel   {
+//CHECK:  omp.parallel shared(%[[ALLOCA]] -> %[[SHARED_IATTR:.*]], %[[Y_REF:.*]] -> %[[SHARED_Y:.*]] : !llvm.ptr, !llvm.ptr) {
 //CHECK:    %[[CONST_1:.*]] = llvm.mlir.constant(1 : i32) : i32
 //CHECK:    %[[ALLOCA_1:.*]] = llvm.alloca %[[CONST_1:.*]] x !llvm.struct<(ptr, i64, i32, i8, i8, i8, i8)> {alignment = 8 : i64} : (i32) -> !llvm.ptr
 //CHECK:    %[[SIZE:.*]] = llvm.mlir.constant(24 : i32) : i32
-//CHECK:    "llvm.intr.memcpy"(%[[ALLOCA_1]], %[[ALLOCA]], %[[SIZE]]) <{arg_attrs = [{{.*}}], isVolatile = false}> : (!llvm.ptr, !llvm.ptr, i32) -> ()
+//CHECK:    "llvm.intr.memcpy"(%[[ALLOCA_1]], %[[SHARED_IATTR]], %[[SIZE]]) <{arg_attrs = [{{.*}}], isVolatile = false}> : (!llvm.ptr, !llvm.ptr, i32) -> ()
 //CHECK:    %[[GEP:.*]] = llvm.getelementptr %[[ALLOCA_1]][0, 0] : (!llvm.ptr) -> !llvm.ptr
 //CHECK:    %[[LOAD_2:.*]] = llvm.load %[[GEP]] : !llvm.ptr -> !llvm.ptr
 //CHECK:    omp.terminator
@@ -813,9 +811,9 @@ func.func @_QQmain() attributes {fir.bindc_name = "mn"} {
   %4 = fir.alloca i32 {bindc_name = "y", uniq_name = "_QFEy"}
   %5 = fir.embox %3 : (!fir.ref<i32>) -> !fir.box<!fir.ptr<i32>>
   fir.store %5 to %0 : !fir.ref<!fir.box<!fir.ptr<i32>>>
-  omp.parallel   {
-    %6 = fir.load %4 : !fir.ref<i32>
-    %7 = fir.load %0 : !fir.ref<!fir.box<!fir.ptr<i32>>>
+  omp.parallel shared(%0 -> %shared_iattr, %4 -> %shared_y : !fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<i32>) {
+    %6 = fir.load %shared_y : !fir.ref<i32>
+    %7 = fir.load %shared_iattr : !fir.ref<!fir.box<!fir.ptr<i32>>>
     %8 = fir.box_addr %7 : (!fir.box<!fir.ptr<i32>>) -> !fir.ptr<i32>
     fir.store %6 to %8 : !fir.ptr<i32>
     omp.terminator
@@ -874,20 +872,20 @@ func.func @sub_() {
 // CHECK-LABEL:  llvm.func @flush_parallel_
 // CHECK-SAME:   %[[ARG_A:.*]]: !llvm.ptr {fir.bindc_name = "a"}, %[[ARG_B:.*]]: !llvm.ptr {fir.bindc_name = "b"}, %[[ARG_C:.*]]: !llvm.ptr {fir.bindc_name = "c"})
   func.func @flush_parallel_(%arg0: !fir.ref<i32> {fir.bindc_name = "a"}, %arg1: !fir.ref<i32> {fir.bindc_name = "b"}, %arg2: !fir.ref<i32> {fir.bindc_name = "c"}) {
-// CHECK:    omp.parallel   {
-    omp.parallel   {
-// CHECK:      omp.flush(%[[ARG_A]], %[[ARG_B]], %[[ARG_C]] : !llvm.ptr, !llvm.ptr, !llvm.ptr)
-      omp.flush(%arg0, %arg1, %arg2 : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>)
+// CHECK:    omp.parallel shared(%[[ARG_A]] -> %[[SHARED_A:.*]], %[[ARG_B]] -> %[[SHARED_B:.*]], %[[ARG_C]] -> %[[SHARED_C:.*]] : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
+    omp.parallel shared(%arg0 -> %shared_a, %arg1 -> %shared_b, %arg2 -> %shared_c : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
+// CHECK:      omp.flush(%[[SHARED_A]], %[[SHARED_B]], %[[SHARED_C]] : !llvm.ptr, !llvm.ptr, !llvm.ptr)
+      omp.flush(%shared_a, %shared_b, %shared_c : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>)
 // CHECK:      omp.flush
       omp.flush
-// CHECK:      %[[A_VAL:.*]] = llvm.load %[[ARG_A]] : !llvm.ptr -> i32
-      %0 = fir.load %arg0 : !fir.ref<i32>
-// CHECK:      %[[B_VAL:.*]] = llvm.load %[[ARG_B]] : !llvm.ptr -> i32
-      %1 = fir.load %arg1 : !fir.ref<i32>
+// CHECK:      %[[A_VAL:.*]] = llvm.load %[[SHARED_A]] : !llvm.ptr -> i32
+      %0 = fir.load %shared_a : !fir.ref<i32>
+// CHECK:      %[[B_VAL:.*]] = llvm.load %[[SHARED_B]] : !llvm.ptr -> i32
+      %1 = fir.load %shared_b : !fir.ref<i32>
 // CHECK:      %[[C_VAL:.*]] = llvm.add %[[A_VAL]], %[[B_VAL]]  : i32
       %2 = arith.addi %0, %1 : i32
-// CHECK:      llvm.store %[[C_VAL]], %[[ARG_C]] : i32, !llvm.ptr
-      fir.store %2 to %arg2 : !fir.ref<i32>
+// CHECK:      llvm.store %[[C_VAL]], %[[SHARED_C]] : i32, !llvm.ptr
+      fir.store %2 to %shared_c : !fir.ref<i32>
 // CHECK:      omp.terminator
       omp.terminator
 // CHECK:    }
@@ -1072,15 +1070,14 @@ func.func @use_index(%arg0 : index) {
 
 // CHECK-LABEL:   llvm.func @alloca_hoisting_openmp() {
 // CHECK:           %[[VAL_0:.*]] = llvm.mlir.constant(6 : index) : i64
-// CHECK:           %[[VAL_1:.*]] = llvm.mlir.constant(1 : i32) : i32
-// CHECK:           %[[VAL_2:.*]] = llvm.mlir.constant(42 : i32) : i32
-// CHECK:           omp.parallel {
-// CHECK:             %[[VAL_3:.*]] = llvm.mlir.constant(6 : index) : i64
-// CHECK:             %[[VAL_4:.*]] = llvm.alloca %[[VAL_3]] x i8 : (i64) -> !llvm.ptr
+// CHECK:           omp.parallel shared(%[[VAL_0]] -> %[[SHARED_LEN:.*]] : i64) {
+// CHECK:             %[[VAL_1:.*]] = llvm.mlir.constant(1 : i32) : i32
+// CHECK:             %[[VAL_2:.*]] = llvm.mlir.constant(42 : i32) : i32
 // CHECK:             omp.wsloop {
-// CHECK:               omp.loop_nest (%[[VAL_5:.*]]) : i32 = (%[[VAL_1]]) to (%[[VAL_2]]) inclusive step (%[[VAL_1]]) {
-// CHECK:                 %[[VAL_6:.*]] = llvm.mlir.constant(1 : i64) : i64
-// CHECK:                 llvm.call @use_string(%[[VAL_4]]) : (!llvm.ptr) -> ()
+// CHECK:               omp.loop_nest (%[[VAL_3:.*]]) : i32 = (%[[VAL_1]]) to (%[[VAL_2]]) inclusive step (%[[VAL_1]]) {
+// CHECK:                 %[[VAL_4:.*]] = llvm.mlir.constant(1 : i64) : i64
+// CHECK:                 %[[VAL_5:.*]] = llvm.alloca %[[SHARED_LEN]] x i8 : (i64) -> !llvm.ptr
+// CHECK:                 llvm.call @use_string(%[[VAL_5]]) : (!llvm.ptr) -> ()
 // CHECK:                 omp.yield
 // CHECK:               }
 // CHECK:             }
@@ -1091,12 +1088,12 @@ func.func @use_index(%arg0 : index) {
 // CHECK:         }
 func.func @alloca_hoisting_openmp() {
   %c6 = arith.constant 6 : index
-  %c1_i32 = arith.constant 1 : i32
-  %c42_i32 = arith.constant 42 : i32
-  omp.parallel {
+  omp.parallel shared(%c6 -> %shared_len : index) {
+    %c1_i32 = arith.constant 1 : i32
+    %c42_i32 = arith.constant 42 : i32
     omp.wsloop {
       omp.loop_nest (%arg0) : i32 = (%c1_i32) to (%c42_i32) inclusive step (%c1_i32) {
-        %0 = fir.alloca !fir.char<1,?>(%c6 : index)
+        %0 = fir.alloca !fir.char<1,?>(%shared_len : index)
         fir.call @use_string(%0) : (!fir.ref<!fir.char<1,?>>) -> ()
         omp.yield
       }

@@ -54,7 +54,7 @@ end subroutine do_simd_order
 
 !CHECK-LABEL:   func.func @_QPdo_simd_order_parallel() {
 subroutine do_simd_order_parallel
-   !CHECK: omp.parallel {
+   !CHECK: omp.parallel shared(%[[I_DECL:.*]]#0 -> %[[I_SHARED:.*]] : !fir.ref<i32>) {
    !CHECK: omp.wsloop order(reproducible:concurrent) {
    !$omp parallel do simd order(reproducible:concurrent)
    do i = 1, 10

@@ -93,11 +93,11 @@ end program
 ! CHECK:           %[[VAL_10:.*]] = fir.shape %[[VAL_8]] : (index) -> !fir.shape<1>
 ! CHECK:           %[[VAL_11:.*]] = fir.embox %[[VAL_9]](%[[VAL_10]]) : (!fir.heap<!fir.array<?xi32>>, !fir.shape<1>) -> !fir.box<!fir.heap<!fir.array<?xi32>>>
 ! CHECK:           fir.store %[[VAL_11]] to %[[VAL_3]]#0 : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_I:.*]], %[[VAL_3]]#0 -> %[[SHARED_R:.*]] : !fir.ref<i32>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
 ! CHECK:             %[[VAL_14:.*]] = arith.constant 0 : i32
 ! CHECK:             %[[VAL_15:.*]] = arith.constant 10 : i32
 ! CHECK:             %[[VAL_16:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_12:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_heap_Uxi32 %[[VAL_3]]#0 -> %[[VAL_17:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I]] -> %[[VAL_12:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_heap_Uxi32 %[[SHARED_R]] -> %[[VAL_17:.*]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_18:.*]]) : i32 = (%[[VAL_14]]) to (%[[VAL_15]]) inclusive step (%[[VAL_16]]) {
 ! CHECK:                 %[[VAL_13:.*]]:2 = hlfir.declare %[[VAL_12]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_19:.*]]:2 = hlfir.declare %[[VAL_17]] {fortran_attrs = {{.*}}<allocatable>, uniq_name = "_QFEr"} : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>)

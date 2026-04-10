@@ -48,8 +48,9 @@ contains
     print *, a, b, c, d, e, f
 
     !$omp parallel
-    !CHECK-DAG: omp.parallel   {
-    !CHECK-DAG:  %[[TP_PARALLEL:.*]] = omp.threadprivate %[[CBLK_ADDR]] : !fir.ref<!fir.array<103xi8>> -> !fir.ref<!fir.array<103xi8>>
+    !CHECK: omp.parallel {
+    !CHECK-DAG:  %[[PAR_CBLK:.*]] = fir.address_of(@blk_) : !fir.ref<!fir.array<103xi8>>
+    !CHECK-DAG:  %[[TP_PARALLEL:.*]] = omp.threadprivate %[[PAR_CBLK]] : !fir.ref<!fir.array<103xi8>> -> !fir.ref<!fir.array<103xi8>>
     !CHECK-DAG:  %[[TP_A_ADDR:.*]] = fir.coordinate_of %[[TP_PARALLEL]], {{.*}} : (!fir.ref<!fir.array<103xi8>>, index) -> !fir.ref<i8>
     !CHECK-DAG:  %[[TP_A_ADDR_CVT:.*]] = fir.convert %[[TP_A_ADDR]] : (!fir.ref<i8>) -> !fir.ref<i32>
     !CHECK-DAG:  %[[TP_A_DECL:.*]]:2 = hlfir.declare %[[TP_A_ADDR_CVT]] storage(%[[TP_PARALLEL]][0]) {uniq_name = "_QMtestEa"} : (!fir.ref<i32>, !fir.ref<!fir.array<103xi8>>) -> (!fir.ref<i32>, !fir.ref<i32>)

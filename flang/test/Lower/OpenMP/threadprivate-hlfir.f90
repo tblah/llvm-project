@@ -8,8 +8,8 @@
 !CHECK:    %[[DECL:.*]]:2 = hlfir.declare %[[ADDR]] {uniq_name = "_QFsubEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK:    %[[TP:.*]] = omp.threadprivate %[[DECL]]#0 : !fir.ref<i32> -> !fir.ref<i32>
 !CHECK:    %[[TP_DECL:.*]]:2 = hlfir.declare %[[TP:.*]] {uniq_name = "_QFsubEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-!CHECK:    omp.parallel   {
-!CHECK:      %[[TP_PARALLEL:.*]] = omp.threadprivate %[[DECL]]#0 : !fir.ref<i32> -> !fir.ref<i32>
+!CHECK:    omp.parallel shared(%[[DECL]]#0 -> %[[PAR_SHARED:.*]] : !fir.ref<i32>) {
+!CHECK:      %[[TP_PARALLEL:.*]] = omp.threadprivate %[[PAR_SHARED]] : !fir.ref<i32> -> !fir.ref<i32>
 !CHECK:      %[[TP_PARALLEL_DECL:.*]]:2 = hlfir.declare %[[TP_PARALLEL]] {uniq_name = "_QFsubEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK:      %[[TP_VAL:.*]] = fir.load %[[TP_PARALLEL_DECL]]#0 : !fir.ref<i32>
 !CHECK:      %{{.*}} = fir.call @_FortranAioOutputInteger32(%{{.*}}, %[[TP_VAL]]) fastmath<contract> : (!fir.ref<i8>, i32) -> i1
@@ -44,8 +44,8 @@ contains
     !CHECK:   %[[TP_03:.*]] = omp.threadprivate %[[DECL_03]]#0 : !fir.ref<i32> -> !fir.ref<i32>
     !CHECK:   %[[TP_DECL_03:.*]]:2 = hlfir.declare %[[TP_03]] {uniq_name = "_QFsub_02Ea"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
     !$omp parallel default(private)
-      !CHECK:   omp.parallel
-      !CHECK:     %[[TP_04:.*]] = omp.threadprivate %[[DECL_03]]#0 : !fir.ref<i32> -> !fir.ref<i32>
+      !CHECK:   omp.parallel shared(%[[DECL_03]]#0 -> %[[PAR_SHARED_03:.*]] : !fir.ref<i32>) {
+      !CHECK:     %[[TP_04:.*]] = omp.threadprivate %[[PAR_SHARED_03]] : !fir.ref<i32> -> !fir.ref<i32>
       !CHECK:     %[[TP_DECL_04:.*]]:2 = hlfir.declare %[[TP_04]] {uniq_name = "_QFsub_02Ea"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
       print *, a
       !CHECK:     omp.terminator
@@ -62,8 +62,8 @@ end module
 subroutine sub_05()
   use mod_01, only: a
   !$omp parallel default(private)
-    !CHECK:   omp.parallel {
-    !CHECK:     %[[TP_05:.*]] = omp.threadprivate %{{.*}} : !fir.ref<i32> -> !fir.ref<i32>
+    !CHECK:   omp.parallel shared(%{{.*}} -> %[[PAR_SHARED_05:.*]] : !fir.ref<i32>) {
+    !CHECK:     %[[TP_05:.*]] = omp.threadprivate %[[PAR_SHARED_05]] : !fir.ref<i32> -> !fir.ref<i32>
     !CHECK:     %{{.*}} = hlfir.declare %[[TP_05]] {uniq_name = "_QMmod_01Ea"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
       print *, a
     !CHECK:     omp.terminator

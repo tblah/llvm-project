@@ -5,12 +5,12 @@
 !CHECK-LABEL: func @_QPsimple_loop()
 subroutine simple_loop
   integer :: i
-  ! CHECK:  omp.parallel
+  ! CHECK:  omp.parallel shared(%[[IV_IN_1:.*]]#0 -> %[[SHARED_IV_1:.*]] : !fir.ref<i32>)
   !$OMP PARALLEL
   ! CHECK:      %[[WS_LB:.*]] = arith.constant 1 : i32
   ! CHECK:      %[[WS_UB:.*]] = arith.constant 9 : i32
   ! CHECK:      %[[WS_STEP:.*]] = arith.constant 1 : i32
-  ! CHECK:      omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
+  ! CHECK:      omp.wsloop private(@{{.*}} %[[SHARED_IV_1]] -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
   ! CHECK-NEXT:   omp.loop_nest (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) inclusive step (%[[WS_STEP]]) {
   !$OMP DO
   do i=1, 9
@@ -29,12 +29,12 @@ end subroutine
 !CHECK-LABEL: func @_QPsimple_loop_with_step()
 subroutine simple_loop_with_step
   integer :: i
-  ! CHECK:  omp.parallel
+  ! CHECK:  omp.parallel shared(%[[IV_IN_2:.*]]#0 -> %[[SHARED_IV_2:.*]] : !fir.ref<i32>)
   !$OMP PARALLEL
   ! CHECK:      %[[WS_LB:.*]] = arith.constant 1 : i32
   ! CHECK:      %[[WS_UB:.*]] = arith.constant 9 : i32
   ! CHECK:      %[[WS_STEP:.*]] = arith.constant 2 : i32
-  ! CHECK:      omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
+  ! CHECK:      omp.wsloop private(@{{.*}} %[[SHARED_IV_2]] -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
   ! CHECK-NEXT:   omp.loop_nest (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) inclusive step (%[[WS_STEP]]) {
   ! CHECK:          %[[IV_DECL:.*]]:2 = hlfir.declare %[[ALLOCA_IV]] {uniq_name = "_QFsimple_loop_with_stepEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
   ! CHECK:          hlfir.assign %[[I]] to %[[IV_DECL]]#0 : i32, !fir.ref<i32>
@@ -53,12 +53,12 @@ end subroutine
 !CHECK-LABEL: func @_QPloop_with_schedule_nowait()
 subroutine loop_with_schedule_nowait
   integer :: i
-  ! CHECK:  omp.parallel
+  ! CHECK:  omp.parallel shared(%[[IV_IN_3:.*]]#0 -> %[[SHARED_IV_3:.*]] : !fir.ref<i32>)
   !$OMP PARALLEL
   ! CHECK:      %[[WS_LB:.*]] = arith.constant 1 : i32
   ! CHECK:      %[[WS_UB:.*]] = arith.constant 9 : i32
   ! CHECK:      %[[WS_STEP:.*]] = arith.constant 1 : i32
-  ! CHECK:      omp.wsloop nowait schedule(runtime) private(@{{.*}} %{{.*}}#0 -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
+  ! CHECK:      omp.wsloop nowait schedule(runtime) private(@{{.*}} %[[SHARED_IV_3]] -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
   ! CHECK-NEXT:   omp.loop_nest (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) inclusive step (%[[WS_STEP]]) {
   !$OMP DO SCHEDULE(runtime)
   do i=1, 9

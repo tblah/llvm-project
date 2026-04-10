@@ -35,8 +35,8 @@ func.func @_QPlocal_spec_translation() {
 // CHECK: func.func @_QPlocal_spec_translation
 // CHECK:   %[[LOCAL_VAR:.*]] = fir.alloca f32 {bindc_name = "local_var", {{.*}}}
 // CHECK:   %[[LOCAL_VAR_DECL:.*]]:2 = hlfir.declare %[[LOCAL_VAR]]
-// CHECK:   omp.parallel {
-// CHECK:     omp.wsloop private(@[[PRIVATIZER]] %[[LOCAL_VAR_DECL]]#0 -> %[[LOCAL_ARG:.*]] : !fir.ref<f32>) {
+// CHECK:   omp.parallel shared(%[[LOCAL_VAR_DECL]]#0 -> %[[SHARED_ARG:.*]] : !fir.ref<f32>) {
+// CHECK:     omp.wsloop private(@[[PRIVATIZER]] %[[SHARED_ARG]] -> %[[LOCAL_ARG:.*]] : !fir.ref<f32>) {
 // CHECK:       omp.loop_nest {{.*}} {
 // CHECK:       %[[PRIV_DECL:.*]]:2 = hlfir.declare %[[LOCAL_ARG]]
 // CHECK:       %[[C42:.*]] = arith.constant

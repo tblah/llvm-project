@@ -14,7 +14,6 @@ n=1000
 end program
 
 ! CHECK-LABEL:   func.func @_QQmain() attributes {fir.bindc_name = "MAIN"} {
-! CHECK:           %[[VAL_0:.*]] = arith.constant 1 : i32
 ! CHECK:           %[[VAL_1:.*]] = arith.constant 1000 : i32
 ! CHECK:           %[[VAL_2:.*]] = arith.constant 0 : i32
 ! CHECK:           %[[VAL_3:.*]] = fir.dummy_scope : !fir.dscope
@@ -27,9 +26,10 @@ end program
 ! CHECK:           %[[VAL_10:.*]]:2 = hlfir.declare %[[VAL_9]] {uniq_name = "_QFEn"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:           hlfir.assign %[[VAL_2]] to %[[VAL_6]]#0 : i32, !fir.ref<i32, volatile>
 ! CHECK:           hlfir.assign %[[VAL_1]] to %[[VAL_10]]#0 : i32, !fir.ref<i32>
-! CHECK:           omp.parallel {
-! CHECK:             %[[VAL_11:.*]] = fir.load %[[VAL_10]]#0 : !fir.ref<i32>
-! CHECK:             omp.wsloop private(@_QFEi_private_i32 %[[VAL_8]]#0 -> %[[VAL_12:.*]] : !fir.ref<i32>) reduction(@add_reduction_i32 %[[VAL_6]]#0 -> %[[VAL_13:.*]] : !fir.ref<i32, volatile>) {
+! CHECK:           omp.parallel shared(%[[VAL_10]]#0 -> %[[SHARED_N:.*]], %[[VAL_8]]#0 -> %[[SHARED_I:.*]], %[[VAL_6]]#0 -> %[[SHARED_A:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32, volatile>) {
+! CHECK:             %[[VAL_0:.*]] = arith.constant 1 : i32
+! CHECK:             %[[VAL_11:.*]] = fir.load %[[SHARED_N]] : !fir.ref<i32>
+! CHECK:             omp.wsloop private(@_QFEi_private_i32 %[[SHARED_I]] -> %[[VAL_12:.*]] : !fir.ref<i32>) reduction(@add_reduction_i32 %[[SHARED_A]] -> %[[VAL_13:.*]] : !fir.ref<i32, volatile>) {
 ! CHECK:               omp.loop_nest (%[[VAL_14:.*]]) : i32 = (%[[VAL_0]]) to (%[[VAL_11]]) inclusive step (%[[VAL_0]]) {
 ! CHECK:                 %[[VAL_15:.*]]:2 = hlfir.declare %[[VAL_12]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_16:.*]]:2 = hlfir.declare %[[VAL_13]] {fortran_attrs = #fir.var_attrs<volatile>, uniq_name = "_QFEa"} : (!fir.ref<i32, volatile>) -> (!fir.ref<i32, volatile>, !fir.ref<i32, volatile>)

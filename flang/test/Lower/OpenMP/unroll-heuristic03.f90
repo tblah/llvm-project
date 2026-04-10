@@ -28,11 +28,11 @@ end subroutine omp_unroll_heuristic03
 ! CHECK:           %[[VAL_5:.*]] = fir.alloca i32 {bindc_name = "res", uniq_name = "_QFomp_unroll_heuristic03Eres"}
 ! CHECK:           %[[VAL_6:.*]]:2 = hlfir.declare %[[VAL_5]] {uniq_name = "_QFomp_unroll_heuristic03Eres"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:           %[[VAL_7:.*]]:2 = hlfir.declare %[[ARG1]] dummy_scope %[[VAL_0]] arg {{[0-9]+}} {uniq_name = "_QFomp_unroll_heuristic03Eub"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
-! CHECK:           omp.parallel private(@_QFomp_unroll_heuristic03Ei_private_i32 %[[VAL_2]]#0 -> %[[VAL_8:.*]] : !fir.ref<i32>) {
+! CHECK:           omp.parallel private(@_QFomp_unroll_heuristic03Ei_private_i32 %[[VAL_2]]#0 -> %[[VAL_8:.*]] : !fir.ref<i32>) shared(%[[VAL_4]]#0 -> %[[SHARED_LB:.*]], %[[VAL_7]]#0 -> %[[SHARED_UB:.*]], %[[VAL_3]]#0 -> %[[SHARED_INC:.*]], %[[VAL_6]]#0 -> %[[SHARED_RES:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:             %[[VAL_9:.*]]:2 = hlfir.declare %[[VAL_8]] {uniq_name = "_QFomp_unroll_heuristic03Ei"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-! CHECK:             %[[VAL_10:.*]] = fir.load %[[VAL_4]]#0 : !fir.ref<i32>
-! CHECK:             %[[VAL_11:.*]] = fir.load %[[VAL_7]]#0 : !fir.ref<i32>
-! CHECK:             %[[VAL_12:.*]] = fir.load %[[VAL_3]]#0 : !fir.ref<i32>
+! CHECK:             %[[VAL_10:.*]] = fir.load %[[SHARED_LB]] : !fir.ref<i32>
+! CHECK:             %[[VAL_11:.*]] = fir.load %[[SHARED_UB]] : !fir.ref<i32>
+! CHECK:             %[[VAL_12:.*]] = fir.load %[[SHARED_INC]] : !fir.ref<i32>
 ! CHECK:             %[[VAL_13:.*]] = arith.constant 0 : i32
 ! CHECK:             %[[VAL_14:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_15:.*]] = arith.cmpi slt, %[[VAL_12]], %[[VAL_13]] : i32
@@ -51,7 +51,7 @@ end subroutine omp_unroll_heuristic03
 ! CHECK:               %[[VAL_28:.*]] = arith.addi %[[VAL_10]], %[[VAL_27]] : i32
 ! CHECK:               hlfir.assign %[[VAL_28]] to %[[VAL_9]]#0 : i32, !fir.ref<i32>
 ! CHECK:               %[[VAL_29:.*]] = fir.load %[[VAL_9]]#0 : !fir.ref<i32>
-! CHECK:               hlfir.assign %[[VAL_29]] to %[[VAL_6]]#0 : i32, !fir.ref<i32>
+! CHECK:               hlfir.assign %[[VAL_29]] to %[[SHARED_RES]] : i32, !fir.ref<i32>
 ! CHECK:               omp.terminator
 ! CHECK:             }
 ! CHECK:             omp.unroll_heuristic(%[[VAL_25]])

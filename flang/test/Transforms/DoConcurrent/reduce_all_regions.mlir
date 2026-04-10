@@ -53,12 +53,12 @@ func.func @_QPdo_concurrent_reduce() {
 // CHECK:           %[[VAL_1:.*]]:2 = hlfir.declare %[[VAL_0]] {uniq_name = "_QFdo_concurrent_reduceEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 // CHECK:           %[[VAL_2:.*]] = fir.alloca i32 {bindc_name = "s", uniq_name = "_QFdo_concurrent_reduceEs"}
 // CHECK:           %[[VAL_3:.*]]:2 = hlfir.declare %[[VAL_2]] {uniq_name = "_QFdo_concurrent_reduceEs"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-// CHECK:           %[[VAL_4:.*]] = arith.constant 1 : index
-// CHECK:           omp.parallel {
+// CHECK:           omp.parallel shared(%[[VAL_3]]#0 -> %[[SHARED_S:.*]] : !fir.ref<i32>) {
+// CHECK:             %[[C1:.*]] = arith.constant 1 : index
 // CHECK:             %[[VAL_5:.*]] = fir.alloca i32 {bindc_name = "i"}
 // CHECK:             %[[VAL_6:.*]]:2 = hlfir.declare %[[VAL_5]] {uniq_name = "_QFdo_concurrent_reduceEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-// CHECK:             omp.wsloop reduction(@add_reduction_i32.omp %[[VAL_3]]#0 -> %[[VAL_7:.*]] : !fir.ref<i32>) {
-// CHECK:               omp.loop_nest (%[[VAL_8:.*]]) : index = (%[[VAL_4]]) to (%[[VAL_4]]) inclusive step (%[[VAL_4]]) {
+// CHECK:             omp.wsloop reduction(@add_reduction_i32.omp %[[SHARED_S]] -> %[[VAL_7:.*]] : !fir.ref<i32>) {
+// CHECK:               omp.loop_nest (%[[VAL_8:.*]]) : index = (%[[C1]]) to (%[[C1]]) inclusive step (%[[C1]]) {
 // CHECK:                 %[[VAL_9:.*]] = fir.convert %[[VAL_8]] : (index) -> i32
 // CHECK:                 fir.store %[[VAL_9]] to %[[VAL_6]]#0 : !fir.ref<i32>
 // CHECK:                 omp.yield

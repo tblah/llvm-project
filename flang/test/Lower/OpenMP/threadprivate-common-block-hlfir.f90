@@ -7,8 +7,9 @@
 
 !CHECK: %[[CBLK_ADDR:.*]] = fir.address_of(@blk_) : !fir.ref<!fir.array<4xi8>>
 !CHECK: {{.*}} = omp.threadprivate %[[CBLK_ADDR]] : !fir.ref<!fir.array<4xi8>> -> !fir.ref<!fir.array<4xi8>>
-!CHECK: omp.parallel   {
-!CHECK:   %[[TP_PARALLEL:.*]] = omp.threadprivate %[[CBLK_ADDR]] : !fir.ref<!fir.array<4xi8>> -> !fir.ref<!fir.array<4xi8>>
+!CHECK: omp.parallel {
+!CHECK:   %[[PAR_CBLK:.*]] = fir.address_of(@blk_) : !fir.ref<!fir.array<4xi8>>
+!CHECK:   %[[TP_PARALLEL:.*]] = omp.threadprivate %[[PAR_CBLK]] : !fir.ref<!fir.array<4xi8>> -> !fir.ref<!fir.array<4xi8>>
 !CHECK:   %[[A_ADDR:.*]] = fir.coordinate_of %[[TP_PARALLEL]], %c0_1 : (!fir.ref<!fir.array<4xi8>>, index) -> !fir.ref<i8>
 !CHECK:   %[[A_ADDR_CVT:.*]] = fir.convert %[[A_ADDR]] : (!fir.ref<i8>) -> !fir.ref<i32>
 !CHECK:   %[[A_DECL:.*]]:2 = hlfir.declare %[[A_ADDR_CVT]] storage(%[[TP_PARALLEL]][0]) {uniq_name = "_QFsub_commonblockEa"} : (!fir.ref<i32>, !fir.ref<!fir.array<4xi8>>) -> (!fir.ref<i32>, !fir.ref<i32>)

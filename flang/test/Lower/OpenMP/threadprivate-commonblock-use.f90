@@ -17,8 +17,11 @@ contains
   contains
 !CHECK-LABEL: func private @_QMm1Fss1Pss2
 !CHECK: %[[CMN:.*]] = fir.address_of(@cmn_) : !fir.ref<!fir.array<4xi8>>
-!CHECK: omp.parallel
-!CHECK: %{{.*}} = omp.threadprivate %[[CMN]] : !fir.ref<!fir.array<4xi8>> -> !fir.ref<!fir.array<4xi8>>
+!CHECK: %[[TP_CMN:.*]] = omp.threadprivate %[[CMN]] : !fir.ref<!fir.array<4xi8>> -> !fir.ref<!fir.array<4xi8>>
+!CHECK: %[[K1_DECL:.*]]:2 = hlfir.declare %{{.*}} storage(%[[TP_CMN]][0]) {uniq_name = "_QMm0Ek1"} : (!fir.ref<i32>, !fir.ref<!fir.array<4xi8>>) -> (!fir.ref<i32>, !fir.ref<i32>)
+!CHECK: omp.parallel shared(%[[K1_DECL]]#0 -> %[[PAR_K1:.*]] : !fir.ref<i32>) {
+!CHECK: %[[PAR_CMN:.*]] = fir.address_of(@cmn_) : !fir.ref<!fir.array<4xi8>>
+!CHECK: %{{.*}} = omp.threadprivate %[[PAR_CMN]] : !fir.ref<!fir.array<4xi8>> -> !fir.ref<!fir.array<4xi8>>
     subroutine ss2
       !$omp parallel copyin (k1)
       !$omp end parallel

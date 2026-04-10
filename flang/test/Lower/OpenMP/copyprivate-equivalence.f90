@@ -48,11 +48,13 @@ end
 ! CHECK:           %[[CONVERT_2:.*]] = fir.convert %[[COORDINATE_OF_2]] : (!fir.ref<i8>) -> !fir.ptr<i32>
 ! CHECK:           %[[DECLARE_2:.*]]:2 = hlfir.declare %[[CONVERT_2]] storage(%[[THREADPRIVATE_0]][4]) {uniq_name = "_QFs1Ekk"} : (!fir.ptr<i32>, !fir.ref<!fir.array<8xi8>>) -> (!fir.ptr<i32>, !fir.ptr<i32>)
 ! CHECK:           omp.parallel {
-! CHECK:             %[[THREADPRIVATE_1:.*]] = omp.threadprivate %[[ADDRESS_OF_0]] : !fir.ref<!fir.array<8xi8>> -> !fir.ref<!fir.array<8xi8>>
+! CHECK:             %[[ADDRESS_OF_1:.*]] = fir.address_of(@com1_) : !fir.ref<!fir.array<8xi8>>
+! CHECK:             %[[CONSTANT_1_PAR:.*]] = arith.constant 2 : index
+! CHECK:             %[[THREADPRIVATE_1:.*]] = omp.threadprivate %[[ADDRESS_OF_1]] : !fir.ref<!fir.array<8xi8>> -> !fir.ref<!fir.array<8xi8>>
 ! CHECK:             %[[CONSTANT_4:.*]] = arith.constant 0 : index
 ! CHECK:             %[[COORDINATE_OF_3:.*]] = fir.coordinate_of %[[THREADPRIVATE_1]], %[[CONSTANT_4]] : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>
 ! CHECK:             %[[CONVERT_3:.*]] = fir.convert %[[COORDINATE_OF_3]] : (!fir.ref<i8>) -> !fir.ptr<!fir.array<2xi32>>
-! CHECK:             %[[SHAPE_2:.*]] = fir.shape %[[CONSTANT_1]] : (index) -> !fir.shape<1>
+! CHECK:             %[[SHAPE_2:.*]] = fir.shape %[[CONSTANT_1_PAR]] : (index) -> !fir.shape<1>
 ! CHECK:             %[[DECLARE_3:.*]]:2 = hlfir.declare %[[CONVERT_3]](%[[SHAPE_2]]) storage(%[[THREADPRIVATE_1]][0]) {uniq_name = "_QFs1Ek"} : (!fir.ptr<!fir.array<2xi32>>, !fir.shape<1>, !fir.ref<!fir.array<8xi8>>) -> (!fir.ptr<!fir.array<2xi32>>, !fir.ptr<!fir.array<2xi32>>)
 ! CHECK:             %[[CONSTANT_5:.*]] = arith.constant 4 : index
 

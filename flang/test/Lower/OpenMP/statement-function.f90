@@ -4,7 +4,7 @@
 !CHECK-LABEL: func @_QPtest_implicit_use
 !CHECK:         %[[IEXP:.*]]:2 = hlfir.declare %{{.*}} {uniq_name = "_QFtest_implicit_useEiexp"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK:         %[[IIMP:.*]]:2 = hlfir.declare %{{.*}} {uniq_name = "_QFtest_implicit_useEiimp"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-!CHECK:         omp.parallel private({{.*firstprivate.*}} %[[IEXP]]#0 -> %[[PRIV_IEXP:[^,]+]] : !fir.ref<i32>) {
+!CHECK:         omp.parallel private(@_QFtest_implicit_useEiexp_firstprivate_i32 %[[IEXP]]#0 -> %[[PRIV_IEXP:.*]] : !fir.ref<i32>) shared(%[[IIMP]]#0 -> %[[SHARED_IIMP:.*]] : !fir.ref<i32>) {
 !CHECK:           %{{.*}}:2 = hlfir.declare %[[PRIV_IEXP]] {uniq_name = "_QFtest_implicit_useEiexp"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 subroutine test_implicit_use()
   implicit none

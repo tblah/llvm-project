@@ -33,8 +33,8 @@ func.func @_QPfoo() {
 // CHECK: omp.target host_eval({{.*}}) map_entries({{.*}}, %[[LOCAL_MAP]] -> %[[LOCAL_MAP_ARG:.*]] : {{.*}}) {
 // CHECK:   %[[LOCAL_DEV_DECL:.*]]:2 = hlfir.declare %[[LOCAL_MAP_ARG]] {uniq_name = "_QFfooEmy_local"}
 
-// CHECK:   omp.teams {
-// CHECK:     omp.parallel private(@[[OMP_PRIVATIZER]] %[[LOCAL_DEV_DECL]]#0 -> %[[LOCAL_PRIV_ARG:.*]] : {{.*}}) {
+// CHECK:   omp.teams shared(%[[LOCAL_DEV_DECL]]#0 -> %[[TEAMS_LOCAL_ARG:[^, ]*]], {{.*}} : !fir.ref<f32>, {{.*}}) {
+// CHECK:     omp.parallel private(@[[OMP_PRIVATIZER]] %[[TEAMS_LOCAL_ARG]] -> %[[LOCAL_PRIV_ARG:.*]] : {{.*}}) shared({{.*}}) {
 // CHECK:       omp.distribute {
 // CHECK:         omp.wsloop {
 // CHECK:           omp.loop_nest {{.*}} {

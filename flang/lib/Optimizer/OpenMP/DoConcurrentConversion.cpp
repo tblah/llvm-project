@@ -293,6 +293,7 @@ public:
                           loopNestLiveIns.end());
 
     mlir::omp::TargetOp targetOp;
+    mlir::omp::TeamsOp teamsOp;
     mlir::omp::LoopNestOperands loopNestClauseOps;
 
     mlir::IRMapping mapper;
@@ -324,7 +325,7 @@ public:
       targetOp =
           genTargetOp(doLoop.getLoc(), rewriter, mapper, loopNestLiveIns,
                       targetClauseOps, loopNestClauseOps, liveInShapeInfoMap);
-      genTeamsOp(rewriter, loop, mapper);
+      teamsOp = genTeamsOp(rewriter, loop, mapper);
     }
 
     mlir::omp::ParallelOp parallelOp =
@@ -391,6 +392,13 @@ public:
     for (mlir::Operation *op : llvm::reverse(opsToMove)) {
       rewriter.moveOpBefore(op, allocBlock, allocBlock->begin());
     }
+
+    // Isolate outlineable ops from above by threading any non-clonable external
+    // values through shared_vars. Pure ops with no regions are cloned instead.
+    // Isolate the innermost op (parallel) first, then the outer one (teams).
+    flangomp::isolateOutlineableOpFromAbove(parallelOp, rewriter);
+    if (mapToDevice)
+      flangomp::isolateOutlineableOpFromAbove(teamsOp, rewriter);
 
     // Mark `unordered` loops that are not perfectly nested to be skipped from
     // the legality check of the `ConversionTarget` since we are not interested

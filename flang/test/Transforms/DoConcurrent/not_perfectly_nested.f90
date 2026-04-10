@@ -39,7 +39,7 @@ end
 
 ! DEVICE: omp.teams
 
-! COMMON: omp.parallel {
+! COMMON: omp.parallel shared(
 
 ! DEVICE: omp.distribute
 

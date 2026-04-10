@@ -445,10 +445,10 @@ subroutine omp_target_implicit_nested
       !CHECK: %[[VAL_10:.*]] = arith.constant 10 : i32
       !CHECK: hlfir.assign %[[VAL_10]] to %[[VAL_8]]#0 : i32, !fir.ref<i32>
       a = 10
-      !CHECK: omp.parallel
+      !CHECK: omp.parallel shared(%[[VAL_9]]#0 -> %[[SHARED_B:.*]] : !fir.ref<i32>) {
       !$omp parallel
          !CHECK: %[[VAL_11:.*]] = arith.constant 20 : i32
-         !CHECK: hlfir.assign %[[VAL_11]] to %[[VAL_9]]#0 : i32, !fir.ref<i32>
+         !CHECK: hlfir.assign %[[VAL_11]] to %[[SHARED_B]] : i32, !fir.ref<i32>
          b = 20
          !CHECK: omp.terminator
       !$omp end parallel
@@ -638,9 +638,9 @@ subroutine omp_target_parallel_do
    !CHECK: %[[MAP:.*]] = omp.map.info var_ptr(%[[VAL_0_DECL]]#1 : !fir.ref<!fir.array<1024xi32>>, !fir.array<1024xi32>)   map_clauses(tofrom) capture(ByRef) bounds(%[[BOUNDS]]) -> !fir.ref<!fir.array<1024xi32>> {name = "a"}
    !CHECK: omp.target   map_entries(%[[MAP]] -> %[[ARG_0:.*]], %{{.*}} -> %{{.*}} : !fir.ref<!fir.array<1024xi32>>, !fir.ref<i32>) {
       !CHECK: %[[VAL_0_DECL:.*]]:2 = hlfir.declare %[[ARG_0]](%{{.*}}) {uniq_name = "_QFomp_target_parallel_doEa"} : (!fir.ref<!fir.array<1024xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<1024xi32>>, !fir.ref<!fir.array<1024xi32>>)
-      !CHECK: omp.parallel
+      !CHECK: omp.parallel shared(%[[VAL_0_DECL]]#0 -> %[[PAR_A:.*]], %{{.*}} -> %[[PAR_I:.*]] : !fir.ref<!fir.array<1024xi32>>, !fir.ref<i32>) {
       !$omp target parallel do map(tofrom: a)
-         !CHECK: omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[I_PVT_ALLOCA:.*]] : !fir.ref<i32>) {
+         !CHECK: omp.wsloop private(@{{.*}} %[[PAR_I]] -> %[[I_PVT_ALLOCA:.*]] : !fir.ref<i32>) {
          !CHECK-NEXT: omp.loop_nest (%[[I_VAL:.*]]) : i32
          do i = 1, 1024
          !CHECK:     %[[I_PVT_DECL:.*]]:2 = hlfir.declare %[[I_PVT_ALLOCA]] {uniq_name = "_QFomp_target_parallel_doEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
@@ -648,7 +648,7 @@ subroutine omp_target_parallel_do
            !CHECK:   %[[C10:.*]] = arith.constant 10 : i32
            !CHECK:   %[[I_PVT_VAL:.*]] = fir.load %[[I_PVT_DECL]]#0 : !fir.ref<i32>
            !CHECK:   %[[I_VAL:.*]] = fir.convert %[[I_PVT_VAL]] : (i32) -> i64
-           !CHECK:   %[[A_I:.*]] = hlfir.designate %[[VAL_0_DECL]]#0 (%[[I_VAL]])  : (!fir.ref<!fir.array<1024xi32>>, i64) -> !fir.ref<i32>
+           !CHECK:   %[[A_I:.*]] = hlfir.designate %[[PAR_A]] (%[[I_VAL]])  : (!fir.ref<!fir.array<1024xi32>>, i64) -> !fir.ref<i32>
            !CHECK:   hlfir.assign %[[C10]] to %[[A_I]] : i32, !fir.ref<i32>
             a(i) = 10
          end do

@@ -8,7 +8,7 @@
 !CHECK:           %[[PAR_I:.*]]:2 = hlfir.declare %[[ALLOCA]] {uniq_name = "_QFsubEi"}
 !CHECK:           omp.master {
 !CHECK:             omp.taskgroup {
-!CHECK-NEXT:          omp.task private(@_QFsubEi_firstprivate_i32 %[[PAR_I]]#0 -> %[[TASK_I:.*]] : !fir.ref<i32>) {
+!CHECK-NEXT:          omp.task private(@_QFsubEi_firstprivate_i32 %[[PAR_I]]#0 -> %[[TASK_I:.*]] : !fir.ref<i32>) shared(%{{.*}} -> %{{.*}} : !fir.ref<!fir.array<10xi32>>) {
 !CHECK:                 %[[TASK_I_DECL:.*]]:2 = hlfir.declare %[[TASK_I]] {uniq_name = "_QFsubEi"}
 !CHECK:               }
 !CHECK:             }

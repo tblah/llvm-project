@@ -57,12 +57,12 @@ fir.declare_reduction @add_reduction_i32 : i32 init {
 // CHECK:           %[[VAL_3:.*]]:2 = hlfir.declare %[[VAL_2]] {uniq_name = "_QFdo_concurrent_reduceEl"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 // CHECK:           %[[VAL_4:.*]] = fir.alloca i32 {bindc_name = "s", uniq_name = "_QFdo_concurrent_reduceEs"}
 // CHECK:           %[[VAL_5:.*]]:2 = hlfir.declare %[[VAL_4]] {uniq_name = "_QFdo_concurrent_reduceEs"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-// CHECK:           %[[VAL_6:.*]] = arith.constant 1 : index
-// CHECK:           omp.parallel {
+// CHECK:           omp.parallel shared(%[[VAL_3]]#0 -> %[[SHARED_L:.*]], %[[VAL_5]]#0 -> %[[SHARED_S:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
+// CHECK:             %[[C1:.*]] = arith.constant 1 : index
 // CHECK:             %[[VAL_7:.*]] = fir.alloca i32 {bindc_name = "i"}
 // CHECK:             %[[VAL_8:.*]]:2 = hlfir.declare %[[VAL_7]] {uniq_name = "_QFdo_concurrent_reduceEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-// CHECK:             omp.wsloop private(@_QFdo_concurrent_reduceEl_private_i32.omp %[[VAL_3]]#0 -> %[[VAL_9:.*]] : !fir.ref<i32>) reduction(@add_reduction_i32.omp %[[VAL_5]]#0 -> %[[VAL_10:.*]] : !fir.ref<i32>) {
-// CHECK:               omp.loop_nest (%[[VAL_11:.*]]) : index = (%[[VAL_6]]) to (%[[VAL_6]]) inclusive step (%[[VAL_6]]) {
+// CHECK:             omp.wsloop private(@_QFdo_concurrent_reduceEl_private_i32.omp %[[SHARED_L]] -> %[[VAL_9:.*]] : !fir.ref<i32>) reduction(@add_reduction_i32.omp %[[SHARED_S]] -> %[[VAL_10:.*]] : !fir.ref<i32>) {
+// CHECK:               omp.loop_nest (%[[VAL_11:.*]]) : index = (%[[C1]]) to (%[[C1]]) inclusive step (%[[C1]]) {
 // CHECK:                 %[[VAL_12:.*]] = fir.convert %[[VAL_11]] : (index) -> i32
 // CHECK:                 fir.store %[[VAL_12]] to %[[VAL_8]]#0 : !fir.ref<i32>
 // CHECK:                 %[[VAL_13:.*]]:2 = hlfir.declare %[[VAL_9]] {uniq_name = "_QFdo_concurrent_reduceEl"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)

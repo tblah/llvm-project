@@ -60,11 +60,11 @@ subroutine distribute_parallel_do_private()
   ! CHECK: %[[X:.*]]:2 = hlfir.declare %[[X_ALLOC]]
   integer(8) :: x
 
-  ! CHECK: omp.teams {
+  ! CHECK: omp.teams shared(%[[X]]#0 -> %[[X_SHARED:.*]], %[[INDEX]]#0 -> %[[INDEX_SHARED:.*]] : !fir.ref<i64>, !fir.ref<i32>) {
   !$omp teams
 
-  ! CHECK:      omp.parallel private(@{{.*}} %[[X]]#0 -> %[[X_ARG:[^,]+]],
-  ! CHECK-SAME:                      @{{.*}} %[[INDEX]]#0 -> %[[INDEX_ARG:.*]] : !fir.ref<i64>, !fir.ref<i32>) {
+  ! CHECK:      omp.parallel private(@{{.*}} %[[X_SHARED]] -> %[[X_ARG:[^,]+]],
+  ! CHECK-SAME:                      @{{.*}} %[[INDEX_SHARED]] -> %[[INDEX_ARG:.*]] : !fir.ref<i64>, !fir.ref<i32>) {
   ! CHECK:      %[[X_PRIV:.*]]:2 = hlfir.declare %[[X_ARG]]
   ! CHECK:      %[[INDEX_PRIV:.*]]:2 = hlfir.declare %[[INDEX_ARG]]
   ! CHECK:      omp.distribute {

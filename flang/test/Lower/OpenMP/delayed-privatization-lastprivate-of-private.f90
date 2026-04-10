@@ -9,7 +9,7 @@ subroutine lastprivate_of_private(a)
   integer i
   ! CHECK: omp.parallel private({{.*}}) {
   !$omp parallel private(a)
-    ! CHECK: omp.parallel {
+    ! CHECK: omp.parallel shared({{.*}} -> {{.*}}, {{.*}} -> {{.*}} : !fir.ref<!fir.box<!fir.array<100xf32>>>, !fir.ref<i32>) {
     !$omp parallel shared(a)
     ! CHECK: omp.wsloop private({{.*}}) {
     !$omp do lastprivate(a)

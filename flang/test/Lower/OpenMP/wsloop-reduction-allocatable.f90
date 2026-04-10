@@ -76,11 +76,11 @@ end program
 ! CHECK:           fir.store %[[VAL_7]] to %[[VAL_5]]#0 : !fir.ref<!fir.box<!fir.heap<i32>>>
 ! CHECK:           %[[VAL_8:.*]] = arith.constant 0 : i32
 ! CHECK:           hlfir.assign %[[VAL_8]] to %[[VAL_5]]#0 realloc : i32, !fir.ref<!fir.box<!fir.heap<i32>>>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_I:.*]], %[[VAL_5]]#0 -> %[[SHARED_R:.*]] : !fir.ref<i32>, !fir.ref<!fir.box<!fir.heap<i32>>>) {
 ! CHECK:             %[[VAL_11:.*]] = arith.constant 0 : i32
 ! CHECK:             %[[VAL_12:.*]] = arith.constant 10 : i32
 ! CHECK:             %[[VAL_13:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_9:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_heap_i32 %[[VAL_5]]#0 -> %[[VAL_14:.*]] : !fir.ref<!fir.box<!fir.heap<i32>>>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I]] -> %[[VAL_9:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_heap_i32 %[[SHARED_R]] -> %[[VAL_14:.*]] : !fir.ref<!fir.box<!fir.heap<i32>>>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_15:.*]]) : i32 = (%[[VAL_11]]) to (%[[VAL_12]]) inclusive step (%[[VAL_13]]) {
 ! CHECK:                 %[[VAL_10:.*]]:2 = hlfir.declare %[[VAL_9]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_16:.*]]:2 = hlfir.declare %[[VAL_14]] {fortran_attrs = {{.*}}<allocatable>, uniq_name = "_QFEr"} : (!fir.ref<!fir.box<!fir.heap<i32>>>) -> (!fir.ref<!fir.box<!fir.heap<i32>>>, !fir.ref<!fir.box<!fir.heap<i32>>>)
@@ -92,4 +92,3 @@ end program
 ! CHECK:             }
 ! CHECK:             omp.terminator
 ! CHECK:           }
-

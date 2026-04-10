@@ -24,7 +24,7 @@ end
 
 ! CHECK-LABEL: func.func @_QPtest_stop_in_region2() {
 ! CHECK:         %{{.*}} = fir.alloca i32 {bindc_name = "x", uniq_name = "_QFtest_stop_in_region2Ex"}
-! CHECK:         omp.parallel   {
+! CHECK:         omp.parallel shared(%{{.*}}#0 -> %{{.*}} : !fir.ref<i32>) {
 ! CHECK:           %[[VAL_1:.*]] = arith.constant 1 : i32
 ! CHECK:           %[[VAL_2:.*]] = arith.constant false
 ! CHECK:           %[[VAL_3:.*]] = arith.constant false
@@ -45,15 +45,15 @@ end
 ! CHECK-LABEL: func.func @_QPtest_stop_in_region3() {
 ! CHECK:         %[[VAL_0:.*]] = fir.alloca i32 {bindc_name = "x", uniq_name = "_QFtest_stop_in_region3Ex"}
 ! CHECK:         %[[VAL_0_DECL:.*]]:2 = hlfir.declare %[[VAL_0]] {uniq_name = "_QFtest_stop_in_region3Ex"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-! CHECK:         omp.parallel   {
+! CHECK:         omp.parallel shared(%[[VAL_0_DECL]]#0 -> %[[SHARED_X:.*]] : !fir.ref<i32>) {
 ! CHECK:           %[[VAL_1:.*]] = arith.constant 3 : i32
-! CHECK:           hlfir.assign %[[VAL_1]] to %[[VAL_0_DECL]]#0 : i32, !fir.ref<i32>
-! CHECK:           %[[VAL_2:.*]] = fir.load %[[VAL_0_DECL]]#0 : !fir.ref<i32>
+! CHECK:           hlfir.assign %[[VAL_1]] to %[[SHARED_X]] : i32, !fir.ref<i32>
+! CHECK:           %[[VAL_2:.*]] = fir.load %[[SHARED_X]] : !fir.ref<i32>
 ! CHECK:           %[[VAL_3:.*]] = arith.constant 1 : i32
 ! CHECK:           %[[VAL_4:.*]] = arith.cmpi sgt, %[[VAL_2]], %[[VAL_3]] : i32
 ! CHECK:           cf.cond_br %[[VAL_4]], ^bb1, ^bb2
 ! CHECK:         ^bb1:
-! CHECK:           %[[VAL_5:.*]] = fir.load %[[VAL_0_DECL]]#0 : !fir.ref<i32>
+! CHECK:           %[[VAL_5:.*]] = fir.load %[[SHARED_X]] : !fir.ref<i32>
 ! CHECK:           %[[VAL_6:.*]] = arith.constant false
 ! CHECK:           %[[VAL_7:.*]] = arith.constant false
 ! CHECK:           fir.call @_FortranAStopStatement(%[[VAL_5]], %[[VAL_6]], %[[VAL_7]]) {{.*}} : (i32, i1, i1) -> ()
@@ -138,7 +138,7 @@ subroutine test_stop_in_region5()
 end
 
 !CHECK-LABEL: func.func @_QPtest_stop_in_region6
-!CHECK:  omp.parallel   {
+!CHECK:  omp.parallel shared(%{{.*}}#0 -> %{{.*}} : !fir.ref<i32>) {
 !CHECK:    cf.cond_br %{{.*}}, ^[[BB1:.*]], ^[[BB2:.*]]
 !CHECK:  ^[[BB1]]:
 !CHECK:    {{.*}}fir.call @_FortranAStopStatement({{.*}}, {{.*}}, {{.*}}) fastmath<contract> : (i32, i1, i1) -> ()

@@ -41,18 +41,19 @@ contains
     print *, x, y, z, t%t_i
 
     !$omp parallel
-!CHECK-DAG:  %[[T_PVT:.*]] = omp.threadprivate %[[T_DECL]]#0 : !fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>> -> !fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>
-!CHECK-DAG:  %[[T_PVT_DECL:.*]]:2 = hlfir.declare %[[T_PVT]] {uniq_name = "_QMtestEt"} : (!fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>) -> (!fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>, !fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>)
-!CHECK-DAG:  %[[X_PVT:.*]] = omp.threadprivate %[[X_DECL]]#0 : !fir.ref<f32> -> !fir.ref<f32>
-!CHECK-DAG:  %[[X_PVT_DECL:.*]]:2 = hlfir.declare %[[X_PVT]] {uniq_name = "_QMtestEx"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
-!CHECK-DAG:  %[[Y_PVT:.*]] = omp.threadprivate %[[Y_DECL]]#0 : !fir.ref<complex<f32>> -> !fir.ref<complex<f32>>
-!CHECK-DAG:  %[[Y_PVT_DECL:.*]]:2 = hlfir.declare %[[Y_PVT]] {uniq_name = "_QMtestEy"} : (!fir.ref<complex<f32>>) -> (!fir.ref<complex<f32>>, !fir.ref<complex<f32>>)
-!CHECK-DAG:  %[[Z_PVT:.*]] = omp.threadprivate %[[Z_DECL]]#0 : !fir.ref<!fir.logical<4>> -> !fir.ref<!fir.logical<4>>
-!CHECK-DAG:  %[[Z_PVT_DECL:.*]]:2 = hlfir.declare %[[Z_PVT]] {uniq_name = "_QMtestEz"} : (!fir.ref<!fir.logical<4>>) -> (!fir.ref<!fir.logical<4>>, !fir.ref<!fir.logical<4>>)
-!CHECK-DAG:  %{{.*}} = fir.load %[[X_PVT_DECL]]#0 : !fir.ref<f32>
-!CHECK-DAG:  %{{.*}} = fir.load %[[Y_PVT_DECL]]#0 : !fir.ref<complex<f32>>
-!CHECK-DAG:  %{{.*}} = fir.load %[[Z_PVT_DECL]]#0 : !fir.ref<!fir.logical<4>>
-!CHECK-DAG:  %{{.*}} = hlfir.designate %[[T_PVT_DECL]]#0{"t_i"}   : (!fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>) -> !fir.ref<i32>
+!CHECK:      omp.parallel shared(%[[X_DECL]]#0 -> %[[X_SHARED:.*]], %[[Y_DECL]]#0 -> %[[Y_SHARED:.*]], %[[Z_DECL]]#0 -> %[[Z_SHARED:.*]], %[[T_DECL]]#0 -> %[[T_SHARED:.*]] : !fir.ref<f32>, !fir.ref<complex<f32>>, !fir.ref<!fir.logical<4>>, !fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>) {
+!CHECK:      %[[X_PVT:.*]] = omp.threadprivate %[[X_SHARED]] : !fir.ref<f32> -> !fir.ref<f32>
+!CHECK:      %[[X_PVT_DECL:.*]]:2 = hlfir.declare %[[X_PVT]] {uniq_name = "_QMtestEx"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
+!CHECK:      %[[Y_PVT:.*]] = omp.threadprivate %[[Y_SHARED]] : !fir.ref<complex<f32>> -> !fir.ref<complex<f32>>
+!CHECK:      %[[Y_PVT_DECL:.*]]:2 = hlfir.declare %[[Y_PVT]] {uniq_name = "_QMtestEy"} : (!fir.ref<complex<f32>>) -> (!fir.ref<complex<f32>>, !fir.ref<complex<f32>>)
+!CHECK:      %[[Z_PVT:.*]] = omp.threadprivate %[[Z_SHARED]] : !fir.ref<!fir.logical<4>> -> !fir.ref<!fir.logical<4>>
+!CHECK:      %[[Z_PVT_DECL:.*]]:2 = hlfir.declare %[[Z_PVT]] {uniq_name = "_QMtestEz"} : (!fir.ref<!fir.logical<4>>) -> (!fir.ref<!fir.logical<4>>, !fir.ref<!fir.logical<4>>)
+!CHECK:      %[[T_PVT:.*]] = omp.threadprivate %[[T_SHARED]] : !fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>> -> !fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>
+!CHECK:      %[[T_PVT_DECL:.*]]:2 = hlfir.declare %[[T_PVT]] {uniq_name = "_QMtestEt"} : (!fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>) -> (!fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>, !fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>)
+!CHECK:      %{{.*}} = fir.load %[[X_PVT_DECL]]#0 : !fir.ref<f32>
+!CHECK:      %{{.*}} = fir.load %[[Y_PVT_DECL]]#0 : !fir.ref<complex<f32>>
+!CHECK:      %{{.*}} = fir.load %[[Z_PVT_DECL]]#0 : !fir.ref<!fir.logical<4>>
+!CHECK:      %{{.*}} = hlfir.designate %[[T_PVT_DECL]]#0{"t_i"}   : (!fir.ref<!fir.type<_QMtestTmy_type{t_i:i32,t_arr:!fir.array<5xf32>}>>) -> !fir.ref<i32>
 print *, x, y, z, t%t_i
     !$omp end parallel
 !CHECK-DAG:  %{{.*}} = fir.load %[[OMP_X_DECL]]#0 : !fir.ref<f32>

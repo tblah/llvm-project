@@ -6,11 +6,12 @@
 !CHECK-LABEL: func @_QPsimple_loop()
 subroutine simple_loop
   integer :: i
+  ! CHECK:  omp.parallel
+  ! CHECK-SAME: shared(%[[IV_IN:.*]] -> %[[SHARED_IV:.*]] : !fir.ref<i32>)
   ! CHECK-DAG:     %[[WS_ST:.*]] = arith.constant 1 : i32
   ! CHECK-DAG:     %[[WS_END:.*]] = arith.constant 9 : i32
-  ! CHECK:  omp.parallel
   !$OMP PARALLEL
-  ! CHECK:         omp.wsloop private(@{{.*}} %{{.*}} -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
+  ! CHECK:         omp.wsloop private(@{{.*}} %[[SHARED_IV]] -> %[[ALLOCA_IV:.*]] : !fir.ref<i32>) {
   ! CHECK-NEXT:      omp.loop_nest (%[[I:.*]]) : i32 = (%[[WS_ST]]) to (%[[WS_END]]) inclusive step (%[[WS_ST]]) {
   !$OMP DO
   do i=1, 9

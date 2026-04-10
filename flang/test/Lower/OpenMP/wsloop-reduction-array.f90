@@ -71,14 +71,14 @@ end program
 ! CHECK:           %[[VAL_3:.*]] = arith.constant 2 : index
 ! CHECK:           %[[VAL_4:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
 ! CHECK:           %[[VAL_5:.*]]:2 = hlfir.declare %[[VAL_2]](%[[VAL_4]]) {uniq_name = "_QFEr"} : (!fir.ref<!fir.array<2xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<2xi32>>, !fir.ref<!fir.array<2xi32>>)
-! CHECK:           omp.parallel {
-! CHECK:             %[[VAL_6:.*]] = fir.embox %[[VAL_5]]#0(%[[VAL_4]]) : (!fir.ref<!fir.array<2xi32>>, !fir.shape<1>) -> !fir.box<!fir.array<2xi32>>
+! CHECK:           omp.parallel shared(%[[VAL_5]]#0 -> %[[SHARED_R:.*]], %[[VAL_1]]#0 -> %[[SHARED_I:.*]] : !fir.ref<!fir.array<2xi32>>, !fir.ref<i32>) {
+! CHECK:             %[[VAL_6:.*]] = fir.embox %[[SHARED_R]](%[[PAR_SHAPE:.*]]) : (!fir.ref<!fir.array<2xi32>>, !fir.shape<1>) -> !fir.box<!fir.array<2xi32>>
 ! CHECK:             %[[VAL_7:.*]] = fir.alloca !fir.box<!fir.array<2xi32>>
 ! CHECK:             fir.store %[[VAL_6]] to %[[VAL_7]] : !fir.ref<!fir.box<!fir.array<2xi32>>>
 ! CHECK:             %[[VAL_10:.*]] = arith.constant 0 : i32
 ! CHECK:             %[[VAL_11:.*]] = arith.constant 10 : i32
 ! CHECK:             %[[VAL_12:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_8:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_2xi32 %[[VAL_7]] -> %[[VAL_13:.*]] : !fir.ref<!fir.box<!fir.array<2xi32>>>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I]] -> %[[VAL_8:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_2xi32 %[[VAL_7]] -> %[[VAL_13:.*]] : !fir.ref<!fir.box<!fir.array<2xi32>>>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_14:.*]]) : i32 = (%[[VAL_10]]) to (%[[VAL_11]]) inclusive step (%[[VAL_12]]) {
 ! CHECK:                 %[[VAL_9:.*]]:2 = hlfir.declare %[[VAL_8]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_15:.*]]:2 = hlfir.declare %[[VAL_13]] {uniq_name = "_QFEr"} : (!fir.ref<!fir.box<!fir.array<2xi32>>>) -> (!fir.ref<!fir.box<!fir.array<2xi32>>>, !fir.ref<!fir.box<!fir.array<2xi32>>>)

@@ -71,13 +71,13 @@ end subroutine
 !CHECK-LABEL: func private @_QFPtest_lastprivate
 !CHECK:       %[[PF:.*]]:2 = hlfir.declare %{{.*}} {{{.*}}uniq_name = "_QFFtest_lastprivateEpf"}
 !CHECK:       %[[PS:.*]]:2 = hlfir.declare %{{.*}} {{{.*}}uniq_name = "_QFFtest_lastprivateEps"}
-!CHECK:       omp.parallel
+!CHECK:       omp.parallel shared(%[[PF]]#0 -> %[[PAR_PF:.*]], %[[PS]]#0 -> %[[PAR_PS:.*]], %{{.*}}#0 -> %{{.*}} : !fir.ref<!fir.boxproc<(!fir.ref<i32>) -> i32>>, !fir.ref<!fir.boxproc<(!fir.ref<i32>) -> ()>>, !fir.ref<i32>) {
 !CHECK:         %[[PRIV_PF:.*]]:2 = hlfir.declare %{{.*}} {{{.*}}uniq_name = "_QFFtest_lastprivateEpf"}
 !CHECK:         %[[PRIV_PS:.*]]:2 = hlfir.declare %{{.*}} {{{.*}}uniq_name = "_QFFtest_lastprivateEps"}
 !CHECK:         %[[PF_VAL:.*]] = fir.load %[[PRIV_PF]]#0
-!CHECK:         fir.store %[[PF_VAL]] to %[[PF]]#0
+!CHECK:         fir.store %[[PF_VAL]] to %[[PAR_PF]]
 !CHECK:         %[[PS_VAL:.*]] = fir.load %[[PRIV_PS]]#0
-!CHECK:         fir.store %[[PS_VAL]] to %[[PS]]#0
+!CHECK:         fir.store %[[PS_VAL]] to %[[PAR_PS]]
 subroutine test_lastprivate
   procedure(f), pointer :: pf
   procedure(sub), pointer :: ps

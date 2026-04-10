@@ -6,7 +6,7 @@
 ! CHECK-LABEL: func @_QPparallel_master
 subroutine parallel_master(x)
   integer :: x
-  !CHECK: omp.parallel {
+  !CHECK: omp.parallel shared({{.*}}) {
   !CHECK: omp.master {
   !$omp parallel master
   x = 1

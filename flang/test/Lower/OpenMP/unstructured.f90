@@ -69,7 +69,7 @@ end
 ! CHECK:     cond_br %{{[0-9]*}}, ^bb2, ^bb4
 ! CHECK:   ^bb2:  // pred: ^bb1
 
-! CHECK:     omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[ALLOCA_2:.*]] : !fir.ref<i32>) {
+! CHECK:     omp.wsloop private(@_QFss3Ek_private_i32 %[[K_INNER_SHARED:.*]] -> %[[ALLOCA_2:.*]] : !fir.ref<i32>) {
 ! CHECK:       omp.loop_nest (%[[ARG1:.*]]) : {{.*}} {
 ! CHECK:         %[[OMP_LOOP_K_DECL:.*]]:2 = hlfir.declare %[[ALLOCA_2]] {uniq_name = "_QFss3Ek"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:         hlfir.assign %[[ARG1]] to %[[OMP_LOOP_K_DECL]]#0 : i32, !fir.ref<i32>
@@ -80,7 +80,7 @@ end
 ! CHECK:       }
 ! CHECK:     }
 
-! CHECK:     omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[ALLOCA_1:.*]] : !fir.ref<i32>) {
+! CHECK:     omp.wsloop private(@_QFss3Ej_private_i32 %[[J_SHARED:.*]] -> %[[ALLOCA_1:.*]] : !fir.ref<i32>) {
 ! CHECK:       omp.loop_nest (%[[ARG2:.*]]) : {{.*}} {
 ! CHECK:         %[[OMP_LOOP_J_DECL:.*]]:2 = hlfir.declare %[[ALLOCA_1]] {uniq_name = "_QFss3Ej"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:         hlfir.assign %[[ARG2]] to %[[OMP_LOOP_J_DECL]]#0 : i32, !fir.ref<i32>
@@ -125,7 +125,7 @@ end
 
 ! CHECK-LABEL: func @_QPss4{{.*}} {
 ! CHECK:       omp.parallel private(@{{.*}} %{{.*}}#0 -> %{{.*}} : {{.*}}) {
-! CHECK:         omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[ALLOCA:.*]] : !fir.ref<i32>) {
+! CHECK:         omp.wsloop private(@_QFss4Ej_private_i32 %[[J_SHARED:.*]] -> %[[ALLOCA:.*]] : !fir.ref<i32>) {
 ! CHECK-NEXT:      omp.loop_nest (%[[ARG:.*]]) : {{.*}} {
 ! CHECK:             %[[OMP_LOOP_J_DECL:.*]]:2 = hlfir.declare %[[ALLOCA]] {uniq_name = "_QFss4Ej"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:             hlfir.assign %[[ARG]] to %[[OMP_LOOP_J_DECL]]#0 : i32, !fir.ref<i32>
@@ -243,7 +243,7 @@ end
 ! CHECK: ^[[BB1_OUTER]]:
 ! CHECK:   cond_br %{{.*}}, ^[[BB2_OUTER:.*]], ^[[BB3_OUTER:.*]]
 ! CHECK-NEXT: ^[[BB2_OUTER:.*]]:
-! CHECK:   omp.parallel  {
+! CHECK:   omp.parallel shared(%{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}} : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:     omp.wsloop private({{.*}}) {
 ! CHECK:       omp.loop_nest {{.*}} {
 ! CHECK:         br ^[[BB1:.*]]
@@ -283,7 +283,7 @@ subroutine ss7() ! EXIT inside OpenMP parallel do (inside do loop)
 end
 
 ! CHECK-LABEL: func @_QPss8() {
-! CHECK:  omp.parallel  {
+! CHECK:  omp.parallel shared(%{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}} : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:    omp.wsloop private({{.*}}) {
 ! CHECK:      omp.loop_nest {{.*}} {
 ! CHECK:        br ^[[BB1:.*]]
@@ -318,8 +318,8 @@ subroutine ss8() ! EXIT inside OpenMP parallel do
 end
 
 ! CHECK-LABEL: func @_QPss9() {
-! CHECK:    omp.parallel  {
-! CHECK-NEXT: omp.parallel private(@{{.*}} %{{.*}}#0 -> %{{.*}}, @{{.*}} %{{.*}}#0 -> %{{.*}} : {{.*}}) {
+! CHECK:    omp.parallel shared(%{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}} : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
+! CHECK-NEXT: omp.parallel private(@{{.*}} %{{.*}} -> %{{.*}}, @{{.*}} %{{.*}} -> %{{.*}} : {{.*}}) shared(%{{.*}} -> %{{.*}} : !fir.ref<i32>) {
 ! CHECK:      br ^[[BB1:.*]]
 ! CHECK:         ^[[BB1]]:
 ! CHECK:      cond_br %{{.*}}, ^[[BB2:.*]], ^[[BB5:.*]]

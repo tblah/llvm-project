@@ -16,15 +16,15 @@
 !CHECK: %[[Y_DECL:.*]]:2 = hlfir.declare %[[Y_BOX]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFreduction_ieorEy"} : (!fir.box<!fir.array<?xi32>>, !fir.dscope) -> (!fir.box<!fir.array<?xi32>>, !fir.box<!fir.array<?xi32>>)
 
 
-!CHECK: omp.parallel
-!CHECK: omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[I_REF:.*]] : !fir.ref<i32>) reduction(@[[IEOR_DECLARE_I]] %[[X_DECL]]#0 -> %[[PRV:.+]] : !fir.ref<i32>)
+!CHECK: omp.parallel shared(%[[Y_DECL]]#0 -> %[[SHARED_Y:.*]], %[[VAL_2:.*]]#0 -> %[[SHARED_I:.*]], %[[X_DECL]]#0 -> %[[SHARED_X:.*]] : !fir.box<!fir.array<?xi32>>, !fir.ref<i32>, !fir.ref<i32>)
+!CHECK: omp.wsloop private(@{{.*}} %[[SHARED_I]] -> %[[I_REF:.*]] : !fir.ref<i32>) reduction(@[[IEOR_DECLARE_I]] %[[SHARED_X]] -> %[[PRV:.+]] : !fir.ref<i32>)
 !CHECK-NEXT: omp.loop_nest
 !CHECK: %[[I_DECL:.*]]:2 = hlfir.declare %[[I_REF]] {uniq_name = "_QFreduction_ieorEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK: %[[PRV_DECL:.+]]:2 = hlfir.declare %[[PRV]] {{.*}} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK: hlfir.assign %{{.*}} to %[[I_DECL]]#0 : i32, !fir.ref<i32>
 !CHECK: %[[I_32:.*]] = fir.load %[[I_DECL]]#0 : !fir.ref<i32>
 !CHECK: %[[I_64:.*]] = fir.convert %[[I_32]] : (i32) -> i64
-!CHECK: %[[Y_I_REF:.*]] = hlfir.designate %[[Y_DECL]]#0 (%[[I_64]])  : (!fir.box<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
+!CHECK: %[[Y_I_REF:.*]] = hlfir.designate %[[SHARED_Y]] (%[[I_64]])  : (!fir.box<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
 !CHECK: %[[LPRV:.+]] = fir.load %[[PRV_DECL]]#0 : !fir.ref<i32>
 !CHECK: %[[Y_I:.*]] = fir.load %[[Y_I_REF]] : !fir.ref<i32>
 !CHECK: %[[RES:.+]] = arith.xori %[[LPRV]], %[[Y_I]] : i32

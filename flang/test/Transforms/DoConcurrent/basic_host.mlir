@@ -18,25 +18,23 @@ func.func @do_concurrent_basic() attributes {fir.bindc_name = "do_concurrent_bas
 
     // CHECK-NOT: fir.do_concurrent
 
-    // CHECK: %[[C1:.*]] = arith.constant 1 : i32
-    // CHECK: %[[LB:.*]] = fir.convert %[[C1]] : (i32) -> index
-    // CHECK: %[[C10:.*]] = arith.constant 10 : i32
-    // CHECK: %[[UB:.*]] = fir.convert %[[C10]] : (i32) -> index
-    // CHECK: %[[STEP:.*]] = arith.constant 1 : index
+    // CHECK: omp.parallel shared(%[[ARR]]#0 -> %[[SHARED_ARR:.*]] : !fir.ref<!fir.array<10xi32>>) {
 
-    // CHECK: omp.parallel {
-
+    // CHECK-NEXT: %[[STEP:.*]] = arith.constant 1 : index
+    // CHECK-NEXT: %[[C1_I32:.*]] = arith.constant 1 : i32
+    // CHECK-NEXT: %[[C10_I32:.*]] = arith.constant 10 : i32
+    // CHECK-NEXT: %[[UB:.*]] = fir.convert %[[C10_I32]] : (i32) -> index
+    // CHECK-NEXT: %[[LB:.*]] = fir.convert %[[C1_I32]] : (i32) -> index
     // CHECK-NEXT: %[[ITER_VAR:.*]] = fir.alloca i32 {bindc_name = "i"}
     // CHECK-NEXT: %[[BINDING:.*]]:2 = hlfir.declare %[[ITER_VAR]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-
-    // CHECK: omp.wsloop {
+    // CHECK-NEXT: omp.wsloop {
     // CHECK-NEXT: omp.loop_nest (%[[ARG0:.*]]) : index = (%[[LB]]) to (%[[UB]]) inclusive step (%[[STEP]]) {
     // CHECK-NEXT: %[[IV_IDX:.*]] = fir.convert %[[ARG0]] : (index) -> i32
     // CHECK-NEXT: fir.store %[[IV_IDX]] to %[[BINDING]]#1 : !fir.ref<i32>
     // CHECK-NEXT: %[[IV_VAL1:.*]] = fir.load %[[BINDING]]#0 : !fir.ref<i32>
     // CHECK-NEXT: %[[IV_VAL2:.*]] = fir.load %[[BINDING]]#0 : !fir.ref<i32>
     // CHECK-NEXT: %[[IV_VAL_I64:.*]] = fir.convert %[[IV_VAL2]] : (i32) -> i64
-    // CHECK-NEXT: %[[ARR_ACCESS:.*]] = hlfir.designate %[[ARR]]#0 (%[[IV_VAL_I64]])  : (!fir.ref<!fir.array<10xi32>>, i64) -> !fir.ref<i32>
+    // CHECK-NEXT: %[[ARR_ACCESS:.*]] = hlfir.designate %[[SHARED_ARR]] (%[[IV_VAL_I64]])  : (!fir.ref<!fir.array<10xi32>>, i64) -> !fir.ref<i32>
     // CHECK-NEXT: hlfir.assign %[[IV_VAL1]] to %[[ARR_ACCESS]] : i32, !fir.ref<i32>
     // CHECK-NEXT: omp.yield
     // CHECK-NEXT: }

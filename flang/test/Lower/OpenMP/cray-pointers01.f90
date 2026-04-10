@@ -19,10 +19,10 @@ contains
     ivar = loc(pointee)
 
     !$omp parallel default(none) shared(ivar)
-    ! CHECK: omp.parallel
-    ! CHECK: %[[I_01:.*]] = fir.convert %[[IVAR_DECL]]#0 : (!fir.ref<i64>) -> !fir.ref<!fir.ptr<i64>>
+    ! CHECK: omp.parallel shared(%[[IVAR_DECL]]#0 -> %[[SHARED_IVAR:.*]], %[[VAR_DECL]]#0 -> %[[SHARED_VAR:.*]] : !fir.ref<i64>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?xf64>>>>) {
+    ! CHECK: %[[I_01:.*]] = fir.convert %[[SHARED_IVAR]] : (!fir.ref<i64>) -> !fir.ref<!fir.ptr<i64>>
     ! CHECK: %[[I_02:.*]] = fir.load %[[I_01]] : !fir.ref<!fir.ptr<i64>>
-    ! CHECK: %[[I_03:.*]] = fir.convert %[[VAR_DECL]]#0 : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xf64>>>>) -> !fir.ref<!fir.box<none>>
+    ! CHECK: %[[I_03:.*]] = fir.convert %[[SHARED_VAR]] : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xf64>>>>) -> !fir.ref<!fir.box<none>>
     ! CHECK: %[[I_04:.*]] = fir.convert %[[I_02]] : (!fir.ptr<i64>) -> !fir.llvm_ptr<i8>
     ! CHECK: fir.call @_FortranAPointerAssociateScalar(%[[I_03]], %[[I_04]]) fastmath<contract> : (!fir.ref<!fir.box<none>>, !fir.llvm_ptr<i8>) -> ()
     print *, var(1)
@@ -42,16 +42,19 @@ program test_cray_pointers_01
   pointee(1) = 42.0
 
   !$omp parallel default(none) private(ivar) shared(pointee)
-    ! CHECK: omp.parallel private({{.*}} %[[IVAR_DECL_01]]#0 -> %[[ARG0:.*]] : !fir.ref<i64>) {
+    ! CHECK: omp.parallel private({{.*}} %[[IVAR_DECL_01]]#0 -> %[[ARG0:.*]] : !fir.ref<i64>) shared(%{{.*}} -> %[[SHARED_POINTEE:.*]], %[[VAR_DECL_02]]#0 -> %[[SHARED_VAR2:.*]] : !fir.ref<!fir.array<2xf64>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?xf64>>>>) {
     ! CHECK:   %[[IVAR_DECL_02:.*]]:2 = hlfir.declare %[[ARG0]] {fortran_attrs = #fir.var_attrs<cray_pointer>, uniq_name = "_QFEivar"} : (!fir.ref<i64>) -> (!fir.ref<i64>, !fir.ref<i64>)
     ! CHECK:   hlfir.assign %{{.*}} to %[[IVAR_DECL_02]]#0 : i64, !fir.ref<i64>
     ivar = loc(pointee)
-    ! CHECK:   fir.call @_FortranAPointerAssociateScalar({{.*}}) fastmath<contract> : (!fir.ref<!fir.box<none>>, !fir.llvm_ptr<i8>) -> ()
+    ! CHECK:   %[[ASSOC1_BOX:.*]] = fir.convert %[[SHARED_VAR2]] : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xf64>>>>) -> !fir.ref<!fir.box<none>>
+    ! CHECK:   fir.call @_FortranAPointerAssociateScalar(%[[ASSOC1_BOX]], %{{.*}}) fastmath<contract> : (!fir.ref<!fir.box<none>>, !fir.llvm_ptr<i8>) -> ()
     ! CHECK:   %[[CONST_2:.*]] = arith.constant 2 : i32
     ! CHECK:   {{.*}} = math.fpowi {{.*}}, %[[CONST_2]] fastmath<contract> : f64, i32
-    ! CHECK:   fir.call @_FortranAPointerAssociateScalar({{.*}}) fastmath<contract> : (!fir.ref<!fir.box<none>>, !fir.llvm_ptr<i8>) -> ()
+    ! CHECK:   %[[ASSOC2_BOX:.*]] = fir.convert %[[SHARED_VAR2]] : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xf64>>>>) -> !fir.ref<!fir.box<none>>
+    ! CHECK:   fir.call @_FortranAPointerAssociateScalar(%[[ASSOC2_BOX]], %{{.*}}) fastmath<contract> : (!fir.ref<!fir.box<none>>, !fir.llvm_ptr<i8>) -> ()
     var(1) = var(1) ** 2
-    ! CHECK:   fir.call @_FortranAPointerAssociateScalar({{.*}}) fastmath<contract> : (!fir.ref<!fir.box<none>>, !fir.llvm_ptr<i8>) -> ()
+    ! CHECK:   %[[ASSOC3_BOX:.*]] = fir.convert %[[SHARED_VAR2]] : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xf64>>>>) -> !fir.ref<!fir.box<none>>
+    ! CHECK:   fir.call @_FortranAPointerAssociateScalar(%[[ASSOC3_BOX]], %{{.*}}) fastmath<contract> : (!fir.ref<!fir.box<none>>, !fir.llvm_ptr<i8>) -> ()
     print *, var(1)
     ! CHECK:   omp.terminator
     ! CHECK: }

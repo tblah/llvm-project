@@ -84,11 +84,11 @@
 ! CHECK:           %[[VAL_3:.*]]:2 = hlfir.declare %[[VAL_2]] {uniq_name = "_QFsimple_int_reductionEx"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:           %[[VAL_4:.*]] = arith.constant 0 : i32
 ! CHECK:           hlfir.assign %[[VAL_4]] to %[[VAL_3]]#0 : i32, !fir.ref<i32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_I_1:.*]], %[[VAL_3]]#0 -> %[[SHARED_X_1:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:             %[[VAL_7:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_8:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_i32 %[[VAL_3]]#0 -> %[[VAL_10:.*]] : !fir.ref<i32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_1]] -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_i32 %[[SHARED_X_1]] -> %[[VAL_10:.*]] : !fir.ref<i32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_11:.*]]) : i32 = (%[[VAL_7]]) to (%[[VAL_8]]) inclusive step (%[[VAL_9]]) {
 ! CHECK:                 %[[VAL_6:.*]]:2 = hlfir.declare %[[VAL_5]] {uniq_name = "_QFsimple_int_reductionEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_12:.*]]:2 = hlfir.declare %[[VAL_10]] {uniq_name = "_QFsimple_int_reductionEx"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
@@ -125,11 +125,11 @@ end subroutine
 ! CHECK:           %[[VAL_3:.*]]:2 = hlfir.declare %[[VAL_2]] {uniq_name = "_QFsimple_real_reductionEx"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
 ! CHECK:           %[[VAL_4:.*]] = arith.constant 0.000000e+00 : f32
 ! CHECK:           hlfir.assign %[[VAL_4]] to %[[VAL_3]]#0 : f32, !fir.ref<f32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_I_2:.*]], %[[VAL_3]]#0 -> %[[SHARED_X_2:.*]] : !fir.ref<i32>, !fir.ref<f32>) {
 ! CHECK:             %[[VAL_7:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_8:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_f32 %[[VAL_3]]#0 -> %[[VAL_10:.*]] : !fir.ref<f32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_2]] -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_f32 %[[SHARED_X_2]] -> %[[VAL_10:.*]] : !fir.ref<f32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_11:.*]]) : i32 = (%[[VAL_7]]) to (%[[VAL_8]]) inclusive step (%[[VAL_9]]) {
 ! CHECK:                 %[[VAL_6:.*]]:2 = hlfir.declare %[[VAL_5]] {uniq_name = "_QFsimple_real_reductionEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_12:.*]]:2 = hlfir.declare %[[VAL_10]] {uniq_name = "_QFsimple_real_reductionEx"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
@@ -167,11 +167,11 @@ end subroutine
 ! CHECK:           %[[VAL_3:.*]]:2 = hlfir.declare %[[VAL_2]] {uniq_name = "_QFsimple_int_reduction_switch_orderEx"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:           %[[VAL_4:.*]] = arith.constant 0 : i32
 ! CHECK:           hlfir.assign %[[VAL_4]] to %[[VAL_3]]#0 : i32, !fir.ref<i32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_I_3:.*]], %[[VAL_3]]#0 -> %[[SHARED_X_3:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:             %[[VAL_7:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_8:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_i32 %[[VAL_3]]#0 -> %[[VAL_10:.*]] : !fir.ref<i32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_3]] -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_i32 %[[SHARED_X_3]] -> %[[VAL_10:.*]] : !fir.ref<i32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_11:.*]]) : i32 = (%[[VAL_7]]) to (%[[VAL_8]]) inclusive step (%[[VAL_9]]) {
 ! CHECK:                 %[[VAL_6:.*]]:2 = hlfir.declare %[[VAL_5]] {uniq_name = "_QFsimple_int_reduction_switch_orderEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_12:.*]]:2 = hlfir.declare %[[VAL_10]] {uniq_name = "_QFsimple_int_reduction_switch_orderEx"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
@@ -207,11 +207,11 @@ end subroutine
 ! CHECK:           %[[VAL_3:.*]]:2 = hlfir.declare %[[VAL_2]] {uniq_name = "_QFsimple_real_reduction_switch_orderEx"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
 ! CHECK:           %[[VAL_4:.*]] = arith.constant 0.000000e+00 : f32
 ! CHECK:           hlfir.assign %[[VAL_4]] to %[[VAL_3]]#0 : f32, !fir.ref<f32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_I_4:.*]], %[[VAL_3]]#0 -> %[[SHARED_X_4:.*]] : !fir.ref<i32>, !fir.ref<f32>) {
 ! CHECK:             %[[VAL_7:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_8:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_f32 %[[VAL_3]]#0 -> %[[VAL_10:.*]] : !fir.ref<f32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_4]] -> %[[VAL_5:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_f32 %[[SHARED_X_4]] -> %[[VAL_10:.*]] : !fir.ref<f32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_11:.*]]) : i32 = (%[[VAL_7]]) to (%[[VAL_8]]) inclusive step (%[[VAL_9]]) {
 ! CHECK:                 %[[VAL_6:.*]]:2 = hlfir.declare %[[VAL_5]] {uniq_name = "_QFsimple_real_reduction_switch_orderEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_12:.*]]:2 = hlfir.declare %[[VAL_10]] {uniq_name = "_QFsimple_real_reduction_switch_orderEx"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
@@ -256,11 +256,11 @@ end subroutine
 ! CHECK:           hlfir.assign %[[VAL_9]] to %[[VAL_5]]#0 : i32, !fir.ref<i32>
 ! CHECK:           %[[VAL_10:.*]] = arith.constant 0 : i32
 ! CHECK:           hlfir.assign %[[VAL_10]] to %[[VAL_7]]#0 : i32, !fir.ref<i32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_I_5:.*]], %[[VAL_3]]#0 -> %[[SHARED_X_5:.*]], %[[VAL_5]]#0 -> %[[SHARED_Y_5:.*]], %[[VAL_7]]#0 -> %[[SHARED_Z_5:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:             %[[VAL_13:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_14:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_15:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_11:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_i32 %[[VAL_3]]#0 -> %[[VAL_16:.*]], byref @add_reduction_byref_i32 %[[VAL_5]]#0 -> %[[VAL_17:.*]], byref @add_reduction_byref_i32 %[[VAL_7]]#0 -> %[[VAL_18:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_5]] -> %[[VAL_11:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_i32 %[[SHARED_X_5]] -> %[[VAL_16:.*]], byref @add_reduction_byref_i32 %[[SHARED_Y_5]] -> %[[VAL_17:.*]], byref @add_reduction_byref_i32 %[[SHARED_Z_5]] -> %[[VAL_18:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_19:.*]]) : i32 = (%[[VAL_13]]) to (%[[VAL_14]]) inclusive step (%[[VAL_15]]) {
 ! CHECK:                 %[[VAL_12:.*]]:2 = hlfir.declare %[[VAL_11]] {uniq_name = "_QFmultiple_int_reductions_same_typeEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_20:.*]]:2 = hlfir.declare %[[VAL_16]] {uniq_name = "_QFmultiple_int_reductions_same_typeEx"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
@@ -318,11 +318,11 @@ end subroutine
 ! CHECK:           hlfir.assign %[[VAL_9]] to %[[VAL_5]]#0 : f32, !fir.ref<f32>
 ! CHECK:           %[[VAL_10:.*]] = arith.constant 0.000000e+00 : f32
 ! CHECK:           hlfir.assign %[[VAL_10]] to %[[VAL_7]]#0 : f32, !fir.ref<f32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_I_6:.*]], %[[VAL_3]]#0 -> %[[SHARED_X_6:.*]], %[[VAL_5]]#0 -> %[[SHARED_Y_6:.*]], %[[VAL_7]]#0 -> %[[SHARED_Z_6:.*]] : !fir.ref<i32>, !fir.ref<f32>, !fir.ref<f32>, !fir.ref<f32>) {
 ! CHECK:             %[[VAL_13:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_14:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_15:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_11:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_f32 %[[VAL_3]]#0 -> %[[VAL_16:.*]], byref @add_reduction_byref_f32 %[[VAL_5]]#0 -> %[[VAL_17:.*]], byref @add_reduction_byref_f32 %[[VAL_7]]#0 -> %[[VAL_18:.*]] : !fir.ref<f32>, !fir.ref<f32>, !fir.ref<f32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_6]] -> %[[VAL_11:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_f32 %[[SHARED_X_6]] -> %[[VAL_16:.*]], byref @add_reduction_byref_f32 %[[SHARED_Y_6]] -> %[[VAL_17:.*]], byref @add_reduction_byref_f32 %[[SHARED_Z_6]] -> %[[VAL_18:.*]] : !fir.ref<f32>, !fir.ref<f32>, !fir.ref<f32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_19:.*]]) : i32 = (%[[VAL_13]]) to (%[[VAL_14]]) inclusive step (%[[VAL_15]]) {
 ! CHECK:                 %[[VAL_12:.*]]:2 = hlfir.declare %[[VAL_11]] {uniq_name = "_QFmultiple_real_reductions_same_typeEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_20:.*]]:2 = hlfir.declare %[[VAL_16]] {uniq_name = "_QFmultiple_real_reductions_same_typeEx"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
@@ -387,11 +387,11 @@ end subroutine
 ! CHECK:           hlfir.assign %[[VAL_12]] to %[[VAL_9]]#0 : f32, !fir.ref<f32>
 ! CHECK:           %[[VAL_13:.*]] = arith.constant 0.000000e+00 : f64
 ! CHECK:           hlfir.assign %[[VAL_13]] to %[[VAL_3]]#0 : f64, !fir.ref<f64>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_1]]#0 -> %[[SHARED_I_7:.*]], %[[VAL_5]]#0 -> %[[SHARED_X_7:.*]], %[[VAL_7]]#0 -> %[[SHARED_Y_7:.*]], %[[VAL_9]]#0 -> %[[SHARED_Z_7:.*]], %[[VAL_3]]#0 -> %[[SHARED_W_7:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i64>, !fir.ref<f32>, !fir.ref<f64>) {
 ! CHECK:             %[[VAL_16:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_17:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_18:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_14:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_i32 %[[VAL_5]]#0 -> %[[VAL_19:.*]], byref @add_reduction_byref_i64 %[[VAL_7]]#0 -> %[[VAL_20:.*]], byref @add_reduction_byref_f32 %[[VAL_9]]#0 -> %[[VAL_21:.*]], byref @add_reduction_byref_f64 %[[VAL_3]]#0 -> %[[VAL_22:.*]] : !fir.ref<i32>, !fir.ref<i64>, !fir.ref<f32>, !fir.ref<f64>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_7]] -> %[[VAL_14:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_i32 %[[SHARED_X_7]] -> %[[VAL_19:.*]], byref @add_reduction_byref_i64 %[[SHARED_Y_7]] -> %[[VAL_20:.*]], byref @add_reduction_byref_f32 %[[SHARED_Z_7]] -> %[[VAL_21:.*]], byref @add_reduction_byref_f64 %[[SHARED_W_7]] -> %[[VAL_22:.*]] : !fir.ref<i32>, !fir.ref<i64>, !fir.ref<f32>, !fir.ref<f64>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_23:.*]]) : i32 = (%[[VAL_16]]) to (%[[VAL_17]]) inclusive step (%[[VAL_18]]) {
 ! CHECK:                 %[[VAL_15:.*]]:2 = hlfir.declare %[[VAL_14]] {uniq_name = "_QFmultiple_reductions_different_typeEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_24:.*]]:2 = hlfir.declare %[[VAL_19]] {uniq_name = "_QFmultiple_reductions_different_typeEx"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)

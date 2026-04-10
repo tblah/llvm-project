@@ -9,21 +9,21 @@
 !CHECK: func @_QPomp_parallel_sections
 subroutine omp_parallel_sections(x, y)
   integer, intent(inout) :: x, y
-  !CHECK: omp.parallel {
+  !CHECK: omp.parallel shared(%[[X_DECL:.*]]#0 -> %[[X_SHARED:.*]], %[[Y_DECL:.*]]#0 -> %[[Y_SHARED:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
   !CHECK: omp.sections {
   !$omp parallel sections
     !CHECK: omp.section {
     !$omp section
-      !CHECK: fir.load
+      !CHECK: fir.load %[[X_SHARED]] : !fir.ref<i32>
       !CHECK: arith.addi
-      !CHECK: hlfir.assign
+      !CHECK: hlfir.assign {{.*}} to %[[X_SHARED]] : i32, !fir.ref<i32>
       x = x + 12
       !CHECK: omp.terminator
     !CHECK: omp.section {
     !$omp section
-      !CHECK: fir.load
+      !CHECK: fir.load %[[Y_SHARED]] : !fir.ref<i32>
       !CHECK: arith.subi
-      !CHECK: hlfir.assign
+      !CHECK: hlfir.assign {{.*}} to %[[Y_SHARED]] : i32, !fir.ref<i32>
       y = y - 5
       !CHECK: omp.terminator
   !CHECK: omp.terminator

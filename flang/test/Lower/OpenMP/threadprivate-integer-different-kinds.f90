@@ -46,24 +46,25 @@ program test
   print *, i, i1, i2, i4, i8, i16
 
   !$omp parallel
-!CHECK-DAG:  %[[I_PVT:.*]] = omp.threadprivate %[[I_DECL]]#0 : !fir.ref<i32> -> !fir.ref<i32>
-!CHECK-DAG:  %[[I_PVT_DECL:.*]]:2 = hlfir.declare %[[I_PVT]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-!CHECK-DAG:  %[[I1_PVT:.*]] = omp.threadprivate %[[I1_DECL]]#0 : !fir.ref<i8> -> !fir.ref<i8>
-!CHECK-DAG:  %[[I1_PVT_DECL:.*]]:2 = hlfir.declare %[[I1_PVT]] {uniq_name = "_QFEi1"} : (!fir.ref<i8>) -> (!fir.ref<i8>, !fir.ref<i8>)
-!CHECK-DAG:  %[[I2_PVT:.*]] = omp.threadprivate %[[I2_DECL]]#0 : !fir.ref<i16> -> !fir.ref<i16>
-!CHECK-DAG:  %[[I2_PVT_DECL:.*]]:2 = hlfir.declare %[[I2_PVT]] {uniq_name = "_QFEi2"} : (!fir.ref<i16>) -> (!fir.ref<i16>, !fir.ref<i16>)
-!CHECK-DAG:  %[[I4_PVT:.*]] = omp.threadprivate %[[I4_DECL]]#0 : !fir.ref<i32> -> !fir.ref<i32>
-!CHECK-DAG:  %[[I4_PVT_DECL:.*]]:2 = hlfir.declare %[[I4_PVT]] {uniq_name = "_QFEi4"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-!CHECK-DAG:  %[[I8_PVT:.*]] = omp.threadprivate %[[I8_DECL]]#0 : !fir.ref<i64> -> !fir.ref<i64>
-!CHECK-DAG:  %[[I8_PVT_DECL:.*]]:2 = hlfir.declare %[[I8_PVT]] {uniq_name = "_QFEi8"} : (!fir.ref<i64>) -> (!fir.ref<i64>, !fir.ref<i64>)
-!CHECK-DAG:  %[[I16_PVT:.*]] = omp.threadprivate %[[I16_DECL]]#0 : !fir.ref<i128> -> !fir.ref<i128>
-!CHECK-DAG:  %[[I16_PVT_DECL:.*]]:2 = hlfir.declare %[[I16_PVT]] {uniq_name = "_QFEi16"} : (!fir.ref<i128>) -> (!fir.ref<i128>, !fir.ref<i128>)
-!CHECK-DAG:  %{{.*}} = fir.load %[[I_PVT_DECL]]#0 : !fir.ref<i32>
-!CHECK-DAG:  %{{.*}} = fir.load %[[I1_PVT_DECL]]#0 : !fir.ref<i8>
-!CHECK-DAG:  %{{.*}} = fir.load %[[I16_PVT_DECL]]#0 : !fir.ref<i128>
-!CHECK-DAG:  %{{.*}} = fir.load %[[I2_PVT_DECL]]#0 : !fir.ref<i16>
-!CHECK-DAG:  %{{.*}} = fir.load %[[I4_PVT_DECL]]#0 : !fir.ref<i32>
-!CHECK-DAG:  %{{.*}} = fir.load %[[I8_PVT_DECL]]#0 : !fir.ref<i64>
+!CHECK:      omp.parallel shared(%[[I_DECL]]#0 -> %[[I_SHARED:.*]], %[[I1_DECL]]#0 -> %[[I1_SHARED:.*]], %[[I2_DECL]]#0 -> %[[I2_SHARED:.*]], %[[I4_DECL]]#0 -> %[[I4_SHARED:.*]], %[[I8_DECL]]#0 -> %[[I8_SHARED:.*]], %[[I16_DECL]]#0 -> %[[I16_SHARED:.*]] : !fir.ref<i32>, !fir.ref<i8>, !fir.ref<i16>, !fir.ref<i32>, !fir.ref<i64>, !fir.ref<i128>) {
+!CHECK:      %[[I_PVT:.*]] = omp.threadprivate %[[I_SHARED]] : !fir.ref<i32> -> !fir.ref<i32>
+!CHECK:      %[[I_PVT_DECL:.*]]:2 = hlfir.declare %[[I_PVT]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
+!CHECK:      %[[I1_PVT:.*]] = omp.threadprivate %[[I1_SHARED]] : !fir.ref<i8> -> !fir.ref<i8>
+!CHECK:      %[[I1_PVT_DECL:.*]]:2 = hlfir.declare %[[I1_PVT]] {uniq_name = "_QFEi1"} : (!fir.ref<i8>) -> (!fir.ref<i8>, !fir.ref<i8>)
+!CHECK:      %[[I2_PVT:.*]] = omp.threadprivate %[[I2_SHARED]] : !fir.ref<i16> -> !fir.ref<i16>
+!CHECK:      %[[I2_PVT_DECL:.*]]:2 = hlfir.declare %[[I2_PVT]] {uniq_name = "_QFEi2"} : (!fir.ref<i16>) -> (!fir.ref<i16>, !fir.ref<i16>)
+!CHECK:      %[[I4_PVT:.*]] = omp.threadprivate %[[I4_SHARED]] : !fir.ref<i32> -> !fir.ref<i32>
+!CHECK:      %[[I4_PVT_DECL:.*]]:2 = hlfir.declare %[[I4_PVT]] {uniq_name = "_QFEi4"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
+!CHECK:      %[[I8_PVT:.*]] = omp.threadprivate %[[I8_SHARED]] : !fir.ref<i64> -> !fir.ref<i64>
+!CHECK:      %[[I8_PVT_DECL:.*]]:2 = hlfir.declare %[[I8_PVT]] {uniq_name = "_QFEi8"} : (!fir.ref<i64>) -> (!fir.ref<i64>, !fir.ref<i64>)
+!CHECK:      %[[I16_PVT:.*]] = omp.threadprivate %[[I16_SHARED]] : !fir.ref<i128> -> !fir.ref<i128>
+!CHECK:      %[[I16_PVT_DECL:.*]]:2 = hlfir.declare %[[I16_PVT]] {uniq_name = "_QFEi16"} : (!fir.ref<i128>) -> (!fir.ref<i128>, !fir.ref<i128>)
+!CHECK:      %{{.*}} = fir.load %[[I_PVT_DECL]]#0 : !fir.ref<i32>
+!CHECK:      %{{.*}} = fir.load %[[I1_PVT_DECL]]#0 : !fir.ref<i8>
+!CHECK:      %{{.*}} = fir.load %[[I2_PVT_DECL]]#0 : !fir.ref<i16>
+!CHECK:      %{{.*}} = fir.load %[[I4_PVT_DECL]]#0 : !fir.ref<i32>
+!CHECK:      %{{.*}} = fir.load %[[I8_PVT_DECL]]#0 : !fir.ref<i64>
+!CHECK:      %{{.*}} = fir.load %[[I16_PVT_DECL]]#0 : !fir.ref<i128>
     print *, i, i1, i2, i4, i8, i16
   !$omp end parallel
 

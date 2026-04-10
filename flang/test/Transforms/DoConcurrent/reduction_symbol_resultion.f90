@@ -20,13 +20,13 @@ end subroutine test2
 ! CHECK-NOT:   omp.declare_reduction
 
 ! CHECK-LABEL: func.func @_QPtest1
-! CHECK:         omp.parallel {
+! CHECK:         omp.parallel shared(
 ! CHECK:           omp.wsloop reduction(@[[RED_SYM]] {{.*}} : !fir.ref<f32>) {
 ! CHECK:           }
 ! CHECK:         }
 
 ! CHECK-LABEL: func.func @_QPtest2
-! CHECK:         omp.parallel {
+! CHECK:         omp.parallel shared(
 ! CHECK:           omp.wsloop reduction(@[[RED_SYM]] {{.*}} : !fir.ref<f32>) {
 ! CHECK:           }
 ! CHECK:         }

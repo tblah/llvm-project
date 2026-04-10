@@ -32,7 +32,7 @@ subroutine distribute_dist_schedule(x)
   ! CHECK: %[[X_REF:.*]]:2 = hlfir.declare %[[X_ARG]]
   integer, intent(in) :: x
 
-  ! CHECK: omp.teams
+  ! CHECK: omp.teams shared(%{{.*}} -> %{{.*}}, %[[X_REF]]#0 -> %[[X_SHARED:.*]] : !fir.ref<i32>, !fir.ref<i32>)
   !$omp teams
 
   ! STATIC SCHEDULE, CONSTANT CHUNK SIZE
@@ -53,7 +53,7 @@ subroutine distribute_dist_schedule(x)
 
   ! STATIC SCHEDULE, VARIABLE CHUNK SIZE
 
-  ! CHECK: %[[X:.*]] = fir.load %[[X_REF]]#0
+  ! CHECK: %[[X:.*]] = fir.load %[[X_SHARED]] : !fir.ref<i32>
   ! CHECK: omp.distribute
   ! CHECK-SAME: dist_schedule_static
   ! CHECK-SAME: chunk_size(%[[X]] : i32)

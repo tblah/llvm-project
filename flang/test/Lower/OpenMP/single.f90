@@ -12,13 +12,13 @@
 subroutine omp_single(x)
   integer, intent(inout) :: x
   !CHECK: %[[X_DECL:.*]]:2 = hlfir.declare %[[X]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {fortran_attrs = #fir.var_attrs<intent_inout>, uniq_name = "_QFomp_singleEx"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
-  !CHECK: omp.parallel
+  !CHECK: omp.parallel shared(%[[X_DECL]]#0 -> %[[X_SHARED:.*]] : !fir.ref<i32>)
   !$omp parallel
   !CHECK: omp.single
   !$omp single
-    !CHECK: %[[xval:.*]] = fir.load %[[X_DECL]]#0 : !fir.ref<i32>
+    !CHECK: %[[xval:.*]] = fir.load %[[X_SHARED]] : !fir.ref<i32>
     !CHECK: %[[res:.*]] = arith.addi %[[xval]], %{{.*}} : i32
-    !CHECK: hlfir.assign %[[res]] to %[[X_DECL]]#0 : i32, !fir.ref<i32>
+    !CHECK: hlfir.assign %[[res]] to %[[X_SHARED]] : i32, !fir.ref<i32>
     x = x + 12
   !CHECK: omp.terminator
   !$omp end single
@@ -35,13 +35,13 @@ end subroutine omp_single
 subroutine omp_single_nowait(x)
   integer, intent(inout) :: x
   !CHECK:   %[[X_DECL:.*]]:2 = hlfir.declare %[[X]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {fortran_attrs = #fir.var_attrs<intent_inout>, uniq_name = "_QFomp_single_nowaitEx"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
-  !CHECK: omp.parallel
+  !CHECK: omp.parallel shared(%[[X_DECL]]#0 -> %[[X_SHARED:.*]] : !fir.ref<i32>)
   !$omp parallel
   !CHECK: omp.single nowait
   !$omp single
-    !CHECK: %[[xval:.*]] = fir.load %[[X_DECL]]#0 : !fir.ref<i32>
+    !CHECK: %[[xval:.*]] = fir.load %[[X_SHARED]] : !fir.ref<i32>
     !CHECK: %[[res:.*]] = arith.addi %[[xval]], %{{.*}} : i32
-    !CHECK: hlfir.assign %[[res]] to %[[X_DECL]]#0 : i32, !fir.ref<i32>
+    !CHECK: hlfir.assign %[[res]] to %[[X_SHARED]] : i32, !fir.ref<i32>
     x = x + 12
   !CHECK: omp.terminator
   !$omp end single nowait
@@ -57,9 +57,9 @@ end subroutine omp_single_nowait
 subroutine single_allocate()
   use omp_lib
   integer :: x
-  !CHECK: omp.parallel {
+  !CHECK: omp.parallel shared(%[[X_DECL:.*]]#0 -> %[[X_SHARED:.*]] : !fir.ref<i32>) {
   !$omp parallel
-  !CHECK: omp.single allocate(%{{.+}} : i64 -> %{{.+}} : !fir.ref<i32>) {
+  !CHECK: omp.single allocate(%{{.+}} : i64 -> %[[X_SHARED]] : !fir.ref<i32>) {
   !$omp single allocate(omp_high_bw_mem_alloc: x) private(x)
   !CHECK: arith.addi
   x = x + 12
@@ -105,13 +105,13 @@ end subroutine
 ! CHECK-SAME:                                      %[[Y:.*]]: !fir.ref<f64> {fir.bindc_name = "y"}) {
 ! CHECK:         %[[X_DECL:.*]]:2 = hlfir.declare %[[X]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFsingle_privatization2Ex"} : (!fir.ref<f32>, !fir.dscope) -> (!fir.ref<f32>, !fir.ref<f32>)
 ! CHECK:         %[[Y_DECL:.*]]:2 = hlfir.declare %[[Y]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFsingle_privatization2Ey"} : (!fir.ref<f64>, !fir.dscope) -> (!fir.ref<f64>, !fir.ref<f64>)
-! CHECK:         omp.parallel   {
+! CHECK:         omp.parallel shared(%[[Y_DECL]]#0 -> %[[Y_SHARED:.*]] : !fir.ref<f64>) {
 ! CHECK:           omp.single   {
 ! CHECK:             %[[X_PVT:.*]] = fir.alloca f32 {bindc_name = "x", pinned, uniq_name = "_QFsingle_privatization2Ex"}
 ! CHECK:             %[[X_PVT_DECL:.*]]:2 = hlfir.declare %[[X_PVT]] {uniq_name = "_QFsingle_privatization2Ex"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
 ! CHECK:             %[[Y_PVT:.*]] = fir.alloca f64 {bindc_name = "y", pinned, uniq_name = "_QFsingle_privatization2Ey"}
 ! CHECK:             %[[Y_PVT_DECL:.*]]:2 = hlfir.declare %[[Y_PVT]] {uniq_name = "_QFsingle_privatization2Ey"} : (!fir.ref<f64>) -> (!fir.ref<f64>, !fir.ref<f64>)
-! CHECK:             %[[Y_LOAD:.*]] = fir.load %[[Y_DECL]]#0 : !fir.ref<f64>
+! CHECK:             %[[Y_LOAD:.*]] = fir.load %[[Y_SHARED]] : !fir.ref<f64>
 ! CHECK:             hlfir.assign %[[Y_LOAD]] to %[[Y_PVT_DECL]]#0 : f64, !fir.ref<f64>
 ! CHECK:             fir.call @_QPbar(%[[X_PVT_DECL]]#0, %[[Y_PVT_DECL]]#0) fastmath<contract> : (!fir.ref<f32>, !fir.ref<f64>) -> ()
 ! CHECK:             omp.terminator

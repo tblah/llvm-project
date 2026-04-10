@@ -26,16 +26,16 @@ subroutine flush_parallel(a, b, c)
 !CHECK:    %[[C:.*]]:2 = hlfir.declare %[[ARG_C]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {fortran_attrs = #fir.var_attrs<intent_inout>, uniq_name = "_QFflush_parallelEc"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
 
 !$omp parallel
-!CHECK:    omp.parallel
-!CHECK:      omp.flush(%[[A]]#0, %[[B]]#0, %[[C]]#0 : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>)
+!CHECK:    omp.parallel shared(%[[A]]#0 -> %[[SHARED_A:.*]], %[[B]]#0 -> %[[SHARED_B:.*]], %[[C]]#0 -> %[[SHARED_C:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>)
+!CHECK:      omp.flush(%[[SHARED_A]], %[[SHARED_B]], %[[SHARED_C]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>)
 !CHECK:      omp.flush
 !$omp flush(a,b,c)
 !$omp flush
 
-!CHECK:      %[[A_VAL:.*]] = fir.load %[[A]]#0 : !fir.ref<i32>
-!CHECK:      %[[B_VAL:.*]] = fir.load %[[B]]#0 : !fir.ref<i32>
+!CHECK:      %[[A_VAL:.*]] = fir.load %[[SHARED_A]] : !fir.ref<i32>
+!CHECK:      %[[B_VAL:.*]] = fir.load %[[SHARED_B]] : !fir.ref<i32>
 !CHECK:      %[[C_VAL:.*]] = arith.addi %[[A_VAL]], %[[B_VAL]] : i32
-!CHECK:      hlfir.assign %[[C_VAL]] to %[[C]]#0 : i32, !fir.ref<i32>
+!CHECK:      hlfir.assign %[[C_VAL]] to %[[SHARED_C]] : i32, !fir.ref<i32>
     c = a + b
 
 !CHECK: omp.terminator

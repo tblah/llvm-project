@@ -5,10 +5,10 @@
 !CHECK-LABEL: sub_parallel
 subroutine sub_parallel()
   print *, x
-!CHECK: omp.parallel   {
+!CHECK: omp.parallel shared(%[[X_DECL:.*]]#0 -> %[[X_SHARED:.*]] : !fir.ref<f32>) {
   !$omp parallel
     print *, x
-!CHECK:   omp.terminator loc(#[[PAR_LOC:.*]])
+!CHECK:   omp.terminator loc(#[[PAR_LOC:[A-Za-z0-9_]+]])
 !CHECK: } loc(#[[PAR_LOC]])
   !$omp end parallel
   print *, x

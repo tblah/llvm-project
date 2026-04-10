@@ -25,14 +25,17 @@ end subroutine
 
 ! CHECK:     func.func @{{.*}}first_and_lastprivate({{.*}})
 ! CHECK:       %[[ORIG_I_DECL:.*]]:2 = hlfir.declare {{.*}} {uniq_name = "{{.*}}Ei"}
-! CHECK:       omp.parallel {
+! CHECK:       %[[ORIG_VAR_DECL:.*]]:2 = hlfir.declare {{.*}} {uniq_name = "{{.*}}Evar"}
+! CHECK:       omp.parallel shared(%[[ORIG_VAR_DECL]]#0 -> %[[SHARED_VAR:.*]], %[[ORIG_I_DECL]]#0 -> %[[SHARED_I:.*]] : [[BOX_TYPE]], !fir.ref<i32>) {
 ! CHECK-NOT:      omp.barrier
-! CHECK:          omp.wsloop private(@[[I_PRIVATIZER]] %[[ORIG_I_DECL]]#0 -> %[[I_ARG:.*]], @[[VAR_PRIVATIZER]] {{.*}}) {
+! CHECK:          %[[PRIV_VAR_BOX:.*]] = fir.alloca !fir.box<!fir.array<?xi32>>
+! CHECK:          fir.store %[[SHARED_VAR]] to %[[PRIV_VAR_BOX]] : !fir.ref<!fir.box<!fir.array<?xi32>>>
+! CHECK:          omp.wsloop private(@[[I_PRIVATIZER]] %[[SHARED_I]] -> %[[I_ARG:.*]], @[[VAR_PRIVATIZER]] %[[PRIV_VAR_BOX]] -> %[[VAR_ARG:.*]] : !fir.ref<i32>, !fir.ref<!fir.box<!fir.array<?xi32>>>) {
 ! CHECK:            omp.loop_nest {{.*}} {
 ! CHECK:              %[[PRIV_I_DECL:.*]]:2 = hlfir.declare %[[I_ARG]] {uniq_name = "{{.*}}Ei"}
 ! CHECK:              fir.if %{{.*}} {
 ! CHECK:                %[[PRIV_I_VAL:.*]] = fir.load %[[PRIV_I_DECL]]#0 : !fir.ref<i32>
-! CHECK:                hlfir.assign %[[PRIV_I_VAL]] to %[[ORIG_I_DECL]]#0
+! CHECK:                hlfir.assign %[[PRIV_I_VAL]] to %[[SHARED_I]]
 ! CHECK:              }
 ! CHECK:              omp.yield
 ! CHECK:            }

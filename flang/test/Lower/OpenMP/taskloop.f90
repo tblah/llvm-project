@@ -51,10 +51,10 @@
 ! CHECK:          %[[I_VAL:.*]]:2 = hlfir.declare %[[ALLOCA_I]] {uniq_name = "_QFomp_taskloopEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:          %[[ALLOCA_RES:.*]] = fir.alloca i32 {bindc_name = "res", uniq_name = "_QFomp_taskloopEres"}
 ! CHECK:          %[[RES_VAL:.*]]:2 = hlfir.declare %[[ALLOCA_RES]] {uniq_name = "_QFomp_taskloopEres"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
+! CHECK:          omp.taskloop.context private(@[[RES_FIRSTPRIVATE]] %[[RES_VAL]]#0 -> %[[PRIV_RES:.*]], @[[I_PRIVATE]] %[[I_VAL]]#0 -> %[[PRIV_I:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:          %[[C1_I32:.*]] = arith.constant 1 : i32
 ! CHECK:          %[[C10_I32:.*]] = arith.constant 10 : i32
 ! CHECK:          %[[C1_I32_0:.*]] = arith.constant 1 : i32
-! CHECK:          omp.taskloop.context private(@[[RES_FIRSTPRIVATE]] %[[RES_VAL]]#0 -> %[[PRIV_RES:.*]], @[[I_PRIVATE]] %[[I_VAL]]#0 -> %[[PRIV_I:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:            omp.taskloop.wrapper {
 ! CHECK:              omp.loop_nest (%[[ARG2:.*]]) : i32 = (%[[C1_I32]]) to (%[[C10_I32]]) inclusive step (%[[C1_I32_0]]) {
 ! CHECK:                %[[RES_DECL:.*]]:2 = hlfir.declare %[[PRIV_RES]] {uniq_name = "_QFomp_taskloopEres"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
@@ -241,7 +241,7 @@ end subroutine
 subroutine omp_taskloop_lastprivate()
    integer x
    x = 0
-   ! CHECK:  omp.taskloop.context private(@[[LAST_PRIVATE_X]] %[[DECL_X]]#0 -> %[[ARG0]], @[[LAST_PRIVATE_I]] %[[DECL_I]]#0 -> %[[ARG1]] : !fir.ref<i32>, !fir.ref<i32>) {
+   ! CHECK:  omp.taskloop.context private(@[[LAST_PRIVATE_X]] %[[DECL_X]]#0 -> %[[ARG0]], @[[LAST_PRIVATE_I]] %[[DECL_I]]#0 -> %[[ARG1]] : !fir.ref<i32>, !fir.ref<i32>) shared(%[[DECL_X]]#0 -> %[[SHARED_X:.*]] : !fir.ref<i32>) {
    ! CHECK:    omp.taskloop.wrapper {
    !$omp taskloop lastprivate(x)
    do i = 1, 100
@@ -253,7 +253,7 @@ subroutine omp_taskloop_lastprivate()
       ! CHECK:  %[[SELCT_RESULT:.*]] = arith.select %{{.*}}, %{{.*}}, %{{.*}} : i1
       ! CHECK:  fir.if %[[SELCT_RESULT]] {
       ! CHECK:    %[[LOADED_SUM:.*]] = fir.load %[[DECL_ARG0]]#0 : !fir.ref<i32>
-      ! CHECK:    hlfir.assign %[[LOADED_SUM]] to %[[DECL_X]]#0 : i32, !fir.ref<i32>
+      ! CHECK:    hlfir.assign %[[LOADED_SUM]] to %[[SHARED_X]] : i32, !fir.ref<i32>
       ! CHECK:  }
       ! CHECK:  omp.yield
    end do

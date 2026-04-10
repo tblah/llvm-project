@@ -68,13 +68,13 @@
 ! CHECK:           %[[VAL_12:.*]]:2 = hlfir.declare %[[VAL_10]](%[[VAL_11]]) {uniq_name = "_QFsEc"} : (!fir.ref<!fir.array<?xi32>>, !fir.shape<1>) -> (!fir.box<!fir.array<?xi32>>, !fir.ref<!fir.array<?xi32>>)
 ! CHECK:           %[[VAL_13:.*]] = arith.constant 0 : i32
 ! CHECK:           hlfir.assign %[[VAL_13]] to %[[VAL_12]]#0 : i32, !fir.box<!fir.array<?xi32>>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_12]]#0 -> %[[VAL_14_IN:.*]], %[[VAL_3]]#0 -> %[[VAL_15_IN:.*]] : !fir.box<!fir.array<?xi32>>, !fir.ref<i32>) {
 ! CHECK:             %[[VAL_14:.*]] = fir.alloca !fir.box<!fir.array<?xi32>>
-! CHECK:             fir.store %[[VAL_12]]#0 to %[[VAL_14]] : !fir.ref<!fir.box<!fir.array<?xi32>>>
+! CHECK:             fir.store %[[VAL_14_IN]] to %[[VAL_14]] : !fir.ref<!fir.box<!fir.array<?xi32>>>
 ! CHECK:             %[[VAL_17:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_18:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_19:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_15:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_Uxi32 %[[VAL_14]] -> %[[VAL_20:.*]] : !fir.ref<!fir.box<!fir.array<?xi32>>>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[VAL_15_IN]] -> %[[VAL_15:.*]] : !fir.ref<i32>) reduction(byref @add_reduction_byref_box_Uxi32 %[[VAL_14]] -> %[[VAL_20:.*]] : !fir.ref<!fir.box<!fir.array<?xi32>>>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_21:.*]]) : i32 = (%[[VAL_17]]) to (%[[VAL_18]]) inclusive step (%[[VAL_19]]) {
 ! CHECK:                 %[[VAL_16:.*]]:2 = hlfir.declare %[[VAL_15]] {uniq_name = "_QFsEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_22:.*]]:2 = hlfir.declare %[[VAL_20]] {uniq_name = "_QFsEc"} : (!fir.ref<!fir.box<!fir.array<?xi32>>>) -> (!fir.ref<!fir.box<!fir.array<?xi32>>>, !fir.ref<!fir.box<!fir.array<?xi32>>>)

@@ -40,17 +40,19 @@ end
 
 ! DEVICE: %[[TARGET_J_DECL:.*]]:2 = hlfir.declare %[[J_ARG]] {uniq_name = "_QFEj"}
 
-! DEVICE: omp.teams
+! DEVICE: omp.teams shared(%[[TARGET_J_DECL]]#0 -> %[[J_TEAMS:[[:alnum:]_]+]],
 
-! COMMON: omp.parallel {
+! COMMON: omp.parallel shared(
+! HOST-SAME: %[[ORIG_J_DECL]]#0 -> %[[J_PAR:[[:alnum:]_]+]],
+! DEVICE-SAME: %[[J_TEAMS]] -> %[[J_PAR_DEV:[[:alnum:]_]+]],
 
 ! DEVICE: omp.distribute
 
 ! COMMON: omp.wsloop {
 ! COMMON: omp.loop_nest ({{[^[:space:]]+}}) {{.*}} {
 ! COMMON:   fir.do_loop {{.*}} iter_args(%[[J_IV:.*]] = {{.*}}) -> {{.*}} {
-! HOST:       fir.store %[[J_IV]] to %[[ORIG_J_DECL]]#0
-! DEVICE:     fir.store %[[J_IV]] to %[[TARGET_J_DECL]]#0
+! HOST:       fir.store %[[J_IV]] to %[[J_PAR]]
+! DEVICE:     fir.store %[[J_IV]] to %[[J_PAR_DEV]]
 
 ! COMMON:     fir.do_concurrent {
 ! COMMON:         %[[ORIG_K_ALLOC:.*]] = fir.alloca i32 {bindc_name = "k"}

@@ -40,10 +40,10 @@ func.func @_QPfoo() {
 
 // CHECK: omp.target host_eval({{.*}}) map_entries({{.*}}, %[[S_MAP]] -> %[[S_TARGET_ARG:.*]] : {{.*}}) {
 // CHECK:   %[[S_DEV_DECL:.*]]:2 = hlfir.declare %[[S_TARGET_ARG]]
-// CHECK:   omp.teams reduction(@[[OMP_RED]] %[[S_DEV_DECL]]#0 -> %[[RED_TEAMS_ARG:.*]] : !fir.ref<f32>) {
-// CHECK:   omp.parallel {
+// CHECK:   omp.teams shared({{.*}}) reduction(@[[OMP_RED]] %[[S_DEV_DECL]]#0 -> %[[RED_TEAMS_ARG:.*]] : !fir.ref<f32>) {
+// CHECK:   omp.parallel shared(%{{.*}}, %{{.*}}, %[[RED_TEAMS_ARG]] -> %[[RED_PAR_ARG:.*]] : {{.*}}) {
 // CHECK:     omp.distribute {
-// CHECK:       omp.wsloop reduction(@[[OMP_RED]] %[[RED_TEAMS_ARG]] -> %[[RED_WS_ARG:.*]] : {{.*}}) {
+// CHECK:       omp.wsloop reduction(@[[OMP_RED]] %[[RED_PAR_ARG]] -> %[[RED_WS_ARG:.*]] : {{.*}}) {
 // CHECK:         %[[S_WS_DECL:.*]]:2 = hlfir.declare %[[RED_WS_ARG]] {uniq_name = "_QFfooEs"}
 // CHECK:         %[[S_VAL:.*]] = fir.load %[[S_WS_DECL]]#0
 // CHECK:         %[[RED_RES:.*]] = arith.addf %[[S_VAL]], %{{.*}} fastmath<contract> : f32

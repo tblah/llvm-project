@@ -34,10 +34,10 @@ end subroutine min_reduce
 ! CHECK-SAME: map_entries({{.*}}%[[MIN_VAL_MAP]] -> %[[MIN_VAL_ARG:[[:alnum:]]+]]{{.*}})
 
 ! CHECK: %[[MIN_VAL_DEV:.*]]:2 = hlfir.declare %[[MIN_VAL_ARG]] {{.*}} "_QFmin_reduceEmin_val"
-! CHECK: omp.teams reduction(@[[RED_SYM]] %[[MIN_VAL_DEV]]#0 -> %[[RED_TEAMS:.*]] : !fir.ref<f32>) {
-! CHECK:   omp.parallel {
+! CHECK: omp.teams shared({{.*}}) reduction(@[[RED_SYM]] %[[MIN_VAL_DEV]]#0 -> %[[RED_TEAMS:.*]] : !fir.ref<f32>) {
+! CHECK:   omp.parallel shared(
 ! CHECK:     omp.distribute {
-! CHECK:       omp.wsloop reduction(@[[RED_SYM]] %[[RED_TEAMS]] -> %[[RED_WS:.*]] : !fir.ref<f32>) {
+! CHECK:       omp.wsloop reduction(@[[RED_SYM]] {{.*}} -> %[[RED_WS:.*]] : !fir.ref<f32>) {
 ! CHECK:         omp.loop_nest
 ! CHECK:       } {omp.composite}
 ! CHECK:     } {omp.composite}

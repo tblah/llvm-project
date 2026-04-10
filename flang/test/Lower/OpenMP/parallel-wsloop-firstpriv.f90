@@ -10,11 +10,11 @@ subroutine omp_do_firstprivate(a)
   integer::n
   n = a+1
   !$omp parallel do firstprivate(a)
-  ! CHECK:  omp.parallel {
+  ! CHECK:  omp.parallel shared(%[[ARG0_DECL]]#0 -> %[[SHARED_A_1:.*]], %[[I_IN_1:.*]]#0 -> %[[SHARED_I_1:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
   ! CHECK: %[[LB:.*]] = arith.constant 1 : i32
-  ! CHECK-NEXT: %[[UB:.*]] = fir.load %[[ARG0_DECL]]#0 : !fir.ref<i32>
+  ! CHECK-NEXT: %[[UB:.*]] = fir.load %[[SHARED_A_1]] : !fir.ref<i32>
   ! CHECK-NEXT: %[[STEP:.*]] = arith.constant 1 : i32
-  ! CHECK-NEXT: omp.wsloop private(@{{.*a_firstprivate.*}} %{{.*}}#0 -> %[[A_PVT_REF:.*]], @{{.*i_private.*}} %{{.*}}#0 -> %[[I_PVT_REF:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
+  ! CHECK-NEXT: omp.wsloop private(@{{.*a_firstprivate.*}} %[[SHARED_A_1]] -> %[[A_PVT_REF:.*]], @{{.*i_private.*}} %[[SHARED_I_1]] -> %[[I_PVT_REF:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
   ! CHECK-NEXT: omp.loop_nest (%[[ARG1:.*]]) : i32 = (%[[LB]]) to (%[[UB]]) inclusive step (%[[STEP]]) {
   ! CHECK: %[[A_PVT_DECL:.*]]:2 = hlfir.declare %[[A_PVT_REF]] {uniq_name = "_QFomp_do_firstprivateEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
   ! CHECK: %[[I_PVT_DECL:.*]]:2 = hlfir.declare %[[I_PVT_REF]] {uniq_name = "_QFomp_do_firstprivateEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
@@ -39,11 +39,11 @@ subroutine omp_do_firstprivate2(a, n)
   integer::n
   n = a+1
   !$omp parallel do firstprivate(a, n)
-  ! CHECK:  omp.parallel {
-  ! CHECK: %[[LB:.*]] = fir.load %[[ARG0_DECL]]#0 : !fir.ref<i32>
-  ! CHECK: %[[UB:.*]] = fir.load %[[ARG1_DECL]]#0 : !fir.ref<i32>
+  ! CHECK:  omp.parallel shared(%[[ARG0_DECL]]#0 -> %[[SHARED_A_2:.*]], %[[ARG1_DECL]]#0 -> %[[SHARED_N_2:.*]], %[[I_IN_2:.*]]#0 -> %[[SHARED_I_2:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
+  ! CHECK: %[[LB:.*]] = fir.load %[[SHARED_A_2]] : !fir.ref<i32>
+  ! CHECK: %[[UB:.*]] = fir.load %[[SHARED_N_2]] : !fir.ref<i32>
   ! CHECK: %[[STEP:.*]] = arith.constant 1 : i32
-  ! CHECK: omp.wsloop private(@{{.*a_firstprivate.*}} %{{.*}}#0 -> %[[A_PVT_REF:.*]], @{{.*n_firstprivate.*}} %{{.*}}#0 -> %[[N_PVT_REF:.*]], @{{.*i_private.*}} %{{.*}}#0 -> %[[I_PVT_REF:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
+  ! CHECK: omp.wsloop private(@{{.*a_firstprivate.*}} %[[SHARED_A_2]] -> %[[A_PVT_REF:.*]], @{{.*n_firstprivate.*}} %[[SHARED_N_2]] -> %[[N_PVT_REF:.*]], @{{.*i_private.*}} %[[SHARED_I_2]] -> %[[I_PVT_REF:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
   ! CHECK-NEXT: omp.loop_nest (%[[ARG2:.*]]) : i32 = (%[[LB]]) to (%[[UB]]) inclusive step (%[[STEP]]) {
   ! CHECK: %[[A_PVT_DECL:.*]]:2 = hlfir.declare %[[A_PVT_REF]] {uniq_name = "_QFomp_do_firstprivate2Ea"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
   ! CHECK: %[[N_PVT_DECL:.*]]:2 = hlfir.declare %[[N_PVT_REF]] {uniq_name = "_QFomp_do_firstprivate2En"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)

@@ -91,12 +91,12 @@ subroutine parallel_do_with_privatisation_clauses(cond,nt)
   logical :: cond
   integer :: nt
   integer :: i
-  ! CHECK:  omp.parallel
+  ! CHECK:  omp.parallel shared(%[[COND_DECL]]#0 -> %[[SHARED_COND_REF:.*]], %[[NT_DECL]]#0 -> %[[SHARED_NT_REF:.*]], %3#0 -> %[[SHARED_I_REF:.*]] : !fir.ref<!fir.logical<4>>, !fir.ref<i32>, !fir.ref<i32>) {
 
   ! CHECK:      %[[WS_LB:.*]] = arith.constant 1 : i32
   ! CHECK:      %[[WS_UB:.*]] = arith.constant 9 : i32
   ! CHECK:      %[[WS_STEP:.*]] = arith.constant 1 : i32
-  ! CHECK:      omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[PRIVATE_COND_REF:.*]], @{{.*}} %{{.*}}#0 -> %[[PRIVATE_NT_REF:.*]], @{{.*}} %3#0 -> %{{.*}} : !fir.ref<!fir.logical<4>>, !fir.ref<i32>, !fir.ref<i32>) {
+  ! CHECK:      omp.wsloop private(@{{.*}} %[[SHARED_COND_REF]] -> %[[PRIVATE_COND_REF:.*]], @{{.*}} %[[SHARED_NT_REF]] -> %[[PRIVATE_NT_REF:.*]], @{{.*}} %[[SHARED_I_REF]] -> %[[IV_ADDR:.*]] : !fir.ref<!fir.logical<4>>, !fir.ref<i32>, !fir.ref<i32>) {
   ! CHECK-NEXT: omp.loop_nest (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) inclusive step (%[[WS_STEP]]) {
   !$OMP PARALLEL DO PRIVATE(cond) FIRSTPRIVATE(nt)
   do i=1, 9
@@ -139,8 +139,9 @@ end subroutine parallel_private_do
 ! CHECK-LABEL:   func.func @_QPparallel_private_do(
 ! CHECK-SAME:                                      %[[VAL_0:.*]]: !fir.ref<!fir.logical<4>> {fir.bindc_name = "cond"},
 ! CHECK-SAME:                                      %[[VAL_1:.*]]: !fir.ref<i32> {fir.bindc_name = "nt"}) {
-! CHECK:           %[[NT_DECL:.*]]:2 = hlfir.declare %[[VAL_1]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFparallel_private_doEnt"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
-! CHECK:           omp.parallel private(@{{.*}} %{{.*}}#0 -> %[[COND_ADDR:.*]], @{{.*firstprivate.*}} %{{.*}}#0 -> %[[NT_PRIV_ADDR:.*]] : {{.*}}) {
+! CHECK:           %[[COND_ARG_DECL:.*]]:2 = hlfir.declare %[[VAL_0]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFparallel_private_doEcond"} : (!fir.ref<!fir.logical<4>>, !fir.dscope) -> (!fir.ref<!fir.logical<4>>, !fir.ref<!fir.logical<4>>)
+! CHECK:           %[[NT_ARG_DECL:.*]]:2 = hlfir.declare %[[VAL_1]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFparallel_private_doEnt"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
+! CHECK:           omp.parallel private(@{{.*}} %[[COND_ARG_DECL]]#0 -> %[[COND_ADDR:.*]], @{{.*firstprivate.*}} %[[NT_ARG_DECL]]#0 -> %[[NT_PRIV_ADDR:.*]] : !fir.ref<!fir.logical<4>>, !fir.ref<i32>) shared(%3#0 -> %[[I_SHARED:.*]] : !fir.ref<i32>) {
 
 ! CHECK:             %[[COND_DECL:.*]]:2 = hlfir.declare %[[COND_ADDR]] {uniq_name = "_QFparallel_private_doEcond"} : (!fir.ref<!fir.logical<4>>) -> (!fir.ref<!fir.logical<4>>, !fir.ref<!fir.logical<4>>)
 
@@ -149,7 +150,7 @@ end subroutine parallel_private_do
 ! CHECK:             %[[VAL_7:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_8:.*]] = arith.constant 9 : i32
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[I_PRIV:.*]] : !fir.ref<i32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[I_SHARED]] -> %[[I_PRIV:.*]] : !fir.ref<i32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[I:.*]]) : i32 = (%[[VAL_7]]) to (%[[VAL_8]]) inclusive step (%[[VAL_9]]) {
 ! CHECK:                 %[[I_PRIV_DECL:.*]]:2 = hlfir.declare %[[I_PRIV]] {uniq_name = "_QFparallel_private_doEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 hlfir.assign %[[I]] to %[[I_PRIV_DECL]]#0 : i32, !fir.ref<i32>
@@ -184,7 +185,7 @@ end subroutine omp_parallel_multiple_firstprivate_do
 ! CHECK-SAME:                                                        %[[B_ADDR:.*]]: !fir.ref<i32> {fir.bindc_name = "b"}) {
 ! CHECK:            %[[A_DECL:.*]]:2 = hlfir.declare %[[A_ADDR]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFomp_parallel_multiple_firstprivate_doEa"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:            %[[B_DECL:.*]]:2 = hlfir.declare %[[B_ADDR]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFomp_parallel_multiple_firstprivate_doEb"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
-! CHECK:           omp.parallel private(@{{.*firstprivate.*}} %{{.*}}#0 -> %[[A_PRIV_ADDR:.*]], @{{.*firstprivate.*}} %{{.*}}#0 -> %[[B_PRIV_ADDR:.*]] : {{.*}}) {
+! CHECK:           omp.parallel private(@{{.*firstprivate.*}} %[[A_DECL]]#0 -> %[[A_PRIV_ADDR:.*]], @{{.*firstprivate.*}} %[[B_DECL]]#0 -> %[[B_PRIV_ADDR:.*]] : !fir.ref<i32>, !fir.ref<i32>) shared(%4#0 -> %[[I_SHARED:.*]] : !fir.ref<i32>) {
 
 ! CHECK:             %[[A_PRIV_DECL:.*]]:2 = hlfir.declare %[[A_PRIV_ADDR]] {uniq_name = "_QFomp_parallel_multiple_firstprivate_doEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 
@@ -194,7 +195,7 @@ end subroutine omp_parallel_multiple_firstprivate_do
 ! CHECK:             %[[VAL_8:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 10 : i32
 ! CHECK:             %[[VAL_10:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[I_PRIV_ADDR:.*]] : !fir.ref<i32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[I_SHARED]] -> %[[I_PRIV_ADDR:.*]] : !fir.ref<i32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[I:.*]]) : i32 = (%[[VAL_8]]) to (%[[VAL_9]]) inclusive step (%[[VAL_10]]) {
 ! CHECK:                 %[[I_PRIV_DECL:.*]]:2 = hlfir.declare %[[I_PRIV_ADDR]] {uniq_name = "_QFomp_parallel_multiple_firstprivate_doEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 hlfir.assign %[[I]] to %[[I_PRIV_DECL]]#0 : i32, !fir.ref<i32>
@@ -229,12 +230,13 @@ end subroutine parallel_do_private
 ! CHECK-LABEL:   func.func @_QPparallel_do_private(
 ! CHECK-SAME:                                      %[[VAL_0:.*]]: !fir.ref<!fir.logical<4>> {fir.bindc_name = "cond"},
 ! CHECK-SAME:                                      %[[VAL_1:.*]]: !fir.ref<i32> {fir.bindc_name = "nt"}) {
+! CHECK:           %[[COND_DECL:.*]]:2 = hlfir.declare %[[VAL_0]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFparallel_do_privateEcond"} : (!fir.ref<!fir.logical<4>>, !fir.dscope) -> (!fir.ref<!fir.logical<4>>, !fir.ref<!fir.logical<4>>)
 ! CHECK:           %[[NT_DECL:.*]]:2 = hlfir.declare %[[VAL_1]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFparallel_do_privateEnt"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
-! CHECK:           omp.parallel   {
+! CHECK:           omp.parallel shared(%[[COND_DECL]]#0 -> %[[SHARED_COND_ADDR:.*]], %[[NT_DECL]]#0 -> %[[SHARED_NT_ADDR:.*]], %3#0 -> %[[SHARED_I_ADDR:.*]] : !fir.ref<!fir.logical<4>>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:             %[[VAL_7:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_8:.*]] = arith.constant 9 : i32
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[COND_PRIV_ADDR:.*]], @{{.*}} %{{.*}}#0 -> %[[NT_PRIV_ADDR:.*]], @{{.*}} %3#0 -> %[[I_PRIV_ADDR:.*]] : !fir.ref<!fir.logical<4>>, !fir.ref<i32>, !fir.ref<i32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_COND_ADDR]] -> %[[COND_PRIV_ADDR:.*]], @{{.*}} %[[SHARED_NT_ADDR]] -> %[[NT_PRIV_ADDR:.*]], @{{.*}} %[[SHARED_I_ADDR]] -> %[[I_PRIV_ADDR:.*]] : !fir.ref<!fir.logical<4>>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[I:.*]]) : i32 = (%[[VAL_7]]) to (%[[VAL_8]]) inclusive step (%[[VAL_9]]) {
 ! CHECK:                 %[[COND_PRIV_DECL:.*]]:2 = hlfir.declare %[[COND_PRIV_ADDR]] {uniq_name = "_QFparallel_do_privateEcond"} : (!fir.ref<!fir.logical<4>>) -> (!fir.ref<!fir.logical<4>>, !fir.ref<!fir.logical<4>>)
 ! CHECK:                 %[[NT_PRIV_DECL:.*]]:2 = hlfir.declare %[[NT_PRIV_ADDR]] {uniq_name = "_QFparallel_do_privateEnt"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
@@ -272,11 +274,11 @@ end subroutine omp_parallel_do_multiple_firstprivate
 ! CHECK-SAME:                                                        %[[B_ADDR:.*]]: !fir.ref<i32> {fir.bindc_name = "b"}) {
 ! CHECK:           %[[A_DECL:.*]]:2 = hlfir.declare %[[A_ADDR]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFomp_parallel_do_multiple_firstprivateEa"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:           %[[B_DECL:.*]]:2 = hlfir.declare %[[B_ADDR]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFomp_parallel_do_multiple_firstprivateEb"} : (!fir.ref<i32>, !fir.dscope) -> (!fir.ref<i32>, !fir.ref<i32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[A_DECL]]#0 -> %[[SHARED_A_ADDR:.*]], %[[B_DECL]]#0 -> %[[SHARED_B_ADDR:.*]], %4#0 -> %[[SHARED_I_ADDR:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:             %[[VAL_8:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 10 : i32
 ! CHECK:             %[[VAL_10:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[A_PRIV_ADDR:.*]], @{{.*}} %{{.}}#0 -> %[[B_PRIV_ADDR:.*]], @{{.*}} %{{.}}#0 -> %[[I_PRIV_ADDR:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_A_ADDR]] -> %[[A_PRIV_ADDR:.*]], @{{.*}} %[[SHARED_B_ADDR]] -> %[[B_PRIV_ADDR:.*]], @{{.*}} %[[SHARED_I_ADDR]] -> %[[I_PRIV_ADDR:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK-NEXT:         omp.loop_nest (%[[I:.*]]) : i32 = (%[[VAL_8]]) to (%[[VAL_9]]) inclusive step (%[[VAL_10]]) {
 ! CHECK:                 %[[A_PRIV_DECL:.*]]:2 = hlfir.declare %[[A_PRIV_ADDR]] {uniq_name = "_QFomp_parallel_do_multiple_firstprivateEa"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[B_PRIV_DECL:.*]]:2 = hlfir.declare %[[B_PRIV_ADDR]] {uniq_name = "_QFomp_parallel_do_multiple_firstprivateEb"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)

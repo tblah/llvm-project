@@ -20,7 +20,7 @@ subroutine sb1(a, x, y, z)
 end subroutine
 
 ! HLFIR:  func.func @_QPsb1
-! HLFIR:    omp.parallel {
+! HLFIR:    omp.parallel shared({{.*}}) {
 ! HLFIR:      omp.workshare {
 ! HLFIR:        hlfir.elemental {{.*}} unordered : (!fir.shape<1>) -> !hlfir.expr<?xi32> {
 ! HLFIR:        hlfir.elemental {{.*}} unordered : (!fir.shape<1>) -> !hlfir.expr<?xi32> {
@@ -42,7 +42,7 @@ end subroutine
 ! FIR:  func.func private @_workshare_copy_i32(%{{[a-z0-9]+}}: !fir.ref<i32>, %{{[a-z0-9]+}}: !fir.ref<i32>
 
 ! FIR:  func.func @_QPsb1
-! FIR:    omp.parallel {
+! FIR:    omp.parallel shared({{.*}}) {
 ! FIR:      omp.single copyprivate(%{{[a-z0-9]+}} -> @_workshare_copy_i32 : !fir.ref<i32>, %{{[a-z0-9]+}} -> @_workshare_copy_heap_Uxi32 : !fir.ref<!fir.heap<!fir.array<?xi32>>>) {
 ! FIR:        fir.allocmem
 ! FIR:      omp.wsloop {

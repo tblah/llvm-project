@@ -16,7 +16,7 @@ program p
 !$omp end parallel
 end program
 
-! CHECK:      omp.parallel {
+! CHECK:      omp.parallel shared(%{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}}, %{{.*}}#0 -> %{{.*}} : !fir.ref<!fir.type<_QFTy3{x:!fir.box<!fir.heap<i32>>}>>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK-NOT:  private(
 ! CHECK:      omp.wsloop
 ! CHECK-SAME: private(

@@ -9,13 +9,9 @@ module test
 
   !$omp threadprivate(x, y, m, n)
 
-!CHECK-DAG: fir.global @_QMtestEm : !fir.box<!fir.ptr<i32>> {
-!CHECK-DAG: fir.global @_QMtestEn : !fir.box<!fir.heap<f32>> {
-!CHECK-DAG: fir.global @_QMtestEx : !fir.box<!fir.ptr<!fir.array<?xi32>>> {
-!CHECK-DAG: fir.global @_QMtestEy : !fir.box<!fir.heap<!fir.array<?xf32>>> {
-
 contains
   subroutine sub()
+!CHECK-LABEL: func.func @_QMtestPsub() {
 !CHECK-DAG:  %[[M:.*]] = fir.address_of(@_QMtestEm) : !fir.ref<!fir.box<!fir.ptr<i32>>>
 !CHECK-DAG:  %[[M_DECL:.*]]:2 = hlfir.declare %[[M]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QMtestEm"} : (!fir.ref<!fir.box<!fir.ptr<i32>>>) -> (!fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<!fir.box<!fir.ptr<i32>>>)
 !CHECK-DAG:  %[[OMP_M:.*]] = omp.threadprivate %[[M_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<i32>>> -> !fir.ref<!fir.box<!fir.ptr<i32>>>
@@ -39,18 +35,19 @@ contains
     print *, x, y, m, n
 
     !$omp parallel
-!CHECK-DAG:  %[[X_PVT:.*]] = omp.threadprivate %[[X_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>> -> !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>
-!CHECK-DAG:  %[[X_PVT_DECL:.*]]:2 = hlfir.declare %[[X_PVT]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QMtestEx"} : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>) -> (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>)
-!CHECK-DAG:  %[[Y_PVT:.*]] = omp.threadprivate %[[Y_DECL]]#0 : !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>> -> !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>
-!CHECK-DAG:  %[[Y_PVT_DECL:.*]]:2 = hlfir.declare %[[Y_PVT]] {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QMtestEy"} : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>) -> (!fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>)
-!CHECK-DAG:  %[[Z_PVT:.*]] = omp.threadprivate %[[M_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<i32>>> -> !fir.ref<!fir.box<!fir.ptr<i32>>>
-!CHECK-DAG:  %[[Z_PVT_DECL:.*]]:2 = hlfir.declare %[[Z_PVT]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QMtestEm"} : (!fir.ref<!fir.box<!fir.ptr<i32>>>) -> (!fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<!fir.box<!fir.ptr<i32>>>)
-!CHECK-DAG:  %[[N_PVT:.*]] = omp.threadprivate %[[N_DECL]]#0 : !fir.ref<!fir.box<!fir.heap<f32>>> -> !fir.ref<!fir.box<!fir.heap<f32>>>
-!CHECK-DAG:  %[[N_PVT_DECL:.*]]:2 = hlfir.declare %[[N_PVT]] {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QMtestEn"} : (!fir.ref<!fir.box<!fir.heap<f32>>>) -> (!fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<!fir.box<!fir.heap<f32>>>)
-!CHECK-DAG:  %{{.*}} = fir.load %[[X_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>
-!CHECK-DAG:  %{{.*}} = fir.load %[[Y_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>
-!CHECK-DAG:  %{{.*}} = fir.load %[[Z_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<i32>>>
-!CHECK-DAG:  %{{.*}} = fir.load %[[N_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.heap<f32>>>
+!CHECK:      omp.parallel shared(%[[X_DECL]]#0 -> %[[X_SHARED:.*]], %[[Y_DECL]]#0 -> %[[Y_SHARED:.*]], %[[M_DECL]]#0 -> %[[M_SHARED:.*]], %[[N_DECL]]#0 -> %[[N_SHARED:.*]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>, !fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<!fir.box<!fir.heap<f32>>>) {
+!CHECK:      %[[X_PVT:.*]] = omp.threadprivate %[[X_SHARED]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>> -> !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>
+!CHECK:      %[[X_PVT_DECL:.*]]:2 = hlfir.declare %[[X_PVT]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QMtestEx"} : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>) -> (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>)
+!CHECK:      %[[Y_PVT:.*]] = omp.threadprivate %[[Y_SHARED]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>> -> !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>
+!CHECK:      %[[Y_PVT_DECL:.*]]:2 = hlfir.declare %[[Y_PVT]] {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QMtestEy"} : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>) -> (!fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>)
+!CHECK:      %[[Z_PVT:.*]] = omp.threadprivate %[[M_SHARED]] : !fir.ref<!fir.box<!fir.ptr<i32>>> -> !fir.ref<!fir.box<!fir.ptr<i32>>>
+!CHECK:      %[[Z_PVT_DECL:.*]]:2 = hlfir.declare %[[Z_PVT]] {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QMtestEm"} : (!fir.ref<!fir.box<!fir.ptr<i32>>>) -> (!fir.ref<!fir.box<!fir.ptr<i32>>>, !fir.ref<!fir.box<!fir.ptr<i32>>>)
+!CHECK:      %[[N_PVT:.*]] = omp.threadprivate %[[N_SHARED]] : !fir.ref<!fir.box<!fir.heap<f32>>> -> !fir.ref<!fir.box<!fir.heap<f32>>>
+!CHECK:      %[[N_PVT_DECL:.*]]:2 = hlfir.declare %[[N_PVT]] {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QMtestEn"} : (!fir.ref<!fir.box<!fir.heap<f32>>>) -> (!fir.ref<!fir.box<!fir.heap<f32>>>, !fir.ref<!fir.box<!fir.heap<f32>>>)
+!CHECK:      %{{.*}} = fir.load %[[X_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>
+!CHECK:      %{{.*}} = fir.load %[[Y_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>
+!CHECK:      %{{.*}} = fir.load %[[Z_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<i32>>>
+!CHECK:      %{{.*}} = fir.load %[[N_PVT_DECL]]#0 : !fir.ref<!fir.box<!fir.heap<f32>>>
       print *, x, y, m, n
     !$omp end parallel
 
@@ -59,5 +56,9 @@ contains
 !CHECK-DAG:  %{{.*}} = fir.load %[[OMP_M_DECL]]#0 : !fir.ref<!fir.box<!fir.ptr<i32>>>
 !CHECK-DAG:  %{{.*}} = fir.load %[[OMP_N_DECL]]#0 : !fir.ref<!fir.box<!fir.heap<f32>>>
     print *, x, y, m, n
+!CHECK-DAG: fir.global @_QMtestEm : !fir.box<!fir.ptr<i32>> {
+!CHECK-DAG: fir.global @_QMtestEn : !fir.box<!fir.heap<f32>> {
+!CHECK-DAG: fir.global @_QMtestEx : !fir.box<!fir.ptr<!fir.array<?xi32>>> {
+!CHECK-DAG: fir.global @_QMtestEy : !fir.box<!fir.heap<!fir.array<?xf32>>> {
   end
 end

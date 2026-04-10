@@ -23,12 +23,12 @@ end subroutine
 ! CHECK-SAME:   {{[^[:space:]]*}} -> {{[^[:space:]]*}}, {{[^[:space:]]*}} -> {{[^[:space:]]*}},
 ! CHECK-SAME:   {{[^[:space:]]*}} -> {{[^[:space:]]*}}, {{[^[:space:]]*}} -> %[[N_MAP_ARG:[^[:space:]]*]], {{.*}}) {
 ! CHECK:   %[[N_MAPPED:.*]]:2 = hlfir.declare %[[N_MAP_ARG]] {uniq_name = "_QFfooEn"}
-! CHECK:   omp.teams {
-! CHECK:     omp.parallel {
+! CHECK:   omp.teams shared(%[[N_MAPPED]]#0 -> %[[TEAMS_N:[[:alnum:]]+]],
+! CHECK:     omp.parallel shared(%[[TEAMS_N]] -> %[[PAR_N:[[:alnum:]]+]],
 ! CHECK:       omp.distribute {
 ! CHECK:         omp.wsloop {
-! CHECK:           omp.loop_nest (%{{.*}}) : index = (%{{.*}}) to (%[[N_HOST_EVAL]]) inclusive step (%{{.*}}) {
-! CHECK:             %[[N_VAL:.*]] = fir.load %[[N_MAPPED]]#0 : !fir.ref<i32>
+! CHECK:           omp.loop_nest (%{{.*}}) : index = (%{{.*}}) to (%{{.*}}) inclusive step (%{{.*}}) {
+! CHECK:             %[[N_VAL:.*]] = fir.load %[[PAR_N]] : !fir.ref<i32>
 ! CHECK:             %[[N_VAL_CVT:.*]] = fir.convert %[[N_VAL]] : (i32) -> f32
 ! CHECK:             hlfir.assign %[[N_VAL_CVT]] to {{.*}}
 ! CHECK-NEXT:        omp.yield

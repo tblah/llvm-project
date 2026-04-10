@@ -19,7 +19,7 @@ program test
   !$omp end parallel workshare
 end program
 
-! HLFIR-O3:    omp.parallel {
+! HLFIR-O3:    omp.parallel shared({{.*}}) {
 ! HLFIR-O3:      omp.workshare {
 ! HLFIR-O3:        hlfir.elemental
 ! HLFIR-O3:        hlfir.assign
@@ -27,13 +27,13 @@ end program
 ! HLFIR-O3:        omp.terminator
 ! HLFIR-O3:      omp.terminator
 
-! FIR-O3:    omp.parallel {
+! FIR-O3:    omp.parallel shared({{.*}}) {
 ! FIR-O3:      omp.wsloop nowait {
 ! FIR-O3:        omp.loop_nest
 ! FIR-O3:      omp.barrier
 ! FIR-O3:      omp.terminator
 
-! HLFIR-O0:    omp.parallel {
+! HLFIR-O0:    omp.parallel shared({{.*}}) {
 ! HLFIR-O0:      omp.workshare {
 ! HLFIR-O0:        hlfir.elemental
 ! HLFIR-O0:        hlfir.assign
@@ -47,7 +47,7 @@ end program
 ! FIR-O0:    fir.store {{.*}} to %[[DST]]
 
 ! Check that we properly handle the temporary array
-! FIR-O0:    omp.parallel {
+! FIR-O0:    omp.parallel shared({{.*}}) {
 ! FIR-O0:      %[[CP:.*]] = fir.alloca !fir.heap<!fir.array<10xf32>>
 ! FIR-O0:      omp.single copyprivate(%[[CP]] -> @_workshare_copy_heap_
 ! FIR-O0:        fir.allocmem

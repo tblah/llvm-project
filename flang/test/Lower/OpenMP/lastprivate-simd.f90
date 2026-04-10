@@ -26,11 +26,11 @@ end subroutine
 ! CHECK:   %[[IDO2_HOST_DECL:.*]]:2 = hlfir.declare %{{.*}} {uniq_name = "{{.*}}Eido2"}
 ! CHECK:   %[[IDO3_HOST_DECL:.*]]:2 = hlfir.declare %{{.*}} {uniq_name = "{{.*}}Eido3"}
 
-! CHECK:   omp.parallel {
+! CHECK:   omp.parallel shared(%[[IDO1_HOST_DECL]]#0 -> %[[IDO1_SHARED:.*]], %[[IDO2_HOST_DECL]]#0 -> %[[IDO2_SHARED:.*]], %[[IDO3_HOST_DECL]]#0 -> %[[IDO3_SHARED:.*]] : !fir.ref<i32>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:     omp.simd private(
-! CHECK-SAME:  @{{.*}}do1_private{{.*}} %[[IDO1_HOST_DECL]]#0 -> %[[IDO1_PRIV_ARG:[^[:space:]]*]],
-! CHECK-SAME:  @{{.*}}do2_private{{.*}} %[[IDO2_HOST_DECL]]#0 -> %[[IDO2_PRIV_ARG:[^[:space:]]*]],
-! CHECK-SAME:  @{{.*}}do3_private{{.*}} %[[IDO3_HOST_DECL]]#0 -> %[[IDO3_PRIV_ARG:[^[:space:]]*]]
+! CHECK-SAME:  @{{.*}}do1_private{{.*}} %[[IDO1_SHARED]] -> %[[IDO1_PRIV_ARG:[^[:space:]]*]],
+! CHECK-SAME:  @{{.*}}do2_private{{.*}} %[[IDO2_SHARED]] -> %[[IDO2_PRIV_ARG:[^[:space:]]*]],
+! CHECK-SAME:  @{{.*}}do3_private{{.*}} %[[IDO3_SHARED]] -> %[[IDO3_PRIV_ARG:[^[:space:]]*]]
 ! CHECK-SAME:  : {{.*}}) {
 
 ! CHECK:       omp.loop_nest (%[[IV1:.*]], %[[IV2:.*]], %[[IV3:.*]]) : {{.*}} {
@@ -43,11 +43,11 @@ end subroutine
 ! CHECK:           hlfir.assign %{{.*}} to %[[IDO2_PRIV_DECL]]#0
 ! CHECK:           hlfir.assign %{{.*}} to %[[IDO3_PRIV_DECL]]#0
 ! CHECK:           %[[IDO1_VAL:.*]] = fir.load %[[IDO1_PRIV_DECL]]#0
-! CHECK:           hlfir.assign %[[IDO1_VAL]] to %[[IDO1_HOST_DECL]]#0
+! CHECK:           hlfir.assign %[[IDO1_VAL]] to %[[IDO1_SHARED]]
 ! CHECK:           %[[IDO2_VAL:.*]] = fir.load %[[IDO2_PRIV_DECL]]#0
-! CHECK:           hlfir.assign %[[IDO2_VAL]] to %[[IDO2_HOST_DECL]]#0
+! CHECK:           hlfir.assign %[[IDO2_VAL]] to %[[IDO2_SHARED]]
 ! CHECK:           %[[IDO3_VAL:.*]] = fir.load %[[IDO3_PRIV_DECL]]#0
-! CHECK:           hlfir.assign %[[IDO3_VAL]] to %[[IDO3_HOST_DECL]]#0
+! CHECK:           hlfir.assign %[[IDO3_VAL]] to %[[IDO3_SHARED]]
 ! CHECK:         }
 ! CHECK-NEXT:    omp.yield
 ! CHECK:       }

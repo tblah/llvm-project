@@ -6,17 +6,17 @@
 ! CHECK-LABEL:  func.func @_QPomploop()
 ! CHECK:    %[[ALLOC_I:.*]] = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFomploopEi"}
 ! CHECK:    %[[DECL_I:.*]]:2 = hlfir.declare %[[ALLOC_I]] {uniq_name = "_QFomploopEi"} :
-! CHECK:    omp.parallel {
+! CHECK:    omp.parallel shared(%[[DECL_I]]#0 -> %[[SHARED_I:.*]], %[[DECL_J:.*]]#0 -> %[[SHARED_J:.*]] : !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:      omp.sections {
 ! CHECK:        omp.section {
 ! CHECK:          %[[RES:.*]] = fir.do_loop %[[ARG0:.*]] = %{{.*}} to %{{.*}} step %{{.*}} iter_args(%[[ARG1:.*]] =
-! CHECK:            fir.store %[[ARG1]] to %[[DECL_I]]#0
+! CHECK:            fir.store %[[ARG1]] to %[[SHARED_I]]
 ! CHECK:            hlfir.assign
-! CHECK:            %[[LOAD_I:.*]] = fir.load %[[DECL_I]]#0
+! CHECK:            %[[LOAD_I:.*]] = fir.load %[[SHARED_I]]
 ! CHECK:            %[[RES_I:.*]] = arith.addi %[[LOAD_I]], %{{.*}}
 ! CHECK:            fir.result %[[RES_I]]
 ! CHECK:          }
-! CHECK:          fir.store %[[RES]] to %[[DECL_I]]#0
+! CHECK:          fir.store %[[RES]] to %[[SHARED_I]]
 ! CHECK:          omp.terminator
 ! CHECK:        }
 ! CHECK:        omp.terminator
@@ -42,7 +42,7 @@ end subroutine
 ! CHECK-LABEL:  func.func @_QPomploop2()
 ! CHECK:    %[[ALLOC_I:.*]] = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFomploop2Ei"}
 ! CHECK:    %[[DECL_I:.*]]:2 = hlfir.declare %[[ALLOC_I]] {uniq_name = "_QFomploop2Ei"} :
-! CHECK:    omp.parallel {
+! CHECK:    omp.parallel shared(%[[DECL_J:.*]]#0 -> %[[SHARED_J:.*]] : !fir.ref<i32>) {
 ! CHECK:      %[[ALLOC_PRIV_I:.*]] = fir.alloca i32 {bindc_name = "i", pinned}
 ! CHECK:      %[[DECL_PRIV_I:.*]]:2 = hlfir.declare %[[ALLOC_PRIV_I]]
 ! CHECK:      omp.sections {
@@ -82,7 +82,7 @@ end subroutine
 ! CHECK-LABEL:  func.func @_QPomploop3()
 ! CHECK:    %[[ALLOC_I:.*]] = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFomploop3Ei"}
 ! CHECK:    %[[DECL_I:.*]]:2 = hlfir.declare %[[ALLOC_I]] {uniq_name = "_QFomploop3Ei"} :
-! CHECK:    omp.parallel {
+! CHECK:    omp.parallel shared(%[[DECL_J:.*]]#0 -> %[[SHARED_J:.*]] : !fir.ref<i32>) {
 ! CHECK:      %[[ALLOC_PRIV_I:.*]] = fir.alloca i32 {bindc_name = "i", pinned}
 ! CHECK:      %[[DECL_PRIV_I:.*]]:2 = hlfir.declare %[[ALLOC_PRIV_I]]
 ! CHECK:      omp.sections {

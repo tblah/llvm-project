@@ -2,14 +2,16 @@
 
 ! Check that we generate proper body of the do-construct.
 
+!CHECK: omp.parallel shared(%{{.*}} -> %[[ARR_SHARED:arg[0-9]+]], %{{.*}} -> %[[I_SHARED:arg[0-9]+]] : !fir.ref<!fir.array<10xf32>>, !fir.ref<i32>) {
+!CHECK:   omp.wsloop private(@_QFEi_private_i32 %[[I_SHARED]] -> %[[I_PRIV:arg[0-9]+]] : !fir.ref<i32>) {
 !CHECK: omp.loop_nest (%[[ARG1:arg[0-9]+]]) : i32 = (%c1_i32) to (%c10_i32) inclusive step (%c1_i32_1) {
-!CHECK:   %[[V0:[0-9]+]]:2 = hlfir.declare %arg0 {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
+!CHECK:   %[[V0:[0-9]+]]:2 = hlfir.declare %[[I_PRIV]] {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK:   hlfir.assign %[[ARG1]] to %[[V0]]#0 : i32, !fir.ref<i32>
 !CHECK:   %[[V1:[0-9]+]] = fir.load %[[V0]]#0 : !fir.ref<i32>
 !CHECK:   %[[V2:[0-9]+]] = fir.convert %[[V1]] : (i32) -> f32
 !CHECK:   %[[V3:[0-9]+]] = fir.load %[[V0]]#0 : !fir.ref<i32>
 !CHECK:   %[[V4:[0-9]+]] = fir.convert %[[V3]] : (i32) -> i64
-!CHECK:   %[[V5:[0-9]+]] = hlfir.designate %3#0 (%[[V4]])  : (!fir.ref<!fir.array<10xf32>>, i64) -> !fir.ref<f32>
+!CHECK:   %[[V5:[0-9]+]] = hlfir.designate %[[ARR_SHARED]] (%[[V4]])  : (!fir.ref<!fir.array<10xf32>>, i64) -> !fir.ref<f32>
 !CHECK:   hlfir.assign %[[V2]] to %[[V5]] : f32, !fir.ref<f32>
 !CHECK:   omp.yield
 !CHECK: }

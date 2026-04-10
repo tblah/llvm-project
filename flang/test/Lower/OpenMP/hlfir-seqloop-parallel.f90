@@ -52,7 +52,7 @@ end subroutine
 !CHECK:    %[[J_DECL:.*]]:2 = hlfir.declare %[[J_ADDR]] {uniq_name = "_QFsb2Ej"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK:    %[[K_ADDR:.*]] = fir.alloca i32 {bindc_name = "k", uniq_name = "_QFsb2Ek"}
 !CHECK:    %[[K_DECL:.*]]:2 = hlfir.declare %[[K_ADDR]] {uniq_name = "_QFsb2Ek"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-!CHECK:    omp.parallel private({{.*}} %[[J_DECL]]#0 -> %[[J_PVT_ADDR:.*]], {{.*}} %[[I_DECL]]#0 -> %[[I_PVT_ADDR:.*]] : {{.*}}) {
+!CHECK:    omp.parallel private(@_QFsb2Ej_private_i32 %[[J_DECL]]#0 -> %[[J_PVT_ADDR:.*]], @_QFsb2Ei_private_i32 %[[I_DECL]]#0 -> %[[I_PVT_ADDR:.*]] : !fir.ref<i32>, !fir.ref<i32>) shared(%[[K_DECL]]#0 -> %[[K_SHARED:.*]] : !fir.ref<i32>) {
 
 !CHECK:      %[[J_PVT_DECL:.*]]:2 = hlfir.declare %[[J_PVT_ADDR]] {uniq_name = "_QFsb2Ej"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 

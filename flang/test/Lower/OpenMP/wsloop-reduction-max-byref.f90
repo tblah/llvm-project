@@ -44,18 +44,18 @@
 ! CHECK:           %[[VAL_5:.*]]:2 = hlfir.declare %[[VAL_0]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFreduction_max_intEy"} : (!fir.box<!fir.array<?xi32>>, !fir.dscope) -> (!fir.box<!fir.array<?xi32>>, !fir.box<!fir.array<?xi32>>)
 ! CHECK:           %[[VAL_6:.*]] = arith.constant 0 : i32
 ! CHECK:           hlfir.assign %[[VAL_6]] to %[[VAL_4]]#0 : i32, !fir.ref<i32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_5]]#0 -> %[[SHARED_Y_1:.*]], %[[VAL_2]]#0 -> %[[SHARED_I_1:.*]], %[[VAL_4]]#0 -> %[[SHARED_X_1:.*]] : !fir.box<!fir.array<?xi32>>, !fir.ref<i32>, !fir.ref<i32>) {
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_10:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_11:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_7:.*]] : !fir.ref<i32>) reduction(byref @max_byref_i32 %[[VAL_4]]#0 -> %[[VAL_12:.*]] : !fir.ref<i32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_1]] -> %[[VAL_7:.*]] : !fir.ref<i32>) reduction(byref @max_byref_i32 %[[SHARED_X_1]] -> %[[VAL_12:.*]] : !fir.ref<i32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_13:.*]]) : i32 = (%[[VAL_9]]) to (%[[VAL_10]]) inclusive step (%[[VAL_11]]) {
 ! CHECK:                 %[[VAL_8:.*]]:2 = hlfir.declare %[[VAL_7]] {uniq_name = "_QFreduction_max_intEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_14:.*]]:2 = hlfir.declare %[[VAL_12]] {uniq_name = "_QFreduction_max_intEx"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 hlfir.assign %[[VAL_13]] to %[[VAL_8]]#0 : i32, !fir.ref<i32>
 ! CHECK-DAG:                 %[[VAL_15:.*]] = fir.load %[[VAL_8]]#0 : !fir.ref<i32>
 ! CHECK-DAG:                 %[[VAL_16:.*]] = fir.convert %[[VAL_15]] : (i32) -> i64
-! CHECK-DAG:                 %[[VAL_17:.*]] = hlfir.designate %[[VAL_5]]#0 (%[[VAL_16]])  : (!fir.box<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
+! CHECK-DAG:                 %[[VAL_17:.*]] = hlfir.designate %[[SHARED_Y_1]] (%[[VAL_16]])  : (!fir.box<!fir.array<?xi32>>, i64) -> !fir.ref<i32>
 ! CHECK-DAG:                 %[[VAL_18:.*]] = fir.load %[[VAL_14]]#0 : !fir.ref<i32>
 ! CHECK-DAG:                 %[[VAL_19:.*]] = fir.load %[[VAL_17]] : !fir.ref<i32>
 ! CHECK:                 %[[VAL_21:.*]] = arith.maxsi %[[VAL_18]], %[[VAL_19]] : i32
@@ -72,18 +72,18 @@
 ! CHECK:           %[[VAL_5:.*]]:2 = hlfir.declare %[[VAL_0]] dummy_scope %{{[0-9]+}} arg {{[0-9]+}} {uniq_name = "_QFreduction_max_realEy"} : (!fir.box<!fir.array<?xf32>>, !fir.dscope) -> (!fir.box<!fir.array<?xf32>>, !fir.box<!fir.array<?xf32>>)
 ! CHECK:           %[[VAL_6:.*]] = arith.constant 0.000000e+00 : f32
 ! CHECK:           hlfir.assign %[[VAL_6]] to %[[VAL_4]]#0 : f32, !fir.ref<f32>
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_5]]#0 -> %[[SHARED_Y_2:.*]], %[[VAL_2]]#0 -> %[[SHARED_I_2:.*]], %[[VAL_4]]#0 -> %[[SHARED_X_2:.*]] : !fir.box<!fir.array<?xf32>>, !fir.ref<i32>, !fir.ref<f32>) {
 ! CHECK:             %[[VAL_9:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_10:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_11:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_7:.*]] : !fir.ref<i32>) reduction(byref @max_byref_f32 %[[VAL_4]]#0 -> %[[VAL_12:.*]] : !fir.ref<f32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_2]] -> %[[VAL_7:.*]] : !fir.ref<i32>) reduction(byref @max_byref_f32 %[[SHARED_X_2]] -> %[[VAL_12:.*]] : !fir.ref<f32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_13:.*]]) : i32 = (%[[VAL_9]]) to (%[[VAL_10]]) inclusive step (%[[VAL_11]]) {
 ! CHECK:                 %[[VAL_8:.*]]:2 = hlfir.declare %[[VAL_7]] {uniq_name = "_QFreduction_max_realEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_14:.*]]:2 = hlfir.declare %[[VAL_12]] {uniq_name = "_QFreduction_max_realEx"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
 ! CHECK:                 hlfir.assign %[[VAL_13]] to %[[VAL_8]]#0 : i32, !fir.ref<i32>
 ! CHECK:                 %[[VAL_15:.*]] = fir.load %[[VAL_8]]#0 : !fir.ref<i32>
 ! CHECK:                 %[[VAL_16:.*]] = fir.convert %[[VAL_15]] : (i32) -> i64
-! CHECK:                 %[[VAL_17:.*]] = hlfir.designate %[[VAL_5]]#0 (%[[VAL_16]])  : (!fir.box<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
+! CHECK:                 %[[VAL_17:.*]] = hlfir.designate %[[SHARED_Y_2]] (%[[VAL_16]])  : (!fir.box<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
 ! CHECK:                 %[[VAL_18:.*]] = fir.load %[[VAL_17]] : !fir.ref<f32>
 ! CHECK:                 %[[VAL_19:.*]] = fir.load %[[VAL_14]]#0 : !fir.ref<f32>
 ! CHECK:                 %[[VAL_20:.*]] = arith.cmpf ogt, %[[VAL_18]], %[[VAL_19]] fastmath<contract> : f32
@@ -91,25 +91,25 @@
 ! CHECK:                 hlfir.assign %[[VAL_21]] to %[[VAL_14]]#0 : f32, !fir.ref<f32>
 ! CHECK:                 omp.yield
 ! CHECK:             omp.terminator
-! CHECK:           omp.parallel {
+! CHECK:           omp.parallel shared(%[[VAL_5]]#0 -> %[[SHARED_Y_3:.*]], %[[VAL_2]]#0 -> %[[SHARED_I_3:.*]], %[[VAL_4]]#0 -> %[[SHARED_X_3:.*]] : !fir.box<!fir.array<?xf32>>, !fir.ref<i32>, !fir.ref<f32>) {
 ! CHECK:             %[[VAL_32:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_33:.*]] = arith.constant 100 : i32
 ! CHECK:             %[[VAL_34:.*]] = arith.constant 1 : i32
-! CHECK:             omp.wsloop private(@{{.*}} %{{.*}}#0 -> %[[VAL_30:.*]] : !fir.ref<i32>) reduction(byref @max_byref_f32 %[[VAL_4]]#0 -> %[[VAL_35:.*]] : !fir.ref<f32>) {
+! CHECK:             omp.wsloop private(@{{.*}} %[[SHARED_I_3]] -> %[[VAL_30:.*]] : !fir.ref<i32>) reduction(byref @max_byref_f32 %[[SHARED_X_3]] -> %[[VAL_35:.*]] : !fir.ref<f32>) {
 ! CHECK-NEXT:          omp.loop_nest (%[[VAL_36:.*]]) : i32 = (%[[VAL_32]]) to (%[[VAL_33]]) inclusive step (%[[VAL_34]]) {
 ! CHECK:                 %[[VAL_31:.*]]:2 = hlfir.declare %[[VAL_30]] {uniq_name = "_QFreduction_max_realEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 ! CHECK:                 %[[VAL_37:.*]]:2 = hlfir.declare %[[VAL_35]] {uniq_name = "_QFreduction_max_realEx"} : (!fir.ref<f32>) -> (!fir.ref<f32>, !fir.ref<f32>)
 ! CHECK:                 hlfir.assign %[[VAL_36]] to %[[VAL_31]]#0 : i32, !fir.ref<i32>
 ! CHECK:                 %[[VAL_38:.*]] = fir.load %[[VAL_31]]#0 : !fir.ref<i32>
 ! CHECK:                 %[[VAL_39:.*]] = fir.convert %[[VAL_38]] : (i32) -> i64
-! CHECK:                 %[[VAL_40:.*]] = hlfir.designate %[[VAL_5]]#0 (%[[VAL_39]])  : (!fir.box<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
+! CHECK:                 %[[VAL_40:.*]] = hlfir.designate %[[SHARED_Y_3]] (%[[VAL_39]])  : (!fir.box<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
 ! CHECK:                 %[[VAL_41:.*]] = fir.load %[[VAL_40]] : !fir.ref<f32>
 ! CHECK:                 %[[VAL_42:.*]] = fir.load %[[VAL_37]]#0 : !fir.ref<f32>
 ! CHECK:                 %[[VAL_43:.*]] = arith.cmpf ogt, %[[VAL_41]], %[[VAL_42]] fastmath<contract> : f32
 ! CHECK:                 fir.if %[[VAL_43]] {
 ! CHECK:                   %[[VAL_44:.*]] = fir.load %[[VAL_31]]#0 : !fir.ref<i32>
 ! CHECK:                   %[[VAL_45:.*]] = fir.convert %[[VAL_44]] : (i32) -> i64
-! CHECK:                   %[[VAL_46:.*]] = hlfir.designate %[[VAL_5]]#0 (%[[VAL_45]])  : (!fir.box<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
+! CHECK:                   %[[VAL_46:.*]] = hlfir.designate %[[SHARED_Y_3]] (%[[VAL_45]])  : (!fir.box<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
 ! CHECK:                   %[[VAL_47:.*]] = fir.load %[[VAL_46]] : !fir.ref<f32>
 ! CHECK:                   hlfir.assign %[[VAL_47]] to %[[VAL_37]]#0 : f32, !fir.ref<f32>
 ! CHECK:                 }
