@@ -40,8 +40,8 @@ func.func @_QQmain() attributes {fir.bindc_name = "main"} {
   %10 = fir.shape %c10 : (index) -> !fir.shape<1>
   %11 = fir.embox %2#1(%10) : (!fir.ref<!fir.array<10xi32>>, !fir.shape<1>) -> !fir.box<!fir.ptr<!fir.array<?xi32>>>
   fir.store %11 to %9#1 : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>
-  omp.teams {
-    omp.parallel private(@_QFEptra_firstprivate_ref_box_ptr_Uxi32 %9#0 -> %arg0, @_QFEi_private_ref_i32 %7#0 -> %arg1 : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>, !fir.ref<i32>) {
+  omp.teams shared(%9#0 -> %teams_shared0, %7#0 -> %teams_shared1, %2#0 -> %teams_shared2 : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>, !fir.ref<i32>, !fir.ref<!fir.array<10xi32>>) {
+    omp.parallel private(@_QFEptra_firstprivate_ref_box_ptr_Uxi32 %teams_shared0 -> %arg0, @_QFEi_private_ref_i32 %teams_shared1 -> %arg1 : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>, !fir.ref<i32>) shared(%teams_shared2 -> %shared : !fir.ref<!fir.array<10xi32>>) {
       %12:2 = hlfir.declare %arg0 {fortran_attrs = #fir.var_attrs<pointer>, uniq_name = "_QFEptra"} : (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>) -> (!fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>)
       %13:2 = hlfir.declare %arg1 {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
       %c1_i32 = arith.constant 1 : i32
@@ -53,7 +53,7 @@ func.func @_QQmain() attributes {fir.bindc_name = "main"} {
             fir.store %arg2 to %13#1 : !fir.ref<i32>
             %14 = fir.load %13#0 : !fir.ref<i32>
             %15 = fir.convert %14 : (i32) -> i64
-            %16 = hlfir.designate %2#0 (%15)  : (!fir.ref<!fir.array<10xi32>>, i64) -> !fir.ref<i32>
+            %16 = hlfir.designate %shared (%15)  : (!fir.ref<!fir.array<10xi32>>, i64) -> !fir.ref<i32>
             %17 = fir.load %16 : !fir.ref<i32>
             %18 = fir.load %12#0 : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>
             %19 = fir.load %13#0 : !fir.ref<i32>
@@ -63,7 +63,7 @@ func.func @_QQmain() attributes {fir.bindc_name = "main"} {
             %23 = arith.addi %17, %22 : i32
             %24 = fir.load %13#0 : !fir.ref<i32>
             %25 = fir.convert %24 : (i32) -> i64
-            %26 = hlfir.designate %2#0 (%25) {test.ptr = "ArrayA"}  : (!fir.ref<!fir.array<10xi32>>, i64) -> !fir.ref<i32>
+            %26 = hlfir.designate %shared (%25) {test.ptr = "ArrayA"}  : (!fir.ref<!fir.array<10xi32>>, i64) -> !fir.ref<i32>
             hlfir.assign %23 to %26 : i32, !fir.ref<i32>
             omp.yield
           }

@@ -115,6 +115,28 @@ static bool isPrivateArg(omp::BlockArgOpenMPOpInterface &argIface,
   return false;
 }
 
+/// if `possiblySharedVal` is a block argument of an OpenMP construct from a
+/// shared clause, look through the clause and return the underlying value,
+/// otherwise return `possiblySharedVal` unmodified.
+static mlir::Value lookThroughSharedClause(mlir::Value possiblySharedVal) {
+  if (auto thisBlockArg =
+          mlir::dyn_cast<mlir::BlockArgument>(possiblySharedVal)) {
+    mlir::Operation *maybeConstructOp = thisBlockArg.getOwner()->getParentOp();
+    if (auto iface =
+            mlir::dyn_cast<omp::BlockArgOpenMPOpInterface>(maybeConstructOp)) {
+      // Okay this is actually a block argument to an OpenMP construct.
+      for (auto [sharedVal, someBlockArg] :
+           llvm::zip_equal(iface.getSharedVars(), iface.getSharedBlockArgs())) {
+        if (someBlockArg == thisBlockArg) {
+          // Handle multiple levels of shared clause.
+          return lookThroughSharedClause(sharedVal);
+        }
+      }
+    }
+  }
+  return possiblySharedVal;
+}
+
 /// Classify `mappedValue` when defined by OpenACC mapping op `accOp`.
 /// Private-like ops use `SourceKind::Allocate`; other data clauses use
 /// `getSourceFn` on the mapped host variable (`mlir::acc::getVar`).
@@ -821,6 +843,14 @@ AliasAnalysis::Source AliasAnalysis::getSource(mlir::Value v,
   Source::Attributes attributes;
   mlir::Operation *instantiationPoint{nullptr};
 
+  // If getSource() is called on an OpenMP shared clause value, look through the
+  // shared clause to the original value. OpenMP's shared clause clause is a
+  // block argument so v will be non-null but defOp will be null.
+  if (v && !defOp) {
+    v = lookThroughSharedClause(v);
+    defOp = v.getDefiningOp();
+  }
+
   // Access path steps collected during the backward walk (leaf-to-root order).
   // Reversed into the final AccessPath at the end, unless the box-load branch
   // composes the full path directly.
@@ -1201,6 +1231,12 @@ AliasAnalysis::Source AliasAnalysis::getSource(mlir::Value v,
         });
     if (accSourceReturn)
       return *accSourceReturn;
+    // OpenMP's shared clause clause is a block argument so v will be non-null
+    // but defOp will be null. Look through the shared clause.
+    if (v && !defOp) {
+      v = lookThroughSharedClause(v);
+      defOp = v.getDefiningOp();
+    }
   }
   if (!defOp && type == SourceKind::Unknown) {
     // Check if the memory source is coming through a dummy argument.

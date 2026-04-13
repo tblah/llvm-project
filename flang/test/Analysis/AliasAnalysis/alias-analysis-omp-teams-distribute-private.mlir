@@ -39,8 +39,8 @@ func.func @_QQmain() attributes {fir.bindc_name = "main"} {
   %7 = fir.alloca !fir.array<2xi32> {bindc_name = "tmp", uniq_name = "_QFEtmp"}
   %8 = fir.shape %c2 : (index) -> !fir.shape<1>
   %9:2 = hlfir.declare %7(%8) {uniq_name = "_QFEtmp"} : (!fir.ref<!fir.array<2xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<2xi32>>, !fir.ref<!fir.array<2xi32>>)
-  omp.teams {
-    omp.parallel private(@_QFEtmp_private_ref_2xi32 %9#0 -> %arg0, @_QFEj_private_ref_i32 %6#0 -> %arg1, @_QFEi_private_ref_i32 %4#0 -> %arg2 : !fir.ref<!fir.array<2xi32>>, !fir.ref<i32>, !fir.ref<i32>) {
+  omp.teams shared(%9#0 -> %teams_shared0, %6#0 -> %teams_shared1, %4#0 -> %teams_shared2, %2#0 -> %teams_shared3 : !fir.ref<!fir.array<2xi32>>, !fir.ref<i32>, !fir.ref<i32>, !fir.ref<!fir.array<10x10xi32>>) {
+    omp.parallel private(@_QFEtmp_private_ref_2xi32 %teams_shared0 -> %arg0, @_QFEj_private_ref_i32 %teams_shared1 -> %arg1, @_QFEi_private_ref_i32 %teams_shared2 -> %arg2 : !fir.ref<!fir.array<2xi32>>, !fir.ref<i32>, !fir.ref<i32>) shared(%teams_shared3 -> %parallel_shared0 : !fir.ref<!fir.array<10x10xi32>>) {
       %c2_1 = arith.constant 2 : index
       %10 = fir.shape %c2_1 : (index) -> !fir.shape<1>
       %11:2 = hlfir.declare %arg0(%10) {uniq_name = "_QFEtmp", test.ptr = "tmp_private_array"} : (!fir.ref<!fir.array<2xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<2xi32>>, !fir.ref<!fir.array<2xi32>>)
@@ -81,7 +81,7 @@ func.func @_QQmain() attributes {fir.bindc_name = "main"} {
               %c1_8 = arith.constant 1 : index
               %27 = hlfir.designate %11#0 (%c1_8)  : (!fir.ref<!fir.array<2xi32>>, index) -> !fir.ref<i32>
               %28 = fir.load %27 : !fir.ref<i32>
-              hlfir.assign %28 to %2#0 : i32, !fir.ref<!fir.array<10x10xi32>>
+              hlfir.assign %28 to %parallel_shared0 : i32, !fir.ref<!fir.array<10x10xi32>>
               %29 = arith.addi %arg4, %c1 : index
               %30 = fir.convert %c1 : (index) -> i32
               %31 = fir.load %13#1 : !fir.ref<i32>

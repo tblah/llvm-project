@@ -40,7 +40,7 @@ func.func @test_boxed_private_vs_arg(
   %6 = fir.embox %4#0(%3) : (!fir.ref<!fir.array<4xf64>>, !fir.shape<1>) -> !fir.box<!fir.array<4xf64>>
   fir.store %6 to %5 : !fir.ref<!fir.box<!fir.array<4xf64>>>
 
-  omp.parallel private(@buf_privatizer %5 -> %arg2 : !fir.ref<!fir.box<!fir.array<4xf64>>>) {
+  omp.parallel private(@buf_privatizer %5 -> %arg2 : !fir.ref<!fir.box<!fir.array<4xf64>>>) shared(%1#0 -> %shared : !fir.ref<!fir.array<10x10x4xf64>>) {
     %10:2 = hlfir.declare %arg2 {uniq_name = "_QFmysubEbuf"} : (!fir.ref<!fir.box<!fir.array<4xf64>>>) -> (!fir.ref<!fir.box<!fir.array<4xf64>>>, !fir.ref<!fir.box<!fir.array<4xf64>>>)
 
     // Designate into the dummy argument array: grid(1, 1, 1:4)
@@ -50,7 +50,7 @@ func.func @test_boxed_private_vs_arg(
     %c1_2 = arith.constant 1 : index
     %11 = fir.shape %c4_1 : (index) -> !fir.shape<1>
     %c1_i64 = arith.constant 1 : i64
-    %12 = hlfir.designate %1#0 (%c1_i64, %c1_i64, %c1:%c4_1:%c1_2) shape %11 {test.ptr = "arg_designate"} : (!fir.ref<!fir.array<10x10x4xf64>>, i64, i64, index, index, index, !fir.shape<1>) -> !fir.box<!fir.array<4xf64>>
+    %12 = hlfir.designate %shared (%c1_i64, %c1_i64, %c1:%c4_1:%c1_2) shape %11 {test.ptr = "arg_designate"} : (!fir.ref<!fir.array<10x10x4xf64>>, i64, i64, index, index, index, !fir.shape<1>) -> !fir.box<!fir.array<4xf64>>
 
     // Designate through loaded private box: buf(1:4)
     %13 = fir.load %10#0 : !fir.ref<!fir.box<!fir.array<4xf64>>>
