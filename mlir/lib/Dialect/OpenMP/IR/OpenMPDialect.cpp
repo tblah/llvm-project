@@ -2462,23 +2462,66 @@ LogicalResult TargetOp::verifyRegions() {
   // Check that host_eval values are only used in legal ways.
   Operation *capturedOp = getInnermostCapturedOmpOp();
   TargetRegionFlags execFlags = getKernelExecFlags(capturedOp);
-  for (Value hostEvalArg :
-       cast<BlockArgOpenMPOpInterface>(getOperation()).getHostEvalBlockArgs()) {
-    for (Operation *user : hostEvalArg.getUsers()) {
+
+  // Helper to find the shared block arg corresponding to a given shared var.
+  auto getSharedBlockArgFor = [](BlockArgOpenMPOpInterface iface,
+                                 OperandRange sharedVars,
+                                 Value var) -> BlockArgument {
+    auto sharedBlockArgs = iface.getSharedBlockArgs();
+    for (auto [sv, ba] : llvm::zip(sharedVars, sharedBlockArgs))
+      if (sv == var)
+        return ba;
+    return {};
+  };
+
+  // Recursively check usages of a value (a host_eval block arg or a block arg
+  // derived from it through shared-clause threading into IsolatedFromAbove
+  // regions). Returns failure if an illegal usage is found.
+  std::function<LogicalResult(Value)> checkHostEvalUsages =
+      [&](Value v) -> LogicalResult {
+    for (Operation *user : v.getUsers()) {
       if (auto teamsOp = dyn_cast<TeamsOp>(user)) {
-        // Check if used in num_teams_lower or any of num_teams_upper_vars
-        if (hostEvalArg == teamsOp.getNumTeamsLower() ||
-            llvm::is_contained(teamsOp.getNumTeamsUpperVars(), hostEvalArg) ||
-            llvm::is_contained(teamsOp.getThreadLimitVars(), hostEvalArg))
+        bool hasLegalUse =
+            v == teamsOp.getNumTeamsLower() ||
+            llvm::is_contained(teamsOp.getNumTeamsUpperVars(), v) ||
+            llvm::is_contained(teamsOp.getThreadLimitVars(), v);
+
+        // Allow threading through shared_vars into the IsolatedFromAbove teams
+        // region, but recursively verify how the block arg is used there.
+        if (llvm::is_contained(teamsOp.getSharedVars(), v)) {
+          auto iface = cast<BlockArgOpenMPOpInterface>(teamsOp.getOperation());
+          if (BlockArgument ba =
+                  getSharedBlockArgFor(iface, teamsOp.getSharedVars(), v))
+            if (failed(checkHostEvalUsages(ba)))
+              return failure();
+          hasLegalUse = true;
+        }
+
+        if (hasLegalUse)
           continue;
 
         return emitOpError() << "host_eval argument only legal as 'num_teams' "
                                 "and 'thread_limit' in 'omp.teams'";
       }
       if (auto parallelOp = dyn_cast<ParallelOp>(user)) {
-        if (bitEnumContainsAny(execFlags, TargetRegionFlags::spmd) &&
+        bool hasLegalUse =
+            bitEnumContainsAny(execFlags, TargetRegionFlags::spmd) &&
             parallelOp->isAncestor(capturedOp) &&
-            llvm::is_contained(parallelOp.getNumThreadsVars(), hostEvalArg))
+            llvm::is_contained(parallelOp.getNumThreadsVars(), v);
+
+        // Allow threading through shared_vars into the IsolatedFromAbove
+        // parallel region, but recursively verify how the block arg is used.
+        if (llvm::is_contained(parallelOp.getSharedVars(), v)) {
+          auto iface =
+              cast<BlockArgOpenMPOpInterface>(parallelOp.getOperation());
+          if (BlockArgument ba =
+                  getSharedBlockArgFor(iface, parallelOp.getSharedVars(), v))
+            if (failed(checkHostEvalUsages(ba)))
+              return failure();
+          hasLegalUse = true;
+        }
+
+        if (hasLegalUse)
           continue;
 
         return emitOpError()
@@ -2486,11 +2529,23 @@ LogicalResult TargetOp::verifyRegions() {
                   "'omp.parallel' when representing target SPMD";
       }
       if (auto loopNestOp = dyn_cast<LoopNestOp>(user)) {
-        if (bitEnumContainsAny(execFlags, TargetRegionFlags::trip_count) &&
-            loopNestOp.getOperation() == capturedOp &&
-            (llvm::is_contained(loopNestOp.getLoopLowerBounds(), hostEvalArg) ||
-             llvm::is_contained(loopNestOp.getLoopUpperBounds(), hostEvalArg) ||
-             llvm::is_contained(loopNestOp.getLoopSteps(), hostEvalArg)))
+        bool isLoopBoundOrStep =
+            llvm::is_contained(loopNestOp.getLoopLowerBounds(), v) ||
+            llvm::is_contained(loopNestOp.getLoopUpperBounds(), v) ||
+            llvm::is_contained(loopNestOp.getLoopSteps(), v);
+        bool isCapturedLoopNest = loopNestOp.getOperation() == capturedOp;
+        ParallelOp enclosingParallel =
+            loopNestOp->getParentOfType<ParallelOp>();
+        bool isTopLevelParallelSpmd =
+            bitEnumContainsAny(execFlags, TargetRegionFlags::spmd) &&
+            !bitEnumContainsAny(execFlags, TargetRegionFlags::trip_count) &&
+            isCapturedLoopNest && enclosingParallel &&
+            enclosingParallel->getParentOp() == getOperation();
+
+        if (isLoopBoundOrStep &&
+            ((bitEnumContainsAny(execFlags, TargetRegionFlags::trip_count) &&
+              isCapturedLoopNest) ||
+             isTopLevelParallelSpmd))
           continue;
 
         return emitOpError() << "host_eval argument only legal as loop bounds "
@@ -2501,7 +2556,13 @@ LogicalResult TargetOp::verifyRegions() {
       return emitOpError() << "host_eval argument illegal use in '"
                            << user->getName() << "' operation";
     }
-  }
+    return success();
+  };
+
+  for (Value hostEvalArg :
+       cast<BlockArgOpenMPOpInterface>(getOperation()).getHostEvalBlockArgs())
+    if (failed(checkHostEvalUsages(hostEvalArg)))
+      return failure();
   return success();
 }
 

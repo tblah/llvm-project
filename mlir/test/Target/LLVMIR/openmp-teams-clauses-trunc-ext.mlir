@@ -23,9 +23,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %5 = omp.map.info var_ptr(%3 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "i"}
     %6 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg1, %4 -> %arg2, %0 -> %arg3, %1 -> %arg4 : i32, i32, i32, i64) map_entries(%5 -> %arg5, %6 -> %arg6 : !llvm.ptr, !llvm.ptr) {
-      omp.teams num_teams( to %arg4 : i64) {
-        omp.distribute private(@_QFnum_teams_const_8Ei_private_i32 %arg5 -> %arg7 : !llvm.ptr) {
-          omp.loop_nest (%arg8) : i32 = (%arg1) to (%arg2) inclusive step (%arg3) {
+      omp.teams num_teams( to %arg4 : i64) shared(%arg5 -> %s5, %arg1 -> %s1, %arg2 -> %s2, %arg3 -> %s3 : !llvm.ptr, i32, i32, i32) {
+        omp.distribute private(@_QFnum_teams_const_8Ei_private_i32 %s5 -> %arg7 : !llvm.ptr) {
+          omp.loop_nest (%arg8) : i32 = (%s1) to (%s2) inclusive step (%s3) {
             llvm.store %arg8, %arg7 : i32, !llvm.ptr
             omp.yield
           }
@@ -49,9 +49,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %6 = omp.map.info var_ptr(%2 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "i"}
     %7 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg2, %3 -> %arg3, %0 -> %arg4, %4 -> %arg5 : i32, i32, i32, i64) map_entries(%5 -> %arg6, %6 -> %arg7, %7 -> %arg8 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
-      omp.teams num_teams( to %arg5 : i64) {
-        omp.distribute private(@_QFnum_teams_arg_8Ei_private_i32 %arg7 -> %arg9 : !llvm.ptr) {
-          omp.loop_nest (%arg10) : i32 = (%arg2) to (%arg3) inclusive step (%arg4) {
+      omp.teams num_teams( to %arg5 : i64) shared(%arg7 -> %s7, %arg2 -> %s2, %arg3 -> %s3, %arg4 -> %s4 : !llvm.ptr, i32, i32, i32) {
+        omp.distribute private(@_QFnum_teams_arg_8Ei_private_i32 %s7 -> %arg9 : !llvm.ptr) {
+          omp.loop_nest (%arg10) : i32 = (%s2) to (%s3) inclusive step (%s4) {
             llvm.store %arg10, %arg9 : i32, !llvm.ptr
             omp.yield
           }
@@ -76,9 +76,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %5 = omp.map.info var_ptr(%3 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "i"}
     %6 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg1, %4 -> %arg2, %0 -> %arg3, %1 -> %arg4 : i32, i32, i32, i16) map_entries(%5 -> %arg5, %6 -> %arg6 : !llvm.ptr, !llvm.ptr) {
-      omp.teams num_teams( to %arg4 : i16) {
-        omp.distribute private(@_QFnum_teams_const_2Ei_private_i32 %arg5 -> %arg7 : !llvm.ptr) {
-          omp.loop_nest (%arg8) : i32 = (%arg1) to (%arg2) inclusive step (%arg3) {
+      omp.teams num_teams( to %arg4 : i16) shared(%arg5 -> %s5, %arg1 -> %s1, %arg2 -> %s2, %arg3 -> %s3 : !llvm.ptr, i32, i32, i32) {
+        omp.distribute private(@_QFnum_teams_const_2Ei_private_i32 %s5 -> %arg7 : !llvm.ptr) {
+          omp.loop_nest (%arg8) : i32 = (%s1) to (%s2) inclusive step (%s3) {
             llvm.store %arg8, %arg7 : i32, !llvm.ptr
             omp.yield
           }
@@ -102,9 +102,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %6 = omp.map.info var_ptr(%2 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "i"}
     %7 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg2, %3 -> %arg3, %0 -> %arg4, %4 -> %arg5 : i32, i32, i32, i16) map_entries(%5 -> %arg6, %6 -> %arg7, %7 -> %arg8 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
-      omp.teams num_teams( to %arg5 : i16) {
-        omp.distribute private(@_QFnum_teams_arg_2Ei_private_i32 %arg7 -> %arg9 : !llvm.ptr) {
-          omp.loop_nest (%arg10) : i32 = (%arg2) to (%arg3) inclusive step (%arg4) {
+      omp.teams num_teams( to %arg5 : i16) shared(%arg7 -> %s7, %arg2 -> %s2, %arg3 -> %s3, %arg4 -> %s4 : !llvm.ptr, i32, i32, i32) {
+        omp.distribute private(@_QFnum_teams_arg_2Ei_private_i32 %s7 -> %arg9 : !llvm.ptr) {
+          omp.loop_nest (%arg10) : i32 = (%s2) to (%s3) inclusive step (%s4) {
             llvm.store %arg10, %arg9 : i32, !llvm.ptr
             omp.yield
           }
@@ -129,9 +129,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %5 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg1, %3 -> %arg2, %0 -> %arg3 : i32, i32, i32) map_entries(%4 -> %arg4, %5 -> %arg5 : !llvm.ptr, !llvm.ptr) {
       %6 = llvm.mlir.constant(137 : i64) : i64
-      omp.teams thread_limit(%6 : i64) {
-        omp.distribute private(@_QFthread_limit_const_8Ei_private_i32 %arg4 -> %arg6 : !llvm.ptr) {
-          omp.loop_nest (%arg7) : i32 = (%arg1) to (%arg2) inclusive step (%arg3) {
+      omp.teams thread_limit(%6 : i64) shared(%arg4 -> %s4, %arg1 -> %s1, %arg2 -> %s2, %arg3 -> %s3 : !llvm.ptr, i32, i32, i32) {
+        omp.distribute private(@_QFthread_limit_const_8Ei_private_i32 %s4 -> %arg6 : !llvm.ptr) {
+          omp.loop_nest (%arg7) : i32 = (%s1) to (%s2) inclusive step (%s3) {
             llvm.store %arg7, %arg6 : i32, !llvm.ptr
             omp.yield
           }
@@ -155,9 +155,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %6 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg2, %3 -> %arg3, %0 -> %arg4 : i32, i32, i32) map_entries(%4 -> %arg5, %5 -> %arg6, %6 -> %arg7 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
       %7 = llvm.load %arg5 : !llvm.ptr -> i64
-      omp.teams thread_limit(%7 : i64) {
-        omp.distribute private(@_QFthread_limit_arg_8Ei_private_i32 %arg6 -> %arg8 : !llvm.ptr) {
-          omp.loop_nest (%arg9) : i32 = (%arg2) to (%arg3) inclusive step (%arg4) {
+      omp.teams thread_limit(%7 : i64) shared(%arg6 -> %s6, %arg2 -> %s2, %arg3 -> %s3, %arg4 -> %s4 : !llvm.ptr, i32, i32, i32) {
+        omp.distribute private(@_QFthread_limit_arg_8Ei_private_i32 %s6 -> %arg8 : !llvm.ptr) {
+          omp.loop_nest (%arg9) : i32 = (%s2) to (%s3) inclusive step (%s4) {
             llvm.store %arg9, %arg8 : i32, !llvm.ptr
             omp.yield
           }
@@ -182,9 +182,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %5 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg1, %3 -> %arg2, %0 -> %arg3 : i32, i32, i32) map_entries(%4 -> %arg4, %5 -> %arg5 : !llvm.ptr, !llvm.ptr) {
       %6 = llvm.mlir.constant(137 : i16) : i16
-      omp.teams thread_limit(%6 : i16) {
-        omp.distribute private(@_QFthread_limit_const_2Ei_private_i32 %arg4 -> %arg6 : !llvm.ptr) {
-          omp.loop_nest (%arg7) : i32 = (%arg1) to (%arg2) inclusive step (%arg3) {
+      omp.teams thread_limit(%6 : i16) shared(%arg4 -> %s4, %arg1 -> %s1, %arg2 -> %s2, %arg3 -> %s3 : !llvm.ptr, i32, i32, i32) {
+        omp.distribute private(@_QFthread_limit_const_2Ei_private_i32 %s4 -> %arg6 : !llvm.ptr) {
+          omp.loop_nest (%arg7) : i32 = (%s1) to (%s2) inclusive step (%s3) {
             llvm.store %arg7, %arg6 : i32, !llvm.ptr
             omp.yield
           }
@@ -208,9 +208,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %6 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg2, %3 -> %arg3, %0 -> %arg4 : i32, i32, i32) map_entries(%4 -> %arg5, %5 -> %arg6, %6 -> %arg7 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
       %7 = llvm.load %arg5 : !llvm.ptr -> i16
-      omp.teams thread_limit(%7 : i16) {
-        omp.distribute private(@_QFthread_limit_arg_2Ei_private_i32 %arg6 -> %arg8 : !llvm.ptr) {
-          omp.loop_nest (%arg9) : i32 = (%arg2) to (%arg3) inclusive step (%arg4) {
+      omp.teams thread_limit(%7 : i16) shared(%arg6 -> %s6, %arg2 -> %s2, %arg3 -> %s3, %arg4 -> %s4 : !llvm.ptr, i32, i32, i32) {
+        omp.distribute private(@_QFthread_limit_arg_2Ei_private_i32 %s6 -> %arg8 : !llvm.ptr) {
+          omp.loop_nest (%arg9) : i32 = (%s2) to (%s3) inclusive step (%s4) {
             llvm.store %arg9, %arg8 : i32, !llvm.ptr
             omp.yield
           }
@@ -235,11 +235,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %5 = omp.map.info var_ptr(%3 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "i"}
     %6 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%1 -> %arg1, %4 -> %arg2, %1 -> %arg3, %0 -> %arg4 : i32, i32, i32, i64) map_entries(%5 -> %arg5, %6 -> %arg6 : !llvm.ptr, !llvm.ptr) {
-      omp.teams {
-        omp.parallel num_threads(%arg4 : i64) private(@_QFnum_threads_const_8Ei_private_i32 %arg5 -> %arg7 : !llvm.ptr) {
+      omp.teams shared(%arg4 -> %t4, %arg5 -> %t5, %arg1 -> %t1, %arg2 -> %t2, %arg3 -> %t3 : i64, !llvm.ptr, i32, i32, i32) {
+        omp.parallel num_threads(%t4 : i64) private(@_QFnum_threads_const_8Ei_private_i32 %t5 -> %arg7 : !llvm.ptr) shared(%t1 -> %p1, %t2 -> %p2, %t3 -> %p3 : i32, i32, i32) {
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%arg8) : i32 = (%arg1) to (%arg2) inclusive step (%arg3) {
+              omp.loop_nest (%arg8) : i32 = (%p1) to (%p2) inclusive step (%p3) {
                 llvm.store %arg8, %arg7 : i32, !llvm.ptr
                 omp.yield
               }
@@ -267,11 +267,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %7 = omp.map.info var_ptr(%3 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "i"}
     %8 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg1, %5 -> %arg2, %0 -> %arg3, %4 -> %arg4 : i32, i32, i32, i64) map_entries(%6 -> %arg5, %7 -> %arg6, %8 -> %arg7 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
-      omp.teams {
-        omp.parallel num_threads(%arg4 : i64) private(@_QFnum_threads_arg_8Ei_private_i32 %arg6 -> %arg8 : !llvm.ptr) {
+      omp.teams shared(%arg4 -> %t4, %arg6 -> %t6, %arg1 -> %t1, %arg2 -> %t2, %arg3 -> %t3 : i64, !llvm.ptr, i32, i32, i32) {
+        omp.parallel num_threads(%t4 : i64) private(@_QFnum_threads_arg_8Ei_private_i32 %t6 -> %arg8 : !llvm.ptr) shared(%t1 -> %p1, %t2 -> %p2, %t3 -> %p3 : i32, i32, i32) {
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%arg9) : i32 = (%arg1) to (%arg2) inclusive step (%arg3) {
+              omp.loop_nest (%arg9) : i32 = (%p1) to (%p2) inclusive step (%p3) {
                 llvm.store %arg9, %arg8 : i32, !llvm.ptr
                 omp.yield
               }
@@ -298,11 +298,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %5 = omp.map.info var_ptr(%3 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "i"}
     %6 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%1 -> %arg1, %4 -> %arg2, %1 -> %arg3, %0 -> %arg4 : i32, i32, i32, i16) map_entries(%5 -> %arg5, %6 -> %arg6 : !llvm.ptr, !llvm.ptr) {
-      omp.teams {
-        omp.parallel num_threads(%arg4 : i16) private(@_QFnum_threads_const_2Ei_private_i32 %arg5 -> %arg7 : !llvm.ptr) {
+      omp.teams shared(%arg4 -> %t4, %arg5 -> %t5, %arg1 -> %t1, %arg2 -> %t2, %arg3 -> %t3 : i16, !llvm.ptr, i32, i32, i32) {
+        omp.parallel num_threads(%t4 : i16) private(@_QFnum_threads_const_2Ei_private_i32 %t5 -> %arg7 : !llvm.ptr) shared(%t1 -> %p1, %t2 -> %p2, %t3 -> %p3 : i32, i32, i32) {
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%arg8) : i32 = (%arg1) to (%arg2) inclusive step (%arg3) {
+              omp.loop_nest (%arg8) : i32 = (%p1) to (%p2) inclusive step (%p3) {
                 llvm.store %arg8, %arg7 : i32, !llvm.ptr
                 omp.yield
               }
@@ -329,11 +329,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
     %6 = omp.map.info var_ptr(%2 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "i"}
     %7 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit) capture(ByCopy) -> !llvm.ptr {name = "n"}
     omp.target host_eval(%0 -> %arg2, %4 -> %arg3, %0 -> %arg4, %3 -> %arg5 : i32, i32, i32, i16) map_entries(%5 -> %arg6, %6 -> %arg7, %7 -> %arg8 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
-      omp.teams {
-        omp.parallel num_threads(%arg5 : i16) private(@_QFnum_threads_arg_2Ei_private_i32 %arg7 -> %arg9 : !llvm.ptr) {
+      omp.teams shared(%arg5 -> %t5, %arg7 -> %t7, %arg2 -> %t2, %arg3 -> %t3, %arg4 -> %t4 : i16, !llvm.ptr, i32, i32, i32) {
+        omp.parallel num_threads(%t5 : i16) private(@_QFnum_threads_arg_2Ei_private_i32 %t7 -> %arg9 : !llvm.ptr) shared(%t2 -> %p2, %t3 -> %p3, %t4 -> %p4 : i32, i32, i32) {
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%arg10) : i32 = (%arg2) to (%arg3) inclusive step (%arg4) {
+              omp.loop_nest (%arg10) : i32 = (%p2) to (%p3) inclusive step (%p4) {
                 llvm.store %arg10, %arg9 : i32, !llvm.ptr
                 omp.yield
               }

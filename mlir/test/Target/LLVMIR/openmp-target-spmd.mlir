@@ -7,17 +7,32 @@
 module attributes {omp.is_target_device = false, omp.target_triples = ["amdgcn-amd-amdhsa"]} {
   llvm.func @main(%x : i32) {
     omp.target host_eval(%x -> %lb, %x -> %ub, %x -> %step : i32, i32, i32) {
-      omp.teams {
-        omp.parallel {
+      omp.teams shared(%lb -> %lb_t, %ub -> %ub_t, %step -> %step_t : i32, i32, i32) {
+        omp.parallel shared(%lb_t -> %lb_p, %ub_t -> %ub_p, %step_t -> %step_p : i32, i32, i32) {
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%iv) : i32 = (%lb) to (%ub) step (%step) {
+              omp.loop_nest (%iv) : i32 = (%lb_p) to (%ub_p) step (%step_p) {
                 omp.yield
               }
             } {omp.composite}
           } {omp.composite}
           omp.terminator
         } {omp.composite}
+        omp.terminator
+      }
+      omp.terminator
+    }
+    llvm.return
+  }
+
+  llvm.func @main_parallel_shared(%x : i32) {
+    omp.target host_eval(%x -> %lb, %x -> %ub, %x -> %step : i32, i32, i32) {
+      omp.parallel shared(%lb -> %lb_p, %ub -> %ub_p, %step -> %step_p : i32, i32, i32) {
+        omp.wsloop {
+          omp.loop_nest (%iv) : i32 = (%lb_p) to (%ub_p) step (%step_p) {
+            omp.yield
+          }
+        }
         omp.terminator
       }
       omp.terminator
@@ -39,7 +54,9 @@ module attributes {omp.is_target_device = false, omp.target_triples = ["amdgcn-a
 // HOST:       [[OFFLOAD_FAILED]]:
 // HOST:         call void @[[TARGET_OUTLINE:.*]]({{.*}})
 
-// HOST:       define internal void @[[TARGET_OUTLINE]]
+// HOST-LABEL: define void @main_parallel_shared
+// HOST:         %[[RESULT2:.*]] = call i32 @__tgt_target_kernel({{.*}})
+// HOST:       define internal void @[[TARGET_OUTLINE_MAIN:__omp_offloading_.*main_l4]]({{.*}})
 // HOST:         call void{{.*}}@__kmpc_fork_teams({{.*}}, ptr @[[TEAMS_OUTLINE:.*]], {{.*}})
 
 // HOST:       define internal void @[[TEAMS_OUTLINE]]
@@ -48,16 +65,21 @@ module attributes {omp.is_target_device = false, omp.target_triples = ["amdgcn-a
 // HOST:       define internal void @[[PARALLEL_OUTLINE]]
 // HOST:         call void @__kmpc_dist_for_static_init{{.*}}(ptr {{.*}}, i32 {{.*}}, i32 34, ptr {{.*}}, ptr {{.*}}, ptr {{.*}}, ptr {{.*}}, ptr {{.*}}, i32 {{.*}}, i32 {{.*}})
 
+// HOST:       define internal void @[[TARGET_OUTLINE2:__omp_offloading_.*main_parallel_shared.*]](i32 %{{.*}}, i32 %{{.*}}, i32 %{{.*}}, ptr %{{.*}})
+// HOST:         call void{{.*}}@__kmpc_fork_call({{.*}}, ptr @[[PARALLEL_OUTLINE2:__omp_offloading_.*main_parallel_shared.*omp_par]], {{.*}})
+// HOST:       define internal void @[[PARALLEL_OUTLINE2]]
+// HOST:         call void @__kmpc_for_static_init{{.*}}
+
 //--- device.mlir
 
 module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memory_space", 5 : ui32>>, llvm.target_triple = "amdgcn-amd-amdhsa", omp.is_target_device = true, omp.is_gpu = true} {
   llvm.func @main(%x : i32) {
     omp.target host_eval(%x -> %lb, %x -> %ub, %x -> %step : i32, i32, i32) {
-      omp.teams {
-        omp.parallel {
+      omp.teams shared(%lb -> %lb_t, %ub -> %ub_t, %step -> %step_t : i32, i32, i32) {
+        omp.parallel shared(%lb_t -> %lb_p, %ub_t -> %ub_p, %step_t -> %step_p : i32, i32, i32) {
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%iv) : i32 = (%lb) to (%ub) step (%step) {
+              omp.loop_nest (%iv) : i32 = (%lb_p) to (%ub_p) step (%step_p) {
                 omp.yield
               }
             } {omp.composite}
@@ -70,6 +92,22 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
     }
     llvm.return
   }
+
+  llvm.func @main_parallel_shared(%x : i32) {
+    omp.target host_eval(%x -> %lb, %x -> %ub, %x -> %step : i32, i32, i32) {
+      omp.parallel shared(%lb -> %lb_p, %ub -> %ub_p, %step -> %step_p : i32, i32, i32) {
+        omp.wsloop {
+          omp.loop_nest (%iv) : i32 = (%lb_p) to (%ub_p) step (%step_p) {
+            omp.yield
+          }
+        }
+        omp.terminator
+      }
+      omp.terminator
+    }
+    llvm.return
+  }
+
 }
 
 // DEVICE:      @[[KERNEL_NAME:.*]]_exec_mode = weak protected constant i8 2
@@ -78,6 +116,8 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
 // DEVICE-SAME: %struct.ConfigurationEnvironmentTy { i8 0, i8 1, i8 [[EXEC_MODE:2]], {{.*}}},
 // DEVICE-SAME: ptr @{{.*}}, ptr @{{.*}} }
 
+// DEVICE:      define void @main(i32 %0) {
+// DEVICE:      define void @main_parallel_shared(i32 %0) {
 // DEVICE:      define weak_odr protected amdgpu_kernel void @[[KERNEL_NAME]]({{.*}})
 // DEVICE:        %{{.*}} = call i32 @__kmpc_target_init(ptr @[[KERNEL_NAME]]_kernel_environment, {{.*}})
 // DEVICE:        call void @[[TARGET_OUTLINE:.*]]({{.*}})
@@ -91,3 +131,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
 
 // DEVICE:      define internal void @[[DISTRIBUTE_OUTLINE]]({{.*}})
 // DEVICE:        call void @__kmpc_distribute_for_static_loop{{.*}}({{.*}})
+
+// DEVICE:      define weak_odr protected amdgpu_kernel void @[[KERNEL_NAME2:.*]]({{.*}})
+// DEVICE:        %{{.*}} = call i32 @__kmpc_target_init(ptr @[[KERNEL_NAME2]]_kernel_environment, {{.*}})
+// DEVICE:        call void @__kmpc_parallel_60(ptr {{.*}}, i32 {{.*}}, i32 {{.*}}, i32 {{.*}}, i32 {{.*}}, ptr @[[PARALLEL_OUTLINE2:.*]], ptr {{.*}}, ptr {{.*}}, i64 {{.*}}, i32 {{.*}})
+// DEVICE:        call void @__kmpc_target_deinit()
+
+// DEVICE:      define internal void @[[PARALLEL_OUTLINE2]]({{.*}})
+// DEVICE:        call void @__kmpc_for_static_loop{{.*}}({{.*}})

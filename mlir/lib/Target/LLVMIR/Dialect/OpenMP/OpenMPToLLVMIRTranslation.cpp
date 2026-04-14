@@ -6700,6 +6700,66 @@ createDeviceArgumentAccessor(MapInfoData &mapData, llvm::Argument &arg,
   return builder.saveIP();
 }
 
+/// Follow a shared-variable body block argument through a region to find
+/// its ultimate use as a clause value (loop bounds, num_threads, etc.) and
+/// populate the corresponding output variable with \p hostEvalVar.
+static void processSharedBodyArg(Value bodyArg, Value hostEvalVar,
+                                 Value &numThreads, Value &numTeamsLower,
+                                 Value &numTeamsUpper, Value &threadLimit,
+                                 llvm::SmallVectorImpl<Value> *lowerBounds,
+                                 llvm::SmallVectorImpl<Value> *upperBounds,
+                                 llvm::SmallVectorImpl<Value> *steps) {
+  for (Operation *user : bodyArg.getUsers()) {
+    llvm::TypeSwitch<Operation *>(user)
+        .Case([&](omp::TeamsOp teamsOp) {
+          // If passed through teams's shared_vars, follow into the teams body.
+          if (llvm::is_contained(teamsOp.getSharedVars(), bodyArg)) {
+            auto iface = cast<omp::BlockArgOpenMPOpInterface>(*teamsOp);
+            OperandRange sharedVars = teamsOp.getSharedVars();
+            ArrayRef<BlockArgument> sharedBlockArgs =
+                iface.getSharedBlockArgs();
+            for (auto [sv, ba] : llvm::zip_equal(sharedVars, sharedBlockArgs)) {
+              if (sv == bodyArg)
+                processSharedBodyArg(ba, hostEvalVar, numThreads, numTeamsLower,
+                                     numTeamsUpper, threadLimit, lowerBounds,
+                                     upperBounds, steps);
+            }
+          }
+        })
+        .Case([&](omp::ParallelOp parallelOp) {
+          if (!parallelOp.getNumThreadsVars().empty() &&
+              parallelOp.getNumThreads(0) == bodyArg)
+            numThreads = hostEvalVar;
+          // If passed through parallel's shared_vars, follow into parallel
+          // body.
+          if (llvm::is_contained(parallelOp.getSharedVars(), bodyArg)) {
+            auto iface = cast<omp::BlockArgOpenMPOpInterface>(*parallelOp);
+            OperandRange sharedVars = parallelOp.getSharedVars();
+            ArrayRef<BlockArgument> sharedBlockArgs =
+                iface.getSharedBlockArgs();
+            for (auto [sv, ba] : llvm::zip_equal(sharedVars, sharedBlockArgs)) {
+              if (sv == bodyArg)
+                processSharedBodyArg(ba, hostEvalVar, numThreads, numTeamsLower,
+                                     numTeamsUpper, threadLimit, lowerBounds,
+                                     upperBounds, steps);
+            }
+          }
+        })
+        .Case([&](omp::LoopNestOp loopOp) {
+          for (auto [i, lb] : llvm::enumerate(loopOp.getLoopLowerBounds()))
+            if (lb == bodyArg && lowerBounds)
+              (*lowerBounds)[i] = hostEvalVar;
+          for (auto [i, ub] : llvm::enumerate(loopOp.getLoopUpperBounds()))
+            if (ub == bodyArg && upperBounds)
+              (*upperBounds)[i] = hostEvalVar;
+          for (auto [i, step] : llvm::enumerate(loopOp.getLoopSteps()))
+            if (step == bodyArg && steps)
+              (*steps)[i] = hostEvalVar;
+        })
+        .Default([](Operation *) {});
+  }
+}
+
 /// Follow uses of `host_eval`-defined block arguments of the given `omp.target`
 /// operation and populate output variables with their corresponding host value
 /// (i.e. operand evaluated outside of the target region), based on their uses
@@ -6722,22 +6782,66 @@ extractHostEvalClauses(omp::TargetOp targetOp, Value &numThreads,
     for (Operation *user : blockArg.getUsers()) {
       llvm::TypeSwitch<Operation *>(user)
           .Case([&](omp::TeamsOp teamsOp) {
-            if (teamsOp.getNumTeamsLower() == blockArg)
+            bool found = false;
+            if (teamsOp.getNumTeamsLower() == blockArg) {
               numTeamsLower = hostEvalVar;
-            else if (llvm::is_contained(teamsOp.getNumTeamsUpperVars(),
-                                        blockArg))
+              found = true;
+            }
+            if (llvm::is_contained(teamsOp.getNumTeamsUpperVars(), blockArg)) {
               numTeamsUpper = hostEvalVar;
-            else if (!teamsOp.getThreadLimitVars().empty() &&
-                     teamsOp.getThreadLimit(0) == blockArg)
+              found = true;
+            }
+            if (!teamsOp.getThreadLimitVars().empty() &&
+                teamsOp.getThreadLimit(0) == blockArg) {
               threadLimit = hostEvalVar;
-            else
+              found = true;
+            }
+            if (llvm::is_contained(teamsOp.getSharedVars(), blockArg)) {
+              // The host_eval arg is threaded into the teams body via
+              // shared_vars. Find the corresponding body block arg and follow
+              // its uses to determine the actual clause it populates.
+              auto iface = cast<omp::BlockArgOpenMPOpInterface>(*teamsOp);
+              OperandRange sharedVars = teamsOp.getSharedVars();
+              ArrayRef<BlockArgument> sharedBlockArgs =
+                  iface.getSharedBlockArgs();
+              for (auto [sv, ba] :
+                   llvm::zip_equal(sharedVars, sharedBlockArgs)) {
+                if (sv == blockArg) {
+                  processSharedBodyArg(
+                      ba, hostEvalVar, numThreads, numTeamsLower, numTeamsUpper,
+                      threadLimit, lowerBounds, upperBounds, steps);
+                  found = true;
+                  break;
+                }
+              }
+            }
+            if (!found)
               llvm_unreachable("unsupported host_eval use");
           })
           .Case([&](omp::ParallelOp parallelOp) {
+            bool found = false;
             if (!parallelOp.getNumThreadsVars().empty() &&
-                parallelOp.getNumThreads(0) == blockArg)
+                parallelOp.getNumThreads(0) == blockArg) {
               numThreads = hostEvalVar;
-            else
+              found = true;
+            }
+            if (llvm::is_contained(parallelOp.getSharedVars(), blockArg)) {
+              auto iface = cast<omp::BlockArgOpenMPOpInterface>(*parallelOp);
+              OperandRange sharedVars = parallelOp.getSharedVars();
+              ArrayRef<BlockArgument> sharedBlockArgs =
+                  iface.getSharedBlockArgs();
+              for (auto [sv, ba] :
+                   llvm::zip_equal(sharedVars, sharedBlockArgs)) {
+                if (sv == blockArg) {
+                  processSharedBodyArg(
+                      ba, hostEvalVar, numThreads, numTeamsLower, numTeamsUpper,
+                      threadLimit, lowerBounds, upperBounds, steps);
+                  found = true;
+                  break;
+                }
+              }
+            }
+            if (!found)
               llvm_unreachable("unsupported host_eval use");
           })
           .Case([&](omp::LoopNestOp loopOp) {

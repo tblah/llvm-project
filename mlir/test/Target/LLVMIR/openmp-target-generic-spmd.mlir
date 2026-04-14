@@ -10,12 +10,12 @@ module attributes {omp.is_target_device = false, omp.target_triples = ["amdgcn-a
     %0 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(to) capture(ByCopy) -> !llvm.ptr
     omp.target host_eval(%x -> %lb, %x -> %ub, %x -> %step : i32, i32, i32) map_entries(%0 -> %ptr : !llvm.ptr) {
       %x.map = llvm.load %ptr : !llvm.ptr -> i32
-      omp.teams {
+      omp.teams shared(%lb -> %lb_t, %ub -> %ub_t, %step -> %step_t, %x.map -> %xm_t : i32, i32, i32, i32) {
         omp.distribute {
-          omp.loop_nest (%iv1) : i32 = (%lb) to (%ub) step (%step) {
-            omp.parallel {
+          omp.loop_nest (%iv1) : i32 = (%lb_t) to (%ub_t) step (%step_t) {
+            omp.parallel shared(%xm_t -> %xm_p : i32) {
               omp.wsloop {
-                omp.loop_nest (%iv2) : i32 = (%x.map) to (%x.map) step (%x.map) {
+                omp.loop_nest (%iv2) : i32 = (%xm_p) to (%xm_p) step (%xm_p) {
                   omp.yield
                 }
               }
@@ -62,12 +62,12 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
     %0 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(to) capture(ByCopy) -> !llvm.ptr
     omp.target map_entries(%0 -> %ptr : !llvm.ptr) {
       %x = llvm.load %ptr : !llvm.ptr -> i32
-      omp.teams {
+      omp.teams shared(%x -> %x_t : i32) {
         omp.distribute {
-          omp.loop_nest (%iv1) : i32 = (%x) to (%x) step (%x) {
-            omp.parallel {
+          omp.loop_nest (%iv1) : i32 = (%x_t) to (%x_t) step (%x_t) {
+            omp.parallel shared(%x_t -> %x_p : i32) {
               omp.wsloop {
-                omp.loop_nest (%iv2) : i32 = (%x) to (%x) step (%x) {
+                omp.loop_nest (%iv2) : i32 = (%x_p) to (%x_p) step (%x_p) {
                   omp.yield
                 }
               }
