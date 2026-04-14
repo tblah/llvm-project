@@ -25,9 +25,9 @@ func.func @reduction1(%arg0 : index, %arg1 : index, %arg2 : index,
   // CHECK: llvm.store %[[CST]], %[[BUF]]
   %step = arith.constant 1 : index
   %zero = arith.constant 0.0 : f32
-  // CHECK: omp.parallel
+  // CHECK: omp.parallel{{.*}}shared({{.*}}%[[BUF]] -> %[[BUF_SHARED:[^ ,)]+]]{{.*}}: {{.*}}!llvm.ptr) {
   // CHECK: omp.wsloop
-  // CHECK-SAME: reduction(@[[$REDF]] %[[BUF]] -> %[[PVT_BUF:[a-z0-9]+]]
+  // CHECK-SAME: reduction(@[[$REDF]] %[[BUF_SHARED]] -> %[[PVT_BUF:[a-z0-9]+]]
   // CHECK: omp.loop_nest
   // CHECK: memref.alloca_scope
   scf.parallel (%i0, %i1) = (%arg0, %arg1) to (%arg2, %arg3)
@@ -107,7 +107,8 @@ func.func @reduction_muli(%arg0 : index, %arg1 : index, %arg2 : index,
   %step = arith.constant 1 : index
   %one = arith.constant 1 : i32
   // CHECK: %[[RED_VAR:.*]] = llvm.alloca %{{.*}} x i32 : (i64) -> !llvm.ptr
-  // CHECK: omp.wsloop reduction(@[[$REDI]] %[[RED_VAR]] -> %[[RED_PVT_VAR:.*]] : !llvm.ptr)
+  // CHECK: omp.parallel{{.*}}shared({{.*}}%[[RED_VAR]] -> %[[RED_VAR_SHARED:[^ ,)]+]]{{.*}}: {{.*}}!llvm.ptr) {
+  // CHECK: omp.wsloop reduction(@[[$REDI]] %[[RED_VAR_SHARED]] -> %[[RED_PVT_VAR:.*]] : !llvm.ptr)
   // CHECK: omp.loop_nest
   scf.parallel (%i0, %i1) = (%arg0, %arg1) to (%arg2, %arg3)
                             step (%arg4, %step) init (%one) -> (i32) {
@@ -206,10 +207,10 @@ func.func @reduction4(%arg0 : index, %arg1 : index, %arg2 : index,
   // CHECK: %[[BUF2:.*]] = llvm.alloca %{{.*}} x i64
   // CHECK: llvm.store %[[IONE]], %[[BUF2]]
 
-  // CHECK: omp.parallel
+  // CHECK: omp.parallel{{.*}}shared({{.*}}%[[BUF1]] -> %[[BUF1_SHARED:[^ ,)]+]]{{.*}}%[[BUF2]] -> %[[BUF2_SHARED:[^ ,)]+]]{{.*}}: {{.*}}!llvm.ptr, !llvm.ptr) {
   // CHECK: omp.wsloop
-  // CHECK-SAME: reduction(@[[$REDF1]] %[[BUF1]] -> %[[PVT_BUF1:[a-z0-9]+]]
-  // CHECK-SAME:           @[[$REDF2]] %[[BUF2]] -> %[[PVT_BUF2:[a-z0-9]+]]
+  // CHECK-SAME: reduction(@[[$REDF1]] %[[BUF1_SHARED]] -> %[[PVT_BUF1:[a-z0-9]+]]
+  // CHECK-SAME:           @[[$REDF2]] %[[BUF2_SHARED]] -> %[[PVT_BUF2:[a-z0-9]+]]
   // CHECK: omp.loop_nest
   // CHECK: memref.alloca_scope
   %res:2 = scf.parallel (%i0, %i1) = (%arg0, %arg1) to (%arg2, %arg3)

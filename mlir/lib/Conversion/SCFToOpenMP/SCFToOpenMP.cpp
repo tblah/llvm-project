@@ -22,6 +22,7 @@
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/SymbolTable.h"
 #include "mlir/Pass/Pass.h"
+#include "mlir/Transforms/RegionUtils.h"
 #include "mlir/Transforms/WalkPatternRewriteDriver.h"
 
 namespace mlir {
@@ -580,6 +581,17 @@ struct ParallelOpLowering : public OpRewritePattern<scf::ParallelOp> {
         rewriter.setInsertionPointToEnd(&*scope.getBodyRegion().begin());
         memref::AllocaScopeReturnOp::create(rewriter, loc, ValueRange());
       }
+    }
+
+    // Capture any live-in values and pass them using a shared clause.
+    // Constant-like ops are cloned into the region rather than shared.
+    SmallVector<Value> capturedVals = makeRegionIsolatedFromAbove(
+        rewriter, ompParallel.getRegion(),
+        [](Operation *op) { return op->hasTrait<OpTrait::ConstantLike>(); });
+    if (!capturedVals.empty()) {
+      rewriter.modifyOpInPlace(ompParallel, [&]() {
+        ompParallel.getSharedVarsMutable().assign(capturedVals);
+      });
     }
 
     // Load loop results.
