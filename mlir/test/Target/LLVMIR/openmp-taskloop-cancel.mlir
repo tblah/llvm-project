@@ -21,9 +21,9 @@ llvm.func @_QPtest(%arg0: !llvm.ptr {fir.bindc_name = "arg", llvm.noalias, llvm.
   %1 = llvm.mlir.constant(100 : i32) : i32
   %2 = llvm.mlir.constant(1 : i64) : i64
   %3 = llvm.alloca %2 x i32 {bindc_name = "i"} : (i64) -> !llvm.ptr
-  omp.taskloop.context private(@_QFtestEarg_firstprivate_i32 %arg0 -> %arg1, @_QFtestEi_private_i32 %3 -> %arg2 : !llvm.ptr, !llvm.ptr) {
+  omp.taskloop.context private(@_QFtestEarg_firstprivate_i32 %arg0 -> %arg1, @_QFtestEi_private_i32 %3 -> %arg2 : !llvm.ptr, !llvm.ptr) shared(%0 -> %lb_step, %1 -> %ub : i32, i32) {
     omp.taskloop.wrapper {
-      omp.loop_nest (%arg3) : i32 = (%0) to (%1) inclusive step (%0) {
+      omp.loop_nest (%arg3) : i32 = (%lb_step) to (%ub) inclusive step (%lb_step) {
         llvm.store %arg3, %arg2 : i32, !llvm.ptr
         llvm.call @_QPbefore(%arg1) : (!llvm.ptr) -> ()
         omp.cancel cancellation_construct_type(taskgroup)
@@ -153,9 +153,9 @@ llvm.func @_QPtest2(%arg0: !llvm.ptr {fir.bindc_name = "arg", llvm.noalias, llvm
   %2 = llvm.mlir.constant(1 : i64) : i64
   %3 = llvm.alloca %2 x i32 {bindc_name = "i"} : (i64) -> !llvm.ptr
   omp.taskgroup {
-    omp.taskloop.context nogroup private(@_QFtestEarg_firstprivate_i32 %arg0 -> %arg1, @_QFtestEi_private_i32 %3 -> %arg2 : !llvm.ptr, !llvm.ptr) {
+    omp.taskloop.context nogroup private(@_QFtestEarg_firstprivate_i32 %arg0 -> %arg1, @_QFtestEi_private_i32 %3 -> %arg2 : !llvm.ptr, !llvm.ptr) shared(%0 -> %lb_step, %1 -> %ub : i32, i32) {
       omp.taskloop.wrapper {
-        omp.loop_nest (%arg3) : i32 = (%0) to (%1) inclusive step (%0) {
+        omp.loop_nest (%arg3) : i32 = (%lb_step) to (%ub) inclusive step (%lb_step) {
           llvm.store %arg3, %arg2 : i32, !llvm.ptr
           llvm.call @_QPbefore(%arg1) : (!llvm.ptr) -> ()
           omp.cancel cancellation_construct_type(taskgroup)
@@ -293,9 +293,9 @@ llvm.func @_QPtest3(%arg0: !llvm.ptr {fir.bindc_name = "arg", llvm.noalias, llvm
   %1 = llvm.mlir.constant(100 : i32) : i32
   %2 = llvm.mlir.constant(1 : i64) : i64
   %3 = llvm.alloca %2 x i32 {bindc_name = "i"} : (i64) -> !llvm.ptr
-  omp.taskloop.context private(@_QFtestEarg_firstprivate_i32 %arg0 -> %arg1, @_QFtestEi_private_i32 %3 -> %arg2 : !llvm.ptr, !llvm.ptr) {
+  omp.taskloop.context private(@_QFtestEarg_firstprivate_i32 %arg0 -> %arg1, @_QFtestEi_private_i32 %3 -> %arg2 : !llvm.ptr, !llvm.ptr) shared(%0 -> %lb_step, %1 -> %ub : i32, i32) {
     omp.taskloop.wrapper {
-      omp.loop_nest (%arg3) : i32 = (%0) to (%1) inclusive step (%0) {
+      omp.loop_nest (%arg3) : i32 = (%lb_step) to (%ub) inclusive step (%lb_step) {
         llvm.store %arg3, %arg2 : i32, !llvm.ptr
         llvm.call @_QPbefore(%arg1) : (!llvm.ptr) -> ()
         %true = llvm.mlir.constant(1 : i1) : i1

@@ -14,9 +14,9 @@ llvm.func @_QPtest_taskloop_bounds() {
   %lb = llvm.mlir.constant(1 : i32) : i32
   %ub = llvm.mlir.constant(10 : i32) : i32
   %step = llvm.mlir.constant(1 : i32) : i32
-  omp.taskloop.context private(@_QPtest_taskloop_boundsEi_private_i32 %1 -> %arg0 : !llvm.ptr) {
+  omp.taskloop.context private(@_QPtest_taskloop_boundsEi_private_i32 %1 -> %arg0 : !llvm.ptr) shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : i32, i32, i32) {
     omp.taskloop.wrapper {
-      omp.loop_nest (%arg1) : i32 = (%lb) to (%ub) inclusive step (%step) {
+      omp.loop_nest (%arg1) : i32 = (%lb_in) to (%ub_in) inclusive step (%step_in) {
         llvm.store %arg1, %arg0 : i32, !llvm.ptr
         omp.yield
       }

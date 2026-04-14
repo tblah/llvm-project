@@ -14,13 +14,13 @@ llvm.func @_QPtest_taskloop(%arg0: !llvm.ptr) {
   %2 = llvm.mlir.constant(100 : i32) : i32
   %3 = llvm.mlir.constant(1 : i64) : i64
   %4 = llvm.alloca %3 x i32 : (i64) -> !llvm.ptr
-  omp.taskloop.context private(@_QFtest_taskloopEi_private_i32 %4 -> %arg1 : !llvm.ptr) {
+  omp.taskloop.context private(@_QFtest_taskloopEi_private_i32 %4 -> %arg1 : !llvm.ptr) shared(%arg0 -> %arg0_in, %0 -> %c48, %1 -> %c1, %2 -> %c100 : !llvm.ptr, i32, i32, i32) {
     // test where this alloca ends up
-    %5 = llvm.alloca %1 x !llvm.struct<(ptr, i64, i32, i8, i8, i8, i8, array<1 x array<3 x i64>>)> {alignment = 8 : i64} : (i32) -> !llvm.ptr
+    %5 = llvm.alloca %c1 x !llvm.struct<(ptr, i64, i32, i8, i8, i8, i8, array<1 x array<3 x i64>>)> {alignment = 8 : i64} : (i32) -> !llvm.ptr
     omp.taskloop.wrapper {
-      omp.loop_nest (%arg2) : i32 = (%1) to (%2) inclusive step (%1) {
+      omp.loop_nest (%arg2) : i32 = (%c1) to (%c100) inclusive step (%c1) {
         llvm.store %arg2, %arg1 : i32, !llvm.ptr
-        "llvm.intr.memcpy"(%5, %arg0, %0) <{arg_attrs = [{llvm.align = 8 : i64}, {llvm.align = 8 : i64}, {}], isVolatile = false}> : (!llvm.ptr, !llvm.ptr, i32) -> ()
+        "llvm.intr.memcpy"(%5, %arg0_in, %c48) <{arg_attrs = [{llvm.align = 8 : i64}, {llvm.align = 8 : i64}, {}], isVolatile = false}> : (!llvm.ptr, !llvm.ptr, i32) -> ()
         %6 = llvm.getelementptr %5[0, 0] : (!llvm.ptr) -> !llvm.ptr, !llvm.struct<(ptr, i64, i32, i8, i8, i8, i8, array<1 x array<3 x i64>>)>
         %7 = llvm.load %6 : !llvm.ptr -> !llvm.ptr
         llvm.call @_QPdo_something(%7) {fastmathFlags = #llvm.fastmath<contract>} : (!llvm.ptr) -> ()

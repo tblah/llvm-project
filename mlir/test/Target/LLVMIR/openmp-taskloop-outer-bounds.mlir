@@ -22,9 +22,9 @@ llvm.func @_QPtest() {
   %lb = llvm.load %lb.addr : !llvm.ptr -> i32
   %ub = llvm.load %ub.addr : !llvm.ptr -> i32
   %step = llvm.load %step.addr : !llvm.ptr -> i32
-  omp.taskloop.context private(@_QFtestEi_private_i32 %i -> %arg0 : !llvm.ptr) {
+  omp.taskloop.context private(@_QFtestEi_private_i32 %i -> %arg0 : !llvm.ptr) shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : i32, i32, i32) {
     omp.taskloop.wrapper {
-      omp.loop_nest (%iv) : i32 = (%lb) to (%ub) inclusive step (%step) {
+      omp.loop_nest (%iv) : i32 = (%lb_in) to (%ub_in) inclusive step (%step_in) {
         llvm.store %iv, %arg0 : i32, !llvm.ptr
         omp.yield
       }
