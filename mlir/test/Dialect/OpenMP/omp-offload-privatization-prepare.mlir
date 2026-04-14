@@ -138,11 +138,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
 // CHECK: omp.target depend(taskdependout -> %[[HEAP0]] : !llvm.ptr) nowait map_entries(%[[VAL_11]] -> %[[VAL_38:.*]], %[[VAL_34]] -> %[[VAL_39:.*]], %[[VAL_33]] -> %[[VAL_40:.*]], %[[VAL_37]] -> %[[VAL_41:.*]], %[[VAL_36]] -> %[[VAL_42:.*]] : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) private(@firstprivatizer %[[HEAP0]] -> %[[VAL_43:.*]] [map_idx=1], @firstprivatizer_1 %[[HEAP1]] -> %[[VAL_44:.*]] [map_idx=3] : !llvm.ptr, !llvm.ptr) {
 // CHECK: omp.terminator
 // CHECK: }
-// CHECK: omp.task depend(taskdependin -> %[[HEAP0]] : !llvm.ptr) {
-// CHECK: llvm.call @firstprivatizer_1_dealloc(%[[VAL_31]]) : (!llvm.ptr) -> ()
-// CHECK: llvm.call @free(%[[HEAP1]]) : (!llvm.ptr) -> ()
-// CHECK: llvm.call @firstprivatizer_dealloc(%[[VAL_21]]) : (!llvm.ptr) -> ()
-// CHECK: llvm.call @free(%[[HEAP0]]) : (!llvm.ptr) -> ()
+// CHECK: omp.task depend(taskdependin -> %[[HEAP0]] : !llvm.ptr) shared(%[[VAL_31]] -> %[[SA0:.*]], %[[HEAP1]] -> %[[SA1:.*]], %[[VAL_21]] -> %[[SA2:.*]], %[[HEAP0]] -> %[[SA3:.*]] : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) {
+// CHECK: llvm.call @firstprivatizer_1_dealloc(%[[SA0]]) : (!llvm.ptr) -> ()
+// CHECK: llvm.call @free(%[[SA1]]) : (!llvm.ptr) -> ()
+// CHECK: llvm.call @firstprivatizer_dealloc(%[[SA2]]) : (!llvm.ptr) -> ()
+// CHECK: llvm.call @free(%[[SA3]]) : (!llvm.ptr) -> ()
 // CHECK: omp.terminator
 // CHECK: }
 // CHECK: %[[VAL_45:.*]] = llvm.mlir.constant(48 : i32) : i32

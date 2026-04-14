@@ -115,9 +115,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr<270> = dense<32> : vec
 // CHECK: omp.target depend(taskdependout -> %[[HEAP0]] : !llvm.ptr) nowait map_entries(%[[VAL_33]] -> %[[VAL_35:.*]], %[[VAL_30]] -> %[[VAL_36:.*]], %[[VAL_32]] -> %[[VAL_37:.*]] : !llvm.ptr, !llvm.ptr, !llvm.ptr) private(@boxchar_firstprivate %[[VAL_34]] -> %[[VAL_38:.*]] [map_idx=0], @private_eye %[[VAL_1]] -> %[[VAL_39:.*]] [map_idx=1] : !llvm.struct<(ptr, i64)>, !llvm.ptr) {
 // CHECK: omp.terminator
 // CHECK: }
-// CHECK: omp.task depend(taskdependin -> %[[HEAP0]] : !llvm.ptr) {
-// CHECK: llvm.call @boxchar_firstprivate_dealloc(%[[VAL_29]]) : (!llvm.struct<(ptr, i64)>) -> ()
-// CHECK: llvm.call @free(%[[HEAP0]]) : (!llvm.ptr) -> ()
+// CHECK: omp.task depend(taskdependin -> %[[HEAP0]] : !llvm.ptr) shared(%[[VAL_29]] -> %[[SA0:.*]], %[[HEAP0]] -> %[[SA1:.*]] : !llvm.struct<(ptr, i64)>, !llvm.ptr) {
+// CHECK: llvm.call @boxchar_firstprivate_dealloc(%[[SA0]]) : (!llvm.struct<(ptr, i64)>) -> ()
+// CHECK: llvm.call @free(%[[SA1]]) : (!llvm.ptr) -> ()
 // CHECK: omp.terminator
 // CHECK: }
 // CHECK: llvm.return

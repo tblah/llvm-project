@@ -15,6 +15,7 @@
 #include "mlir/IR/IRMapping.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Support/LLVM.h"
+#include "mlir/Transforms/RegionUtils.h"
 #include "llvm/Support/DebugLog.h"
 #include "llvm/Support/FormatVariadic.h"
 #include <cstdint>
@@ -319,6 +320,22 @@ class PrepareForOMPOffloadPrivatizationPass
       assert(newPrivVars.size() == privateVars.size() &&
              "The number of private variables must match before and after "
              "transformation");
+
+      // Fix any IsolatedFromAbove violations in the cleanup task by adding
+      // captured values as shared_vars. The task body may reference values
+      // (e.g. heapMem, initializedVal) defined outside the task region.
+      if (cleanupTaskOp) {
+        SmallVector<Value> capturedVals = makeRegionIsolatedFromAbove(
+            rewriter, cleanupTaskOp.getRegion(), [](Operation *op) {
+              return op->hasTrait<OpTrait::ConstantLike>();
+            });
+        if (!capturedVals.empty()) {
+          rewriter.modifyOpInPlace(cleanupTaskOp, [&]() {
+            cleanupTaskOp.getSharedVarsMutable().assign(capturedVals);
+          });
+        }
+      }
+
       if (fakeDependVar) {
         omp::ClauseTaskDependAttr outDepend = omp::ClauseTaskDependAttr::get(
             rewriter.getContext(), omp::ClauseTaskDepend::taskdependout);
