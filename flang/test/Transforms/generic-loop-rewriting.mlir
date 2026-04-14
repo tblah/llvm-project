@@ -4,11 +4,11 @@ omp.private {type = private} @_QFteams_loopEi_private_i32 : i32
 
 func.func @_QPteams_loop() {
   %i = fir.alloca i32
-  omp.teams {
+  omp.teams shared(%i -> %shared_i : !fir.ref<i32>) {
     %c0 = arith.constant 0 : i32
     %c10 = arith.constant 10 : i32
     %c1 = arith.constant 1 : i32
-    omp.loop private(@_QFteams_loopEi_private_i32 %i -> %arg2 : !fir.ref<i32>) {
+    omp.loop private(@_QFteams_loopEi_private_i32 %shared_i -> %arg2 : !fir.ref<i32>) {
       omp.loop_nest (%arg3) : i32 = (%c0) to (%c10) inclusive step (%c1) {
         fir.store %arg3 to %arg2 : !fir.ref<i32>
         omp.yield
@@ -48,11 +48,11 @@ func.func @_QPteams_loop() {
 
 func.func @_QPparallel_loop() {
   %i = fir.alloca i32
-  omp.parallel {
+  omp.parallel shared(%i -> %shared_i : !fir.ref<i32>) {
     %c0 = arith.constant 0 : i32
     %c10 = arith.constant 10 : i32
     %c1 = arith.constant 1 : i32
-    omp.loop private(@_QFteams_loopEi_private_i32 %i -> %arg2 : !fir.ref<i32>) {
+    omp.loop private(@_QFteams_loopEi_private_i32 %shared_i -> %arg2 : !fir.ref<i32>) {
       omp.loop_nest (%arg3) : i32 = (%c0) to (%c10) inclusive step (%c1) {
         fir.store %arg3 to %arg2 : !fir.ref<i32>
         omp.yield

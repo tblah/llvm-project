@@ -17,15 +17,15 @@ subroutine sb1(x, y)
   !$omp end parallel workshare
 end subroutine
 
-! HLFIR:     omp.parallel {
+! HLFIR:     omp.parallel shared(%2#0 -> %[[Y_SHARED:.*]], %1#0 -> %[[X_SHARED:.*]] : !fir.box<!fir.array<?xi32>>, !fir.box<!fir.array<?xi32>>) {
 ! HLFIR:       omp.workshare {
-! HLFIR:         hlfir.assign
+! HLFIR:         hlfir.assign %[[Y_SHARED]] to %[[X_SHARED]] : !fir.box<!fir.array<?xi32>>, !fir.box<!fir.array<?xi32>>
 ! HLFIR:         omp.terminator
 ! HLFIR:       }
 ! HLFIR:       omp.terminator
 ! HLFIR:     }
 
-! FIR:     omp.parallel {
+! FIR:     omp.parallel shared(%{{.*}} -> %[[Y_SHARED:.*]], %{{.*}} -> %[[X_SHARED:.*]] : !fir.box<!fir.array<?xi32>>, !fir.box<!fir.array<?xi32>>) {
 ! FIR:       omp.wsloop nowait {
 ! FIR:         omp.loop_nest
 ! FIR:       }

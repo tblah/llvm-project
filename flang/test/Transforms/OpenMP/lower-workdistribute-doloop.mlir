@@ -19,11 +19,11 @@
 // CHECK:           return
 // CHECK:         }
 func.func @x(%lb : index, %ub : index, %step : index, %b : i1, %addr : !fir.ref<index>) {
-  omp.teams {
-    omp.workdistribute { 
-      fir.do_loop %iv = %lb to %ub step %step unordered {
+  omp.teams shared(%lb -> %lb0, %ub -> %ub0, %step -> %step0, %b -> %b0, %addr -> %addr0 : index, index, index, i1, !fir.ref<index>) {
+    omp.workdistribute {
+      fir.do_loop %iv = %lb0 to %ub0 step %step0 unordered {
         %zero = arith.constant 0 : index
-        fir.store %zero to %addr : !fir.ref<index>
+        fir.store %zero to %addr0 : !fir.ref<index>
       }
       omp.terminator
     }
