@@ -42,29 +42,29 @@ llvm.func @sectionsreduction_(%arg0: !llvm.ptr {fir.bindc_name = "x"}) attribute
   %0 = llvm.mlir.constant(1 : i64) : i64
   %1 = llvm.mlir.constant(0 : index) : i64
   %2 = llvm.mlir.constant(1 : index) : i64
-  omp.parallel {
-    %3 = llvm.alloca %0 x !llvm.struct<(ptr, i64, i32, i8, i8, i8, i8, array<1 x array<3 x i64>>)> : (i64) -> !llvm.ptr
+  omp.parallel shared(%0 -> %s0, %1 -> %s1, %2 -> %s2 : i64, i64, i64) {
+    %3 = llvm.alloca %s0 x !llvm.struct<(ptr, i64, i32, i8, i8, i8, i8, array<1 x array<3 x i64>>)> : (i64) -> !llvm.ptr
     omp.sections reduction(byref @add_reduction_byref_box_Uxf32 %3 -> %arg1 : !llvm.ptr) {
       omp.section {
       ^bb0(%arg2: !llvm.ptr):
-        llvm.br ^bb1(%0 : i64)
+        llvm.br ^bb1(%s0 : i64)
       ^bb1(%4: i64):  // 2 preds: ^bb0, ^bb2
-        %5 = llvm.icmp "sgt" %4, %1 : i64
+        %5 = llvm.icmp "sgt" %4, %s1 : i64
         llvm.cond_br %5, ^bb2, ^bb3
       ^bb2:  // pred: ^bb1
-        %6 = llvm.sub %4, %2 : i64
+        %6 = llvm.sub %4, %s2 : i64
         llvm.br ^bb1(%6 : i64)
       ^bb3:  // pred: ^bb1
         omp.terminator
       }
       omp.section {
       ^bb0(%arg2: !llvm.ptr):
-        llvm.br ^bb1(%0 : i64)
+        llvm.br ^bb1(%s0 : i64)
       ^bb1(%4: i64):  // 2 preds: ^bb0, ^bb2
-        %5 = llvm.icmp "sgt" %4, %1 : i64
+        %5 = llvm.icmp "sgt" %4, %s1 : i64
         llvm.cond_br %5, ^bb2, ^bb3
       ^bb2:  // pred: ^bb1
-        %6 = llvm.sub %4, %2 : i64
+        %6 = llvm.sub %4, %s2 : i64
         llvm.br ^bb1(%6 : i64)
       ^bb3:  // pred: ^bb1
         omp.terminator
