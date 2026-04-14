@@ -39,8 +39,8 @@ llvm.func @cancel_parallel() {
 // CHECK:         ret void
 
 llvm.func @cancel_parallel_if(%arg0 : i1) {
-  omp.parallel {
-    omp.cancel cancellation_construct_type(parallel) if(%arg0)
+  omp.parallel shared(%arg0 -> %arg0_in : i1) {
+    omp.cancel cancellation_construct_type(parallel) if(%arg0_in)
     omp.terminator
   }
   llvm.return

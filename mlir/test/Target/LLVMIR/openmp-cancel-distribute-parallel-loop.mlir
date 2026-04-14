@@ -1,11 +1,11 @@
 // RUN: mlir-translate -mlir-to-llvmir %s | FileCheck %s
 
 llvm.func @cancel_distribute_parallel_do(%lb : i32, %ub : i32, %step : i32) {
-  omp.teams {
-    omp.parallel {
+  omp.teams shared(%lb -> %lb_t, %ub -> %ub_t, %step -> %step_t : i32, i32, i32) {
+    omp.parallel shared(%lb_t -> %lb_p, %ub_t -> %ub_p, %step_t -> %step_p : i32, i32, i32) {
       omp.distribute {
         omp.wsloop {
-          omp.loop_nest (%iv) : i32 = (%lb) to (%ub) step (%step) {
+          omp.loop_nest (%iv) : i32 = (%lb_p) to (%ub_p) step (%step_p) {
             omp.cancel cancellation_construct_type(loop)
             omp.yield
           }
