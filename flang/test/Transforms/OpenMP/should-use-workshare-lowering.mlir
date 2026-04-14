@@ -25,12 +25,12 @@ func.func @should_parallelize_0(%arg: !fir.ref<!fir.array<42xi32>>, %idx : index
 // CHECK-LABEL: @should_parallelize_1
 // CHECK: omp.workshare.loop_wrapper
 func.func @should_parallelize_1(%arg: !fir.ref<!fir.array<42xi32>>, %idx : index) {
-  omp.parallel {
+  omp.parallel shared(%arg -> %arg_in : !fir.ref<!fir.array<42xi32>>) {
     omp.workshare {
       %c42 = arith.constant 42 : index
       %c1_i32 = arith.constant 1 : i32
       %shape = fir.shape %c42 : (index) -> !fir.shape<1>
-      %array:2 = hlfir.declare %arg(%shape) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
+      %array:2 = hlfir.declare %arg_in(%shape) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
       %elemental = hlfir.elemental %shape unordered : (!fir.shape<1>) -> !hlfir.expr<42xi32> {
       ^bb0(%i: index):
         hlfir.yield_element %c1_i32 : i32
@@ -93,11 +93,11 @@ func.func @should_not_parallelize_1(%arg: !fir.ref<!fir.array<42xi32>>, %idx : i
 // CHECK-NOT: omp.workshare.loop_wrapper
 func.func @should_not_parallelize_2(%arg: !fir.ref<!fir.array<42xi32>>, %idx : index) {
   omp.workshare {
-    omp.parallel {
+    omp.parallel shared(%arg -> %arg_in : !fir.ref<!fir.array<42xi32>>) {
       %c42 = arith.constant 42 : index
       %c1_i32 = arith.constant 1 : i32
       %shape = fir.shape %c42 : (index) -> !fir.shape<1>
-      %array:2 = hlfir.declare %arg(%shape) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
+      %array:2 = hlfir.declare %arg_in(%shape) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
       %elemental = hlfir.elemental %shape unordered : (!fir.shape<1>) -> !hlfir.expr<42xi32> {
       ^bb0(%i: index):
         hlfir.yield_element %c1_i32 : i32
@@ -115,13 +115,13 @@ func.func @should_not_parallelize_2(%arg: !fir.ref<!fir.array<42xi32>>, %idx : i
 // CHECK-NOT: omp.workshare.loop_wrapper
 func.func @should_not_parallelize_3(%arg: !fir.ref<!fir.array<42xi32>>, %idx : index) {
   omp.workshare {
-    omp.parallel {
+    omp.parallel shared(%arg -> %arg_outer : !fir.ref<!fir.array<42xi32>>) {
       omp.workshare {
-        omp.parallel {
+        omp.parallel shared(%arg_outer -> %arg_in : !fir.ref<!fir.array<42xi32>>) {
           %c42 = arith.constant 42 : index
           %c1_i32 = arith.constant 1 : i32
           %shape = fir.shape %c42 : (index) -> !fir.shape<1>
-          %array:2 = hlfir.declare %arg(%shape) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
+          %array:2 = hlfir.declare %arg_in(%shape) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
           %elemental = hlfir.elemental %shape unordered : (!fir.shape<1>) -> !hlfir.expr<42xi32> {
           ^bb0(%i: index):
             hlfir.yield_element %c1_i32 : i32

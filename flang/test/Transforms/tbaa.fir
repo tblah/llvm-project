@@ -216,7 +216,8 @@ func.func @_QQmain() attributes {fir.bindc_name = "reduce"} {
 // CHECK: omp.parallel reduction({{.*}}) {
     %8 = fir.declare %arg0 {uniq_name = "_QFEi"} : (!fir.ref<i32>) -> !fir.ref<i32>
 // CHECK-NEXT: %[[DECL:.*]] = fir.declare
-    fir.store %c-1_i32 to %8 : !fir.ref<i32>
+    %cminus1_i32 = arith.constant -1 : i32
+    fir.store %cminus1_i32 to %8 : !fir.ref<i32>
 // CHECK-NOT: fir.store %{{.*}} to %[[DECL]] {tbaa = %{{.*}}} : !fir.ref<i32>
 // CHECK:     fir.store %{{.*}} to %[[DECL]] : !fir.ref<i32>
     omp.terminator

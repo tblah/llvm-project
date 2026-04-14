@@ -1330,20 +1330,22 @@ func.func @_QPtest_dummy_scalar_pointer_optional(%arg0: !fir.ref<!fir.array<?xi3
 // (even if omp.loop_nest becomes a loop-like operation):
 // CHECK-LABEL: func.func @_QPtest_omp_loop_wrapper
 // CHECK: omp.parallel
+// CHECK-NEXT: arith.constant
+// CHECK-NEXT: arith.constant
 // CHECK-NEXT: omp.wsloop
 // CHECK-NEXT: omp.loop_nest
 func.func @_QPtest_omp_loop_wrapper(%arg0: !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>> {fir.bindc_name = "a"}) {
-  %c10_i32 = arith.constant 10 : i32
-  %c1_i32 = arith.constant 1 : i32
   %0 = fir.dummy_scope : !fir.dscope
   %1 = fir.declare %arg0 dummy_scope %0 arg 1 {fortran_attrs = #fir.var_attrs<allocatable>, uniq_name = "_QFtest_omp_loop_wrapperEa"} : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>, !fir.dscope) -> !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
   %2 = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFtest_omp_loop_wrapperEi"}
   %3 = fir.declare %2 {uniq_name = "_QFtest_omp_loop_wrapperEi"} : (!fir.ref<i32>) -> !fir.ref<i32>
-  omp.parallel {
-    omp.wsloop private(@_QFtest_omp_loop_wrapperEi_private_i32 %3 -> %arg1 : !fir.ref<i32>) {
+  omp.parallel shared(%3 -> %shared3, %1 -> %shared1 : !fir.ref<i32>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) {
+    %c10_i32 = arith.constant 10 : i32
+    %c1_i32 = arith.constant 1 : i32
+    omp.wsloop private(@_QFtest_omp_loop_wrapperEi_private_i32 %shared3 -> %arg1 : !fir.ref<i32>) {
       omp.loop_nest (%arg2) : i32 = (%c1_i32) to (%c10_i32) inclusive step (%c1_i32) {
         %c0 = arith.constant 0 : index
-        %5 = fir.load %1 : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
+        %5 = fir.load %shared1 : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
         %7 = fir.convert %arg2 : (i32) -> i64
         %8 = fir.box_addr %5 : (!fir.box<!fir.heap<!fir.array<?xi32>>>) -> !fir.heap<!fir.array<?xi32>>
         %9:3 = fir.box_dims %5, %c0 : (!fir.box<!fir.heap<!fir.array<?xi32>>>, index) -> (index, index, index)
@@ -2401,23 +2403,28 @@ func.func @test_acc_loop_nested_canMoveOutOf(%arg0: !fir.ref<!fir.array<10xf32>>
 // CHECK-LABEL:   func.func @test_omp_wsloop_nested_canMoveFromDescendant(
 // CHECK-SAME:      %[[ARG0:.*]]: !fir.ref<!fir.array<10xf32>>)
 // CHECK:         omp.parallel
+// CHECK-SAME:        shared({{.*}}, %[[ARG0]] -> %[[ARG0_SHARED:.*]] : {{.*}})
+// CHECK-NEXT:      arith.constant
+// CHECK-NEXT:      arith.constant
+// CHECK-NEXT:      arith.constant
+// CHECK-NEXT:      arith.constant
 // CHECK-NEXT:      omp.wsloop
 // CHECK-NEXT:        omp.loop_nest
 // CHECK:               scf.if
-// CHECK:                 fir.convert %[[ARG0]]
+// CHECK:                 fir.convert %[[ARG0_SHARED]]
 func.func @test_omp_wsloop_nested_canMoveFromDescendant(%arg0: !fir.ref<!fir.array<10xf32>>) {
-  %cst = arith.constant 1.000000e+00 : f32
-  %c10_i32 = arith.constant 10 : i32
-  %c5_i32 = arith.constant 5 : i32
-  %c1_i32 = arith.constant 1 : i32
   %alloca = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFtestEi"}
   %decl_i = fir.declare %alloca {uniq_name = "_QFtestEi"} : (!fir.ref<i32>) -> !fir.ref<i32>
-  omp.parallel {
-    omp.wsloop private(@_QFtestEi_private_i32 %decl_i -> %arg1 : !fir.ref<i32>) {
+  omp.parallel shared(%decl_i -> %shared_decl_i, %arg0 -> %shared_arg0 : !fir.ref<i32>, !fir.ref<!fir.array<10xf32>>) {
+    %cst = arith.constant 1.000000e+00 : f32
+    %c10_i32 = arith.constant 10 : i32
+    %c5_i32 = arith.constant 5 : i32
+    %c1_i32 = arith.constant 1 : i32
+    omp.wsloop private(@_QFtestEi_private_i32 %shared_decl_i -> %arg1 : !fir.ref<i32>) {
       omp.loop_nest (%arg2) : i32 = (%c1_i32) to (%c10_i32) inclusive step (%c1_i32) {
         %cond = arith.cmpi slt, %arg2, %c5_i32 : i32
         scf.if %cond {
-          %cvt = fir.convert %arg0 : (!fir.ref<!fir.array<10xf32>>) -> memref<10xf32>
+          %cvt = fir.convert %shared_arg0 : (!fir.ref<!fir.array<10xf32>>) -> memref<10xf32>
           %idx = fir.convert %arg2 : (i32) -> index
           memref.store %cst, %cvt[%idx] : memref<10xf32>
         }

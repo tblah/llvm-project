@@ -129,11 +129,11 @@ omp.private {type = private} @y_private : i32
 
 // CHECK-LABEL: func.func @hlfir_assign_shared_to_private
 func.func @hlfir_assign_shared_to_private(%arg0: !fir.ref<i32>, %shared: !fir.ref<i32>) {
-  omp.parallel private(@y_private %arg0 -> %priv_arg : !fir.ref<i32>) {
+  omp.parallel private(@y_private %arg0 -> %priv_arg : !fir.ref<i32>) shared(%shared -> %shared_in : !fir.ref<i32>) {
     %decl:2 = hlfir.declare %priv_arg {uniq_name = "x"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
     omp.workshare {
       // hlfir.assign with a shared RHS variable should stay in omp.single
-      hlfir.assign %shared to %decl#0 : !fir.ref<i32>, !fir.ref<i32>
+      hlfir.assign %shared_in to %decl#0 : !fir.ref<i32>, !fir.ref<i32>
       omp.terminator
     }
     omp.terminator
@@ -141,10 +141,10 @@ func.func @hlfir_assign_shared_to_private(%arg0: !fir.ref<i32>, %shared: !fir.re
   return
 }
 
-// CHECK:       omp.parallel private(@y_private %{{.*}} -> %[[PRIV_ARG:.*]] : !fir.ref<i32>) {
+// CHECK:       omp.parallel private(@y_private %{{.*}} -> %[[PRIV_ARG:.*]] : !fir.ref<i32>) shared(%{{.*}} -> %[[SHARED_ARG:.*]] : !fir.ref<i32>) {
 // CHECK-NEXT:    %[[DECL:.*]]:2 = hlfir.declare %[[PRIV_ARG]]
 // CHECK-NEXT:    omp.single nowait {
-// CHECK:           hlfir.assign %{{.*}} to %[[DECL]]#0 : !fir.ref<i32>, !fir.ref<i32>
+// CHECK:           hlfir.assign %[[SHARED_ARG]] to %[[DECL]]#0 : !fir.ref<i32>, !fir.ref<i32>
 // CHECK:           omp.terminator
 // CHECK-NEXT:    }
 // CHECK-NEXT:    omp.barrier
@@ -193,13 +193,13 @@ func.func @reduction_clause_thread_local(%arg0: !fir.ref<i32>) {
 
 // CHECK-LABEL: func.func @no_nowait_in_loop_with_workshare_wrapper
 func.func @no_nowait_in_loop_with_workshare_wrapper(%arg0: !fir.ref<i32>) {
-  omp.parallel {
+  omp.parallel shared(%arg0 -> %arg0_in : !fir.ref<i32>) {
     omp.workshare {
       %c1 = arith.constant 1 : index
       %c10 = arith.constant 10 : index
       fir.do_loop %i = %c1 to %c10 step %c1 {
         // This side-effecting op will be wrapped in omp.single without nowait
-        "test.side_effect"(%arg0) : (!fir.ref<i32>) -> ()
+        "test.side_effect"(%arg0_in) : (!fir.ref<i32>) -> ()
         // The workshare.loop_wrapper triggers recursive processing of the loop
         omp.workshare.loop_wrapper {
           omp.loop_nest (%j) : index = (%c1) to (%c10) inclusive step (%c1) {
@@ -216,10 +216,10 @@ func.func @no_nowait_in_loop_with_workshare_wrapper(%arg0: !fir.ref<i32>) {
 }
 
 // The omp.single inside the loop should NOT have nowait
-// CHECK:       omp.parallel {
+// CHECK:       omp.parallel shared(%{{.*}} -> %[[SHARED_ARG0:.*]] : !fir.ref<i32>) {
 // CHECK:         fir.do_loop
 // CHECK:           omp.single {
-// CHECK:             "test.side_effect"
+// CHECK:             "test.side_effect"(%[[SHARED_ARG0]])
 // CHECK:             omp.terminator
 // CHECK-NEXT:      }
 // CHECK:           omp.wsloop {
@@ -273,11 +273,11 @@ func.func @thread_local_store_in_loop_with_wrapper() {
 
 // CHECK-LABEL: func.func @non_thread_local_needs_single
 func.func @non_thread_local_needs_single(%arg0: !fir.ref<i32>) {
-  omp.parallel {
+  omp.parallel shared(%arg0 -> %arg0_in : !fir.ref<i32>) {
     omp.workshare {
       %c1 = arith.constant 1 : i32
       // arg0 is shared memory, store must be in omp.single
-      fir.store %c1 to %arg0 : !fir.ref<i32>
+      fir.store %c1 to %arg0_in : !fir.ref<i32>
       omp.terminator
     }
     omp.terminator
@@ -285,10 +285,10 @@ func.func @non_thread_local_needs_single(%arg0: !fir.ref<i32>) {
   return
 }
 
-// CHECK:       omp.parallel {
+// CHECK:       omp.parallel shared(%{{.*}} -> %[[SHARED_ARG1:.*]] : !fir.ref<i32>) {
 // CHECK-NEXT:    omp.single nowait {
 // CHECK-NEXT:      %[[C1:.*]] = arith.constant 1 : i32
-// CHECK-NEXT:      fir.store %[[C1]] to %{{.*}} : !fir.ref<i32>
+// CHECK-NEXT:      fir.store %[[C1]] to %[[SHARED_ARG1]] : !fir.ref<i32>
 // CHECK-NEXT:      omp.terminator
 // CHECK-NEXT:    }
 // CHECK-NEXT:    omp.barrier
@@ -349,7 +349,7 @@ func.func @thread_local_load_and_store() {
 
 // CHECK-LABEL: func.func @forall_pattern_in_workshare
 func.func @forall_pattern_in_workshare(%shared: !fir.ref<i32>) {
-  omp.parallel {
+  omp.parallel shared(%shared -> %shared_in : !fir.ref<i32>) {
     %idx_alloca = fir.alloca i32 {bindc_name = "i", pinned}
     omp.workshare {
       %c1 = arith.constant 1 : index
@@ -359,7 +359,7 @@ func.func @forall_pattern_in_workshare(%shared: !fir.ref<i32>) {
         %iv_i32 = fir.convert %iv : (index) -> i32
         fir.store %iv_i32 to %idx_alloca : !fir.ref<i32>
         // Load from shared memory (must stay in omp.single)
-        %shared_val = fir.load %shared : !fir.ref<i32>
+        %shared_val = fir.load %shared_in : !fir.ref<i32>
         // Load from thread-local alloca (must stay in omp.single to
         // prevent SingleRegion elimination and barrier loss)
         %idx_val = fir.load %idx_alloca : !fir.ref<i32>
@@ -384,14 +384,14 @@ func.func @forall_pattern_in_workshare(%shared: !fir.ref<i32>) {
 // load and side-effecting op (preserving the single's barrier). The
 // thread-local store is also cloned inside the single, but a parallel copy
 // is placed after it so all threads update their own alloca.
-// CHECK:       omp.parallel {
+// CHECK:       omp.parallel shared(%{{.*}} -> %[[SHARED_ARG2:.*]] : !fir.ref<i32>) {
 // CHECK:         %[[IDX:.*]] = fir.alloca i32 {bindc_name = "i", pinned}
 // CHECK:         fir.do_loop
 // The single contains the shared load, thread-local load, and side effect.
 // The thread-local store is also cloned inside (harmless, one thread runs it).
 // CHECK:           omp.single {
 // CHECK:             fir.store {{.*}} to %[[IDX]] : !fir.ref<i32>
-// CHECK:             fir.load %{{.*}} : !fir.ref<i32>
+// CHECK:             fir.load %[[SHARED_ARG2]] : !fir.ref<i32>
 // CHECK:             fir.load %[[IDX]] : !fir.ref<i32>
 // CHECK:             "test.side_effect"
 // CHECK:             omp.terminator

@@ -2,12 +2,12 @@
 
 // CHECK-LABEL:   func.func @simple(
 // CHECK-SAME:                      %[[VAL_0:.*]]: !fir.ref<!fir.array<42xi32>>) {
-// CHECK:           omp.parallel {
+// CHECK:           omp.parallel shared(%[[VAL_0]] -> %[[SHARED_ARG:.*]] : !fir.ref<!fir.array<42xi32>>) {
 // CHECK:             omp.workshare {
 // CHECK:               %[[VAL_1:.*]] = arith.constant 42 : index
 // CHECK:               %[[VAL_2:.*]] = arith.constant 1 : i32
 // CHECK:               %[[VAL_3:.*]] = fir.shape %[[VAL_1]] : (index) -> !fir.shape<1>
-// CHECK:               %[[VAL_4:.*]]:2 = hlfir.declare %[[VAL_0]](%[[VAL_3]]) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
+// CHECK:               %[[VAL_4:.*]]:2 = hlfir.declare %[[SHARED_ARG]](%[[VAL_3]]) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
 // CHECK:               %[[VAL_5:.*]] = fir.allocmem !fir.array<42xi32> {bindc_name = ".tmp.array", uniq_name = ""}
 // CHECK:               %[[VAL_6:.*]]:2 = hlfir.declare %[[VAL_5]](%[[VAL_3]]) {uniq_name = ".tmp.array"} : (!fir.heap<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.heap<!fir.array<42xi32>>, !fir.heap<!fir.array<42xi32>>)
 // CHECK:               %[[VAL_7:.*]] = arith.constant true
@@ -34,12 +34,12 @@
 // CHECK:           return
 // CHECK:         }
 func.func @simple(%arg: !fir.ref<!fir.array<42xi32>>) {
-  omp.parallel {
+  omp.parallel shared(%arg -> %arg_in : !fir.ref<!fir.array<42xi32>>) {
     omp.workshare {
       %c42 = arith.constant 42 : index
       %c1_i32 = arith.constant 1 : i32
       %shape = fir.shape %c42 : (index) -> !fir.shape<1>
-      %array:2 = hlfir.declare %arg(%shape) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
+      %array:2 = hlfir.declare %arg_in(%shape) {uniq_name = "array"} : (!fir.ref<!fir.array<42xi32>>, !fir.shape<1>) -> (!fir.ref<!fir.array<42xi32>>, !fir.ref<!fir.array<42xi32>>)
       %elemental = hlfir.elemental %shape unordered : (!fir.shape<1>) -> !hlfir.expr<42xi32> {
       ^bb0(%i: index):
         %ref = hlfir.designate %array#0 (%i) : (!fir.ref<!fir.array<42xi32>>, index) -> !fir.ref<i32>

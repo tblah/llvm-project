@@ -26,10 +26,10 @@ func.func @simd(%arg0: i32, %arg1: !fir.ref<i32>, %arg2: !fir.ref<i32>) {
 
 // CHECK-LABEL: func.func @simd_composite
 func.func @simd_composite(%arg0: i32, %arg1: !fir.ref<i32>) {
-  %c1_i32 = arith.constant 1 : i32
-  %c100000_i32 = arith.constant 100000 : i32
   // CHECK-NOT: omp.parallel
-  omp.parallel {
+  omp.parallel shared(%arg0 -> %shared0, %arg1 -> %shared1 : i32, !fir.ref<i32>) {
+    %c1_i32 = arith.constant 1 : i32
+    %c100000_i32 = arith.constant 100000 : i32
     // CHECK-NOT: omp.wsloop
     omp.wsloop {
       // CHECK: omp.simd
@@ -37,7 +37,7 @@ func.func @simd_composite(%arg0: i32, %arg1: !fir.ref<i32>) {
         // CHECK: omp.loop_nest
         omp.loop_nest (%arg3) : i32 = (%c1_i32) to (%c100000_i32) inclusive step (%c1_i32) {
           // CHECK: fir.store
-          fir.store %arg0 to %arg1 : !fir.ref<i32>
+          fir.store %shared0 to %shared1 : !fir.ref<i32>
           // CHECK: omp.yield
           omp.yield
         }
@@ -55,19 +55,19 @@ func.func @simd_composite(%arg0: i32, %arg1: !fir.ref<i32>) {
 // CHECK-LABEL: func.func @parallel
 omp.private {type = private} @_QFEi_private_i32 : i32
 func.func @parallel(%arg0: i32, %arg1: !fir.ref<i32>) {
-  %c1 = arith.constant 1 : index
-  %c1_i32 = arith.constant 1 : i32
-  %c100000_i32 = arith.constant 100000 : i32
   // CHECK-NOT: omp.parallel
-  omp.parallel private(@_QFEi_private_i32 %arg1 -> %arg3 : !fir.ref<i32>) {
+  omp.parallel private(@_QFEi_private_i32 %arg1 -> %arg3 : !fir.ref<i32>) shared(%arg0 -> %shared0, %arg1 -> %shared1 : i32, !fir.ref<i32>) {
+    %c1 = arith.constant 1 : index
+    %c1_i32 = arith.constant 1 : i32
+    %c100000_i32 = arith.constant 100000 : i32
     // CHECK: fir.convert
     %15 = fir.convert %c1_i32 : (i32) -> index
     // CHECK: fir.convert
     %16 = fir.convert %c100000_i32 : (i32) -> index
     // CHECK: fir.do_loop
-    %18 = fir.do_loop %arg4 = %15 to %16 step %c1 iter_args(%arg2 = %arg0) -> (i32) {
+    %18 = fir.do_loop %arg4 = %15 to %16 step %c1 iter_args(%arg2 = %shared0) -> (i32) {
       // CHECK: fir.store
-      fir.store %arg0 to %arg1 : !fir.ref<i32>
+      fir.store %shared0 to %shared1 : !fir.ref<i32>
       fir.result %arg2 : i32
     }
     // CHECK-NOT: omp.terminator
@@ -100,9 +100,9 @@ func.func @target_map(%arg5: i32, %arg6: !fir.ref<i32>) {
 // CHECK-LABEL: func.func @teams
 func.func @teams(%arg0: i32, %arg1: !fir.ref<i32>) {
   // CHECK-NOT: omp.teams
-  omp.teams {
+  omp.teams shared(%arg0 -> %shared0, %arg1 -> %shared1 : i32, !fir.ref<i32>) {
     // CHECK: fir.store
-    fir.store %arg0 to %arg1 : !fir.ref<i32>
+    fir.store %shared0 to %shared1 : !fir.ref<i32>
     // CHECK-NOT: omp.terminator
     omp.terminator
   }
@@ -150,12 +150,12 @@ func.func @threadprivate(%arg0: i32, %arg1: !fir.ref<i32>) {
 // CHECK-LABEL: func.func @multi_block(
 // CHECK-SAME: %[[ARG_0:.*]]: i32, %[[ARG_1:.*]]: !fir.ref<i32>, %[[ARG_3:.*]]: i1
 func.func @multi_block(%funcArg0: i32, %funcArg1: !fir.ref<i32>, %6: i1) {
-  %false = arith.constant false
-  %c0_i32 = arith.constant 0 : i32
   // CHECK-NOT: omp.parallel
-  omp.parallel {
+  omp.parallel shared(%funcArg0 -> %shared0, %funcArg1 -> %shared1, %6 -> %shared6 : i32, !fir.ref<i32>, i1) {
+    %false = arith.constant false
+    %c0_i32 = arith.constant 0 : i32
     // CHECK: cf.cond_br %[[ARG_3]], ^[[BB1:.*]], ^[[BB2:.*]]
-    cf.cond_br %6, ^bb1, ^bb2
+    cf.cond_br %shared6, ^bb1, ^bb2
   // CHECK: ^[[BB1]]
   ^bb1:  // pred: ^bb0
     // CHECK: fir.call
@@ -165,7 +165,7 @@ func.func @multi_block(%funcArg0: i32, %funcArg1: !fir.ref<i32>, %6: i1) {
   // CHECK: ^[[BB2]]
   ^bb2:  // pred: ^bb0
     // CHECK: fir.store
-    fir.store %funcArg0 to %funcArg1 : !fir.ref<i32>
+    fir.store %shared0 to %shared1 : !fir.ref<i32>
     // CHECK-NOT: omp.terminator
     omp.terminator
   }
