@@ -28,18 +28,20 @@ llvm.br ^bb1(%11, %4 : i32, i64)
 ^bb1(%12: i32, %13: i64):  // 2 preds: ^bb0, ^bb2
 %14 = llvm.icmp "sgt" %13, %5 : i64
 llvm.store %12, %3 : i32, !llvm.ptr
-omp.task private(@_QFEc_firstprivate_i32 %3 -> %arg0 : !llvm.ptr) {
-  %19 = omp.map.info var_ptr(%1 : !llvm.ptr, i32) map_clauses(implicit, exit_release_or_enter_alloc) capture(ByCopy) -> !llvm.ptr {name = "i"}
+omp.task private(@_QFEc_firstprivate_i32 %3 -> %arg0 : !llvm.ptr) shared(%1 -> %task1, %9 -> %task9 : !llvm.ptr, !llvm.ptr) {
+  %19 = omp.map.info var_ptr(%task1 : !llvm.ptr, i32) map_clauses(implicit, exit_release_or_enter_alloc) capture(ByCopy) -> !llvm.ptr {name = "i"}
   %20 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit, exit_release_or_enter_alloc) capture(ByCopy) -> !llvm.ptr {name = "c"}
-  %21 = omp.map.info var_ptr(%9 : !llvm.ptr, i32) map_clauses(implicit, exit_release_or_enter_alloc) capture(ByCopy) -> !llvm.ptr {name = "chunksz"}
+  %21 = omp.map.info var_ptr(%task9 : !llvm.ptr, i32) map_clauses(implicit, exit_release_or_enter_alloc) capture(ByCopy) -> !llvm.ptr {name = "chunksz"}
   omp.target map_entries(%19 -> %arg1, %20 -> %arg2, %21 -> %arg3 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
     %22 = llvm.mlir.constant(9999 : i32) : i32
     %23 = llvm.mlir.constant(1 : i32) : i32
-    omp.parallel {
-      %24 = llvm.load %arg2 : !llvm.ptr -> i32
-      %25 = llvm.add %24, %22 : i32
-      omp.wsloop private(@_QFEi_private_i32 %arg1 -> %arg4 : !llvm.ptr) {
-        omp.loop_nest (%arg5) : i32 = (%24) to (%25) inclusive step (%23) {
+    omp.parallel shared(%arg2 -> %arg2_p, %arg1 -> %arg1_p : !llvm.ptr, !llvm.ptr) {
+      %c9999 = llvm.mlir.constant(9999 : i32) : i32
+      %c1 = llvm.mlir.constant(1 : i32) : i32
+      %24 = llvm.load %arg2_p : !llvm.ptr -> i32
+      %25 = llvm.add %24, %c9999 : i32
+      omp.wsloop private(@_QFEi_private_i32 %arg1_p -> %arg4 : !llvm.ptr) {
+        omp.loop_nest (%arg5) : i32 = (%24) to (%25) inclusive step (%c1) {
           llvm.store %arg5, %arg4 : i32, !llvm.ptr
           omp.yield
         }

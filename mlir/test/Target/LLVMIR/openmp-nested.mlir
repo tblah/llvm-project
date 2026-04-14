@@ -13,10 +13,12 @@ module {
       %12 = llvm.alloca %0 x i64 : (i64) -> !llvm.ptr
       omp.wsloop {
         omp.loop_nest (%arg2) : i64 = (%2) to (%1) step (%0) {
-          omp.parallel {
+          omp.parallel shared(%12 -> %shared_ptr : !llvm.ptr) {
+            %inner0 = llvm.mlir.constant(1 : index) : i64
+            %inner2 = llvm.mlir.constant(0 : index) : i64
             omp.wsloop {
-              omp.loop_nest (%arg3) : i64 = (%2) to (%0) step (%0) {
-                llvm.store %2, %12 : i64, !llvm.ptr
+              omp.loop_nest (%arg3) : i64 = (%inner2) to (%inner0) step (%inner0) {
+                llvm.store %inner2, %shared_ptr : i64, !llvm.ptr
                 omp.yield
               }
             }

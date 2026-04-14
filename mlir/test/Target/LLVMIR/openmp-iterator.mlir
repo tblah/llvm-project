@@ -14,11 +14,11 @@ llvm.func @task_affinity_iterator_1d(%arr: !llvm.ptr {llvm.nocapture}) {
   %c6  = llvm.mlir.constant(6 : i64) : i64
   %len = llvm.mlir.constant(4 : i64) : i64
 
-  omp.parallel {
+  omp.parallel shared(%c1 -> %c1_in, %c4 -> %c4_in, %c6 -> %c6_in, %len -> %len_in, %arr -> %arr_in : i64, i64, i64, i64, !llvm.ptr) {
     omp.single {
       %it = omp.iterator(%i: i64, %j: i64) =
-          (%c1 to %c4 step %c1, %c1 to %c6 step %c1) {
-        %entry = omp.affinity_entry %arr, %len
+          (%c1_in to %c4_in step %c1_in, %c1_in to %c6_in step %c1_in) {
+        %entry = omp.affinity_entry %arr_in, %len_in
             : (!llvm.ptr, i64) -> !omp.affinity_entry_ty<!llvm.ptr, i64>
         omp.yield(%entry : !omp.affinity_entry_ty<!llvm.ptr, i64>)
       } -> !omp.iterated<!omp.affinity_entry_ty<!llvm.ptr, i64>>
@@ -78,12 +78,12 @@ llvm.func @task_affinity_iterator_3d(%arr: !llvm.ptr {llvm.nocapture}) {
   %c6  = llvm.mlir.constant(6 : i64) : i64
   %len = llvm.mlir.constant(4 : i64) : i64
 
-  omp.parallel {
+  omp.parallel shared(%c1 -> %c1_in, %c2 -> %c2_in, %c4 -> %c4_in, %c6 -> %c6_in, %len -> %len_in, %arr -> %arr_in : i64, i64, i64, i64, i64, !llvm.ptr) {
     omp.single {
       // 3-D iterator: i=1..4, j=1..6, k=1..2 => total trips = 48
       %it = omp.iterator(%i: i64, %j: i64, %k: i64) =
-          (%c1 to %c4 step %c1, %c1 to %c6 step %c1, %c1 to %c2 step %c1) {
-        %entry = omp.affinity_entry %arr, %len
+          (%c1_in to %c4_in step %c1_in, %c1_in to %c6_in step %c1_in, %c1_in to %c2_in step %c1_in) {
+        %entry = omp.affinity_entry %arr_in, %len_in
             : (!llvm.ptr, i64) -> !omp.affinity_entry_ty<!llvm.ptr, i64>
         omp.yield(%entry : !omp.affinity_entry_ty<!llvm.ptr, i64>)
       } -> !omp.iterated<!omp.affinity_entry_ty<!llvm.ptr, i64>>
@@ -143,19 +143,19 @@ llvm.func @task_affinity_iterator_multiple(%arr: !llvm.ptr {llvm.nocapture}) {
   %c6  = llvm.mlir.constant(6 : i64) : i64
   %len = llvm.mlir.constant(4 : i64) : i64
 
-  omp.parallel {
+  omp.parallel shared(%c1 -> %c1_in, %c3 -> %c3_in, %c4 -> %c4_in, %c6 -> %c6_in, %len -> %len_in, %arr -> %arr_in : i64, i64, i64, i64, i64, !llvm.ptr) {
     omp.single {
       // First iterator: 2-D (4 * 6 = 24)
       %it0 = omp.iterator(%i: i64, %j: i64) =
-          (%c1 to %c4 step %c1, %c1 to %c6 step %c1) {
-        %entry0 = omp.affinity_entry %arr, %len
+          (%c1_in to %c4_in step %c1_in, %c1_in to %c6_in step %c1_in) {
+        %entry0 = omp.affinity_entry %arr_in, %len_in
             : (!llvm.ptr, i64) -> !omp.affinity_entry_ty<!llvm.ptr, i64>
         omp.yield(%entry0 : !omp.affinity_entry_ty<!llvm.ptr, i64>)
       } -> !omp.iterated<!omp.affinity_entry_ty<!llvm.ptr, i64>>
 
       // second iterator: 1-D (3)
-      %it1 = omp.iterator(%k: i64) = (%c1 to %c3 step %c1) {
-        %entry1 = omp.affinity_entry %arr, %len
+      %it1 = omp.iterator(%k: i64) = (%c1_in to %c3_in step %c1_in) {
+        %entry1 = omp.affinity_entry %arr_in, %len_in
             : (!llvm.ptr, i64) -> !omp.affinity_entry_ty<!llvm.ptr, i64>
         omp.yield(%entry1 : !omp.affinity_entry_ty<!llvm.ptr, i64>)
       } -> !omp.iterated<!omp.affinity_entry_ty<!llvm.ptr, i64>>
@@ -241,10 +241,10 @@ llvm.func @task_affinity_iterator_multiple(%arr: !llvm.ptr {llvm.nocapture}) {
 llvm.func @task_affinity_iterator_dynamic_tripcount(
     %arr: !llvm.ptr {llvm.nocapture}, %lb: i64, %ub: i64, %step: i64,
     %len: i64) {
-  omp.parallel {
+  omp.parallel shared(%arr -> %arr_in, %lb -> %lb_in, %ub -> %ub_in, %step -> %step_in, %len -> %len_in : !llvm.ptr, i64, i64, i64, i64) {
     omp.single {
-      %it = omp.iterator(%i: i64) = (%lb to %ub step %step) {
-        %entry = omp.affinity_entry %arr, %len
+      %it = omp.iterator(%i: i64) = (%lb_in to %ub_in step %step_in) {
+        %entry = omp.affinity_entry %arr_in, %len_in
             : (!llvm.ptr, i64) -> !omp.affinity_entry_ty<!llvm.ptr, i64>
         omp.yield(%entry : !omp.affinity_entry_ty<!llvm.ptr, i64>)
       } -> !omp.iterated<!omp.affinity_entry_ty<!llvm.ptr, i64>>
@@ -271,10 +271,10 @@ llvm.func @task_affinity_iterator_negative_step(%arr: !llvm.ptr {llvm.nocapture}
   %c1 = llvm.mlir.constant(1 : i64) : i64
   %cn1 = llvm.mlir.constant(-1 : i64) : i64
 
-  omp.parallel {
+  omp.parallel shared(%c4 -> %c4_in, %c1 -> %c1_in, %cn1 -> %cn1_in, %arr -> %arr_in : i64, i64, i64, !llvm.ptr) {
     omp.single {
-      %it = omp.iterator(%i: i64) = (%c4 to %c1 step %cn1) {
-        %entry = omp.affinity_entry %arr, %i
+      %it = omp.iterator(%i: i64) = (%c4_in to %c1_in step %cn1_in) {
+        %entry = omp.affinity_entry %arr_in, %i
             : (!llvm.ptr, i64) -> !omp.affinity_entry_ty<!llvm.ptr, i64>
         omp.yield(%entry : !omp.affinity_entry_ty<!llvm.ptr, i64>)
       } -> !omp.iterated<!omp.affinity_entry_ty<!llvm.ptr, i64>>

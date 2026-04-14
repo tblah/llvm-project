@@ -311,8 +311,8 @@ llvm.func @test_omp_master() -> () {
 llvm.func @test_omp_masked(%arg0: i32)-> () {
 // CHECK: call void {{.*}}@__kmpc_fork_call{{.*}} @{{.*}})
 // CHECK: omp.par.region1:
-  omp.parallel {
-    omp.masked filter(%arg0: i32) {
+  omp.parallel shared(%arg0 -> %filter_val : i32) {
+    omp.masked filter(%filter_val: i32) {
 // CHECK: [[OMP_THREAD_3_4:%.*]] = call i32 @__kmpc_global_thread_num(ptr @{{[0-9]+}})
 // CHECK: {{[0-9]+}} = call i32 @__kmpc_masked(ptr @{{[0-9]+}}, i32 [[OMP_THREAD_3_4]], i32 %{{[0-9]+}})
 // CHECK: omp.masked.region
@@ -379,10 +379,10 @@ llvm.func @wsloop_linear(%lb : i32, %ub : i32, %step : i32, %x : !llvm.ptr) {
 
 // CHECK-LABEL: @wsloop_simple
 llvm.func @wsloop_simple(%arg0: !llvm.ptr) {
-  %0 = llvm.mlir.constant(42 : index) : i64
-  %1 = llvm.mlir.constant(10 : index) : i64
-  %2 = llvm.mlir.constant(1 : index) : i64
-  omp.parallel {
+  omp.parallel shared(%arg0 -> %arg0_in : !llvm.ptr) {
+    %0 = llvm.mlir.constant(42 : index) : i64
+    %1 = llvm.mlir.constant(10 : index) : i64
+    %2 = llvm.mlir.constant(1 : index) : i64
     "omp.wsloop"() ({
       omp.loop_nest (%arg1) : i64 = (%1) to (%0) step (%2) {
         // The form of the emitted IR is controlled by OpenMPIRBuilder and
@@ -390,7 +390,7 @@ llvm.func @wsloop_simple(%arg0: !llvm.ptr) {
         // CHECK: call i32 @__kmpc_global_thread_num
         // CHECK: call void @__kmpc_for_static_init_{{.*}}(ptr @[[$loc_struct]],
         %3 = llvm.mlir.constant(2.000000e+00 : f32) : f32
-        %4 = llvm.getelementptr %arg0[%arg1] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+        %4 = llvm.getelementptr %arg0_in[%arg1] : (!llvm.ptr, i64) -> !llvm.ptr, f32
         llvm.store %3, %4 : f32, !llvm.ptr
         omp.yield
       }
@@ -1291,7 +1291,7 @@ llvm.func @collapse_wsloop(
     %3: i32, %4: i32, %5: i32,
     %6: i32, %7: i32, %8: i32,
     %20: !llvm.ptr) {
-  omp.parallel {
+  omp.parallel shared(%0 -> %a0, %1 -> %a1, %2 -> %a2, %3 -> %a3, %4 -> %a4, %5 -> %a5, %6 -> %a6, %7 -> %a7, %8 -> %a8, %20 -> %a20 : i32, i32, i32, i32, i32, i32, i32, i32, i32, !llvm.ptr) {
     // CHECK: icmp slt i32 %[[LB0]], 0
     // CHECK-COUNT-4: select
     // CHECK: %[[TRIPCOUNT0:.*]] = select
@@ -1314,12 +1314,12 @@ llvm.func @collapse_wsloop(
     // CHECK: store i32 %[[TOTAL_SUB_1]], ptr
     // CHECK: call void @__kmpc_for_static_init_4u
     omp.wsloop {
-      omp.loop_nest (%arg0, %arg1, %arg2) : i32 = (%0, %1, %2) to (%3, %4, %5) step (%6, %7, %8) collapse(3) {
-        %31 = llvm.load %20 : !llvm.ptr -> i32
+      omp.loop_nest (%arg0, %arg1, %arg2) : i32 = (%a0, %a1, %a2) to (%a3, %a4, %a5) step (%a6, %a7, %a8) collapse(3) {
+        %31 = llvm.load %a20 : !llvm.ptr -> i32
         %32 = llvm.add %31, %arg0 : i32
         %33 = llvm.add %32, %arg1 : i32
         %34 = llvm.add %33, %arg2 : i32
-        llvm.store %34, %20 : i32, !llvm.ptr
+        llvm.store %34, %a20 : i32, !llvm.ptr
         omp.yield
       }
     }
@@ -1354,7 +1354,7 @@ llvm.func @collapse_wsloop_dynamic(
     %3: i32, %4: i32, %5: i32,
     %6: i32, %7: i32, %8: i32,
     %20: !llvm.ptr) {
-  omp.parallel {
+  omp.parallel shared(%0 -> %a0, %1 -> %a1, %2 -> %a2, %3 -> %a3, %4 -> %a4, %5 -> %a5, %6 -> %a6, %7 -> %a7, %8 -> %a8, %20 -> %a20 : i32, i32, i32, i32, i32, i32, i32, i32, i32, !llvm.ptr) {
     // CHECK: icmp slt i32 %[[LB0]], 0
     // CHECK-COUNT-4: select
     // CHECK: %[[TRIPCOUNT0:.*]] = select
@@ -1376,12 +1376,12 @@ llvm.func @collapse_wsloop_dynamic(
     // CHECK: store i32 %[[TOTAL]], ptr
     // CHECK: call void @__kmpc_dispatch_init_4u
     omp.wsloop schedule(dynamic) {
-      omp.loop_nest (%arg0, %arg1, %arg2) : i32 = (%0, %1, %2) to (%3, %4, %5) step (%6, %7, %8) collapse(3) {
-        %31 = llvm.load %20 : !llvm.ptr -> i32
+      omp.loop_nest (%arg0, %arg1, %arg2) : i32 = (%a0, %a1, %a2) to (%a3, %a4, %a5) step (%a6, %a7, %a8) collapse(3) {
+        %31 = llvm.load %a20 : !llvm.ptr -> i32
         %32 = llvm.add %31, %arg0 : i32
         %33 = llvm.add %32, %arg1 : i32
         %34 = llvm.add %33, %arg2 : i32
-        llvm.store %34, %20 : i32, !llvm.ptr
+        llvm.store %34, %a20 : i32, !llvm.ptr
         omp.yield
       }
     }
@@ -2733,8 +2733,10 @@ llvm.func @omp_threadprivate() {
   llvm.store %0, %4 : i32, !llvm.ptr
 
   omp.parallel  {
-    %5 = omp.threadprivate %3 : !llvm.ptr -> !llvm.ptr
-    llvm.store %1, %5 : i32, !llvm.ptr
+    %inner1 = llvm.mlir.constant(2 : i32) : i32
+    %inner3 = llvm.mlir.addressof @_QFsubEx : !llvm.ptr
+    %5 = omp.threadprivate %inner3 : !llvm.ptr -> !llvm.ptr
+    llvm.store %inner1, %5 : i32, !llvm.ptr
     omp.terminator
   }
 
@@ -2922,9 +2924,9 @@ module attributes {llvm.target_triple = "x86_64-unknown-linux-gnu"} {
     // CHECK: %[[shareds:.+]] = load ptr, ptr %[[task_data]]
     // CHECK: call void @llvm.memcpy.p0.p0.i64(ptr {{.+}} %[[shareds]], ptr {{.+}}, i64 16, i1 false)
     // CHECK: call i32 @__kmpc_omp_task(ptr @{{.+}}, i32 %[[omp_global_thread_num]], ptr %[[task_data]])
-    omp.task {
-      %z = llvm.add %x, %y : i32
-      llvm.store %z, %zaddr : i32, !llvm.ptr
+    omp.task shared(%x -> %x_in, %y -> %y_in, %zaddr -> %zaddr_in : i32, i32, !llvm.ptr) {
+      %z = llvm.add %x_in, %y_in : i32
+      llvm.store %z, %zaddr_in : i32, !llvm.ptr
       omp.terminator
     }
     // CHECK: %[[prod:.+]] = mul i32 %[[x]], %[[y]]
@@ -2951,10 +2953,10 @@ module attributes {llvm.target_triple = "x86_64-unknown-linux-gnu"} {
 // -----
 
 llvm.func @par_task_(%arg0: !llvm.ptr {fir.bindc_name = "a"}) {
-  %0 = llvm.mlir.constant(1 : i32) : i32
-  omp.task   {
-    omp.parallel   {
-      llvm.store %0, %arg0 : i32, !llvm.ptr
+  omp.task shared(%arg0 -> %task_arg0 : !llvm.ptr) {
+    %0 = llvm.mlir.constant(1 : i32) : i32
+    omp.parallel shared(%0 -> %c1, %task_arg0 -> %par_arg0 : i32, !llvm.ptr) {
+      llvm.store %c1, %par_arg0 : i32, !llvm.ptr
       omp.terminator
     }
     omp.terminator
@@ -3072,8 +3074,8 @@ llvm.func @omp_taskgroup_task(%x: i32, %y: i32, %zaddr: !llvm.ptr) {
       llvm.call @foo() : () -> ()
       omp.terminator
     }
-    omp.task {
-      llvm.call @bar(%x, %y, %zaddr) : (i32, i32, !llvm.ptr) -> ()
+    omp.task shared(%x -> %x_in, %y -> %y_in, %zaddr -> %zaddr_in : i32, i32, !llvm.ptr) {
+      llvm.call @bar(%x_in, %y_in, %zaddr_in) : (i32, i32, !llvm.ptr) -> ()
       omp.terminator
     }
     llvm.br ^bb1
@@ -3495,10 +3497,10 @@ llvm.func @distribute() {
 // -----
 
 llvm.func @distribute_wsloop(%lb : i32, %ub : i32, %step : i32) {
-  omp.parallel {
+  omp.parallel shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : i32, i32, i32) {
     omp.distribute {
       omp.wsloop {
-        omp.loop_nest (%iv) : i32 = (%lb) to (%ub) step (%step) {
+        omp.loop_nest (%iv) : i32 = (%lb_in) to (%ub_in) step (%step_in) {
           omp.yield
         }
       } {omp.composite}
@@ -3591,11 +3593,10 @@ llvm.func @nested_task_with_deps() {
 // CHECK:       }
 
 llvm.func @task_affinity_plain(%arr: !llvm.ptr {llvm.nocapture}) {
-  %len = llvm.mlir.constant(4 : i64) : i64
-
-  omp.parallel {
+  omp.parallel shared(%arr -> %arr_in : !llvm.ptr) {
+    %len = llvm.mlir.constant(4 : i64) : i64
     omp.single {
-      %ae = omp.affinity_entry %arr, %len
+      %ae = omp.affinity_entry %arr_in, %len
         : (!llvm.ptr, i64) -> !omp.affinity_entry_ty<!llvm.ptr, i64>
 
       omp.task affinity(%ae : !omp.affinity_entry_ty<!llvm.ptr, i64>) {

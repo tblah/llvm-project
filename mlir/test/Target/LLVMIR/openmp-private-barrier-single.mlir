@@ -30,13 +30,13 @@ llvm.func @wsloop_private_(%arg0: !llvm.ptr {fir.bindc_name = "y"}) attributes {
   %6 = llvm.mlir.constant(1 : i32) : i32
   %7 = llvm.mlir.constant(10 : i32) : i32
   %8 = llvm.mlir.constant(0 : i32) : i32
-  omp.parallel {
+  omp.parallel shared(%5 -> %s5, %3 -> %s3, %8 -> %s8, %7 -> %s7, %6 -> %s6 : !llvm.ptr, !llvm.ptr, i32, i32, i32) {
     omp.single {
-      omp.wsloop private(@_QFwsloop_privateEc_firstprivate_ref_c8 %5 -> %arg1, @_QFwsloop_privateEi_private_ref_i32 %3 -> %arg2 : !llvm.ptr, !llvm.ptr) private_barrier {
+      omp.wsloop private(@_QFwsloop_privateEc_firstprivate_ref_c8 %s5 -> %arg1, @_QFwsloop_privateEi_private_ref_i32 %s3 -> %arg2 : !llvm.ptr, !llvm.ptr) private_barrier {
   // CHECK: omp.private.copy:
   // CHECK-NOT: __kmpc_barrier
   // CHECK: br label
-        omp.loop_nest (%arg4) : i32 = (%8) to (%7) inclusive step (%6) {
+        omp.loop_nest (%arg4) : i32 = (%s8) to (%s7) inclusive step (%s6) {
           omp.yield
         }
       }

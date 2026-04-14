@@ -303,9 +303,9 @@ llvm.func @taskgroup_task_reduction(%x : !llvm.ptr) {
 llvm.func @taskloop_allocate(%lb : i32, %ub : i32, %step : i32, %x : !llvm.ptr) {
   // expected-error@below {{LLVM Translation failed for operation: omp.taskloop.context}}
   // expected-error@below {{not yet implemented: Unhandled clause allocate in omp.taskloop.context operation}}
-  omp.taskloop.context allocate(%x : !llvm.ptr -> %x : !llvm.ptr) {
+  omp.taskloop.context allocate(%x : !llvm.ptr -> %x : !llvm.ptr) shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : i32, i32, i32) {
     omp.taskloop.wrapper {
-      omp.loop_nest (%iv) : i32 = (%lb) to (%ub) step (%step) {
+      omp.loop_nest (%iv) : i32 = (%lb_in) to (%ub_in) step (%step_in) {
         omp.yield
       }
     }
@@ -328,9 +328,9 @@ llvm.func @taskloop_allocate(%lb : i32, %ub : i32, %step : i32, %x : !llvm.ptr) 
 llvm.func @taskloop_inreduction(%lb : i32, %ub : i32, %step : i32, %x : !llvm.ptr) {
   // expected-error@below {{LLVM Translation failed for operation: omp.taskloop.context}}
   // expected-error@below {{not yet implemented: Unhandled clause in_reduction in omp.taskloop.context operation}}
-  omp.taskloop.context in_reduction(@add_reduction_i32 %x -> %arg0 : !llvm.ptr) {
+  omp.taskloop.context in_reduction(@add_reduction_i32 %x -> %arg0 : !llvm.ptr) shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : i32, i32, i32) {
     omp.taskloop.wrapper {
-      omp.loop_nest (%iv) : i32 = (%lb) to (%ub) step (%step) {
+      omp.loop_nest (%iv) : i32 = (%lb_in) to (%ub_in) step (%step_in) {
         omp.yield
       }
     }
@@ -353,9 +353,9 @@ llvm.func @taskloop_inreduction(%lb : i32, %ub : i32, %step : i32, %x : !llvm.pt
 llvm.func @taskloop_reduction(%lb : i32, %ub : i32, %step : i32, %x : !llvm.ptr) {
   // expected-error@below {{LLVM Translation failed for operation: omp.taskloop.context}}
   // expected-error@below {{not yet implemented: Unhandled clause reduction in omp.taskloop.context operation}}
-  omp.taskloop.context reduction(@add_reduction_i32 %x -> %arg0 : !llvm.ptr) {
+  omp.taskloop.context shared(%lb -> %lb_in, %ub -> %ub_in, %step -> %step_in : i32, i32, i32) reduction(@add_reduction_i32 %x -> %arg0 : !llvm.ptr) {
     omp.taskloop.wrapper {
-      omp.loop_nest (%iv) : i32 = (%lb) to (%ub) step (%step) {
+      omp.loop_nest (%iv) : i32 = (%lb_in) to (%ub_in) step (%step_in) {
         omp.yield
       }
     }

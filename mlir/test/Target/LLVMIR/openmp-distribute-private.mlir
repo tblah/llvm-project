@@ -14,11 +14,11 @@ llvm.func @_QQmain() {
   %5 = llvm.mlir.constant(1000 : i32) : i32
   %6 = llvm.mlir.constant(1 : i32) : i32
 
-  omp.teams {
-    omp.distribute private(@_QFEpriv_val_dist_private_f32 %1 -> %arg0, @_QFEi_private_i32 %3 -> %arg1 : !llvm.ptr, !llvm.ptr) {
-      omp.loop_nest (%arg2) : i32 = (%6) to (%5) inclusive step (%6) {
+  omp.teams shared(%1 -> %s1, %3 -> %s3, %4 -> %s4, %5 -> %s5, %6 -> %s6 : !llvm.ptr, !llvm.ptr, f32, i32, i32) {
+    omp.distribute private(@_QFEpriv_val_dist_private_f32 %s1 -> %arg0, @_QFEi_private_i32 %s3 -> %arg1 : !llvm.ptr, !llvm.ptr) {
+      omp.loop_nest (%arg2) : i32 = (%s6) to (%s5) inclusive step (%s6) {
         llvm.store %arg2, %arg1 : i32, !llvm.ptr
-        llvm.store %4, %arg0 : f32, !llvm.ptr
+        llvm.store %s4, %arg0 : f32, !llvm.ptr
         omp.yield
       }
     }

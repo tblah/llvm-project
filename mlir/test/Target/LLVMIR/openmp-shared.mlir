@@ -120,9 +120,9 @@ llvm.func @use(!llvm.ptr) -> ()
 // CHECK:         @__kmpc_taskloop(
 // CHECK:         ret void
 llvm.func @omp_taskloop_context_shared(%arg0: !llvm.ptr) {
-  %c1 = llvm.mlir.constant(1 : i32) : i32
-  %c5 = llvm.mlir.constant(5 : i32) : i32
   omp.taskloop.context shared(%arg0 -> %arg0_shared : !llvm.ptr) {
+    %c1 = llvm.mlir.constant(1 : i32) : i32
+    %c5 = llvm.mlir.constant(5 : i32) : i32
     omp.taskloop.wrapper {
       omp.loop_nest (%iv) : i32 = (%c1) to (%c5) inclusive step (%c1) {
         llvm.call @use(%arg0_shared) : (!llvm.ptr) -> ()

@@ -7,11 +7,14 @@ llvm.func @distribute_wsloop_dist_schedule_chunked_schedule_chunked(%n: i32, %te
   %1 = llvm.mlir.constant(1 : i32) : i32
   %scs = llvm.mlir.constant(64 : i32) : i32
 
-  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) {
-    omp.parallel {
-      omp.distribute dist_schedule_static dist_schedule_chunk_size(%dcs : i32) {
-        omp.wsloop schedule(static = %scs : i32) {
-          omp.loop_nest (%i) : i32 = (%0) to (%n) step (%1) {
+  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) shared(%dcs -> %dcs_t, %n -> %n_t : i32, i32) {
+    omp.parallel shared(%dcs_t -> %dcs_p, %n_t -> %n_p : i32, i32) {
+        %c0 = llvm.mlir.constant(0 : i32) : i32
+      %c1 = llvm.mlir.constant(1 : i32) : i32
+      %par_scs = llvm.mlir.constant(64 : i32) : i32
+      omp.distribute dist_schedule_static dist_schedule_chunk_size(%dcs_p : i32) {
+        omp.wsloop schedule(static = %par_scs : i32) {
+          omp.loop_nest (%i) : i32 = (%c0) to (%n_p) step (%c1) {
             omp.yield
           }
         } {omp.composite}
@@ -33,11 +36,15 @@ llvm.func @distribute_wsloop_dist_schedule_chunked_schedule_chunked_i64(%n: i32,
   %scs = llvm.mlir.constant(64 : i64) : i64
   %n64 = llvm.zext %n : i32 to i64
 
-  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) {
-    omp.parallel {
-      omp.distribute dist_schedule_static dist_schedule_chunk_size(%dcs : i64) {
-        omp.wsloop schedule(static = %scs : i64) {
-          omp.loop_nest (%i) : i64 = (%0) to (%n64) step (%1) {
+  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) shared(%n64 -> %n64_t : i64) {
+    omp.parallel shared(%n64_t -> %n64_p : i64) {
+        %c0 = llvm.mlir.constant(0 : i64) : i64
+      %c1 = llvm.mlir.constant(1 : i64) : i64
+      %par_dcs = llvm.mlir.constant(1024 : i64) : i64
+      %par_scs = llvm.mlir.constant(64 : i64) : i64
+      omp.distribute dist_schedule_static dist_schedule_chunk_size(%par_dcs : i64) {
+        omp.wsloop schedule(static = %par_scs : i64) {
+          omp.loop_nest (%i) : i64 = (%c0) to (%n64_p) step (%c1) {
             omp.yield
           }
         } {omp.composite}
@@ -59,11 +66,14 @@ llvm.func @distribute_wsloop_dist_schedule_chunked(%n: i32, %teams: i32, %thread
   %1 = llvm.mlir.constant(1 : i32) : i32
   %dcs = llvm.mlir.constant(1024 : i32) : i32
 
-  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) {
-    omp.parallel {
-      omp.distribute dist_schedule_static dist_schedule_chunk_size(%dcs : i32) {
+  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) shared(%n -> %n_t : i32) {
+    omp.parallel shared(%n_t -> %n_p : i32) {
+        %c0 = llvm.mlir.constant(0 : i32) : i32
+      %c1 = llvm.mlir.constant(1 : i32) : i32
+      %par_dcs = llvm.mlir.constant(1024 : i32) : i32
+      omp.distribute dist_schedule_static dist_schedule_chunk_size(%par_dcs : i32) {
         omp.wsloop schedule(static) {
-          omp.loop_nest (%i) : i32 = (%0) to (%n) step (%1) {
+          omp.loop_nest (%i) : i32 = (%c0) to (%n_p) step (%c1) {
             omp.yield
           }
         } {omp.composite}
@@ -84,11 +94,14 @@ llvm.func @distribute_wsloop_dist_schedule_chunked_i64(%n: i32, %teams: i32, %th
   %dcs = llvm.mlir.constant(1024 : i64) : i64
   %n64 = llvm.zext %n : i32 to i64
 
-  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) {
-    omp.parallel {
-      omp.distribute dist_schedule_static dist_schedule_chunk_size(%dcs : i64) {
+  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) shared(%n64 -> %n64_t : i64) {
+    omp.parallel shared(%n64_t -> %n64_p : i64) {
+        %c0 = llvm.mlir.constant(0 : i64) : i64
+      %c1 = llvm.mlir.constant(1 : i64) : i64
+      %par_dcs = llvm.mlir.constant(1024 : i64) : i64
+      omp.distribute dist_schedule_static dist_schedule_chunk_size(%par_dcs : i64) {
         omp.wsloop schedule(static) {
-          omp.loop_nest (%i) : i64 = (%0) to (%n64) step (%1) {
+          omp.loop_nest (%i) : i64 = (%c0) to (%n64_p) step (%c1) {
             omp.yield
           }
         } {omp.composite}
@@ -110,11 +123,14 @@ llvm.func @distribute_wsloop_schedule_chunked(%n: i32, %teams: i32, %threads: i3
   %1 = llvm.mlir.constant(1 : i32) : i32
   %scs = llvm.mlir.constant(64 : i32) : i32
 
-  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) {
-    omp.parallel {
+  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) shared(%n -> %n_t : i32) {
+    omp.parallel shared(%n_t -> %n_p : i32) {
+        %c0 = llvm.mlir.constant(0 : i32) : i32
+      %c1 = llvm.mlir.constant(1 : i32) : i32
+      %par_scs = llvm.mlir.constant(64 : i32) : i32
       omp.distribute dist_schedule_static {
-        omp.wsloop schedule(static = %scs : i32) {
-          omp.loop_nest (%i) : i32 = (%0) to (%n) step (%1) {
+        omp.wsloop schedule(static = %par_scs : i32) {
+          omp.loop_nest (%i) : i32 = (%c0) to (%n_p) step (%c1) {
             omp.yield
           }
         } {omp.composite}
@@ -135,11 +151,14 @@ llvm.func @distribute_wsloop_schedule_chunked_i64(%n: i32, %teams: i32, %threads
   %scs = llvm.mlir.constant(64 : i64) : i64
   %n64 = llvm.zext %n : i32 to i64
 
-  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) {
-    omp.parallel {
+  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) shared(%n64 -> %n64_t : i64) {
+    omp.parallel shared(%n64_t -> %n64_p : i64) {
+        %c0 = llvm.mlir.constant(0 : i64) : i64
+      %c1 = llvm.mlir.constant(1 : i64) : i64
+      %par_scs = llvm.mlir.constant(64 : i64) : i64
       omp.distribute dist_schedule_static {
-        omp.wsloop schedule(static = %scs : i64) {
-          omp.loop_nest (%i) : i64 = (%0) to (%n64) step (%1) {
+        omp.wsloop schedule(static = %par_scs : i64) {
+          omp.loop_nest (%i) : i64 = (%c0) to (%n64_p) step (%c1) {
             omp.yield
           }
         } {omp.composite}
@@ -161,11 +180,13 @@ llvm.func @distribute_wsloop_no_chunks(%n: i32, %teams: i32, %threads: i32) {
   %0 = llvm.mlir.constant(0 : i32) : i32
   %1 = llvm.mlir.constant(1 : i32) : i32
 
-  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) {
-    omp.parallel {
+  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) shared(%n -> %n_t : i32) {
+    omp.parallel shared(%n_t -> %n_p : i32) {
+        %c0 = llvm.mlir.constant(0 : i32) : i32
+      %c1 = llvm.mlir.constant(1 : i32) : i32
       omp.distribute dist_schedule_static {
         omp.wsloop schedule(static) {
-          omp.loop_nest (%i) : i32 = (%0) to (%n) step (%1) {
+          omp.loop_nest (%i) : i32 = (%c0) to (%n_p) step (%c1) {
             omp.yield
           }
         } {omp.composite}
@@ -185,11 +206,13 @@ llvm.func @distribute_wsloop_no_chunks_i64(%n: i32, %teams: i32, %threads: i32) 
   %1 = llvm.mlir.constant(1 : i64) : i64
   %n64 = llvm.zext %n : i32 to i64
 
-  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) {
-    omp.parallel {
+  omp.teams num_teams(to %teams : i32) thread_limit(%threads : i32) shared(%n64 -> %n64_t : i64) {
+    omp.parallel shared(%n64_t -> %n64_p : i64) {
+        %c0 = llvm.mlir.constant(0 : i64) : i64
+      %c1 = llvm.mlir.constant(1 : i64) : i64
       omp.distribute dist_schedule_static {
         omp.wsloop schedule(static) {
-          omp.loop_nest (%i) : i64 = (%0) to (%n64) step (%1) {
+          omp.loop_nest (%i) : i64 = (%c0) to (%n64_p) step (%c1) {
             omp.yield
           }
         } {omp.composite}

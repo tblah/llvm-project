@@ -80,9 +80,10 @@ llvm.func @omp_threadprivate() {
 
   llvm.store %1, %5 : i32, !llvm.ptr
 
-  omp.parallel  {
-    %6 = omp.threadprivate %4 : !llvm.ptr -> !llvm.ptr
-    llvm.store %2, %6 : i32, !llvm.ptr
+  omp.parallel shared(%4 -> %alloca_sh : !llvm.ptr) {
+    %c2 = llvm.mlir.constant(2 : i32) : i32
+    %6 = omp.threadprivate %alloca_sh : !llvm.ptr -> !llvm.ptr
+    llvm.store %c2, %6 : i32, !llvm.ptr
     omp.terminator
   }
 
