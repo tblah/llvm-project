@@ -24,9 +24,11 @@ llvm.func @test_parallel_do_simd() {
     %5 = llvm.mlir.constant(1 : i64) : i64
     %6 = llvm.alloca %5 x i32 {bindc_name = "i", pinned} : (i64) -> !llvm.ptr
     %7 = llvm.mlir.constant(1 : i64) : i64
+    %c1000 = llvm.mlir.constant(1000 : i32) : i32
+    %c1 = llvm.mlir.constant(1 : i32) : i32
     omp.wsloop {
       omp.simd {
-        omp.loop_nest (%arg0) : i32 = (%3) to (%2) inclusive step (%3) {
+        omp.loop_nest (%arg0) : i32 = (%c1) to (%c1000) inclusive step (%c1) {
           llvm.store %arg0, %6 : i32, !llvm.ptr
           omp.yield
         }

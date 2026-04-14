@@ -21,11 +21,11 @@ omp.declare_reduction @add_reduction : !llvm.ptr alloc {
 
 llvm.func @use_reduction() attributes {fir.bindc_name = "test"} {
   %6 = llvm.mlir.constant(1 : i32) : i32
-  omp.parallel {
+  omp.parallel shared(%6 -> %s6 : i32) {
     %18 = llvm.mlir.constant(1 : i64) : i64
     %19 = llvm.alloca %18 x !llvm.struct<(ptr)> : (i64) -> !llvm.ptr
     omp.wsloop reduction(byref @add_reduction %19 -> %arg0 : !llvm.ptr) {
-      omp.loop_nest (%arg1) : i32 = (%6) to (%6) inclusive step (%6) {
+      omp.loop_nest (%arg1) : i32 = (%s6) to (%s6) inclusive step (%s6) {
         omp.yield
       }
     }
