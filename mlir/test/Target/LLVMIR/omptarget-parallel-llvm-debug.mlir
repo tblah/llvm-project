@@ -19,10 +19,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<i32 = dense<32> : vector<2xi64>,
     omp.target map_entries(%5 -> %arg0 : !llvm.ptr) {
       %6 = llvm.mlir.constant(1 : i32) : i32
       llvm.intr.dbg.declare #var_x1 = %arg0 : !llvm.ptr loc(#loc3)
-      omp.parallel {
-        %7 = llvm.load %arg0 : !llvm.ptr -> i32
-        %8 = llvm.add %7, %6 : i32
-        llvm.store %8, %arg0 : i32, !llvm.ptr
+      omp.parallel shared(%arg0 -> %p_arg0 : !llvm.ptr) {
+        %c1 = llvm.mlir.constant(1 : i32) : i32
+        %7 = llvm.load %p_arg0 : !llvm.ptr -> i32
+        %8 = llvm.add %7, %c1 : i32
+        llvm.store %8, %p_arg0 : i32, !llvm.ptr
         omp.terminator
       }
       omp.terminator

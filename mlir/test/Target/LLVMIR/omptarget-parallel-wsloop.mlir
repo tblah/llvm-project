@@ -8,13 +8,13 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
     target_cpu = "gfx90a",
     target_features = #llvm.target_features<["+gfx9-insts", "+wavefrontsize64"]>}
    {
-    omp.parallel {
+    omp.parallel shared(%arg0 -> %p_arg0 : !llvm.ptr) {
       %loop_ub = llvm.mlir.constant(9 : i32) : i32
       %loop_lb = llvm.mlir.constant(0 : i32) : i32
       %loop_step = llvm.mlir.constant(1 : i32) : i32
       omp.wsloop {
         omp.loop_nest (%loop_cnt) : i32 = (%loop_lb) to (%loop_ub) inclusive step (%loop_step) {
-          %gep = llvm.getelementptr %arg0[0, %loop_cnt] : (!llvm.ptr, i32) -> !llvm.ptr, !llvm.array<10 x i32>
+          %gep = llvm.getelementptr %p_arg0[0, %loop_cnt] : (!llvm.ptr, i32) -> !llvm.ptr, !llvm.array<10 x i32>
           llvm.store %loop_cnt, %gep : i32, !llvm.ptr
           omp.yield
         }

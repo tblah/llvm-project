@@ -39,9 +39,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<"dlti.alloca_memory_space" = 5 :
       %c10 = llvm.mlir.constant(10 : i32) : i32
       omp.teams reduction(byref @add_reduction_byref_box_5xf32 %arg0 -> %arg2 : !llvm.ptr) {
         omp.parallel {
+          %par_c1 = llvm.mlir.constant(1 : i32) : i32
+          %par_c10 = llvm.mlir.constant(10 : i32) : i32
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%arg5) : i32 = (%c1_2) to (%c10) inclusive step (%c1_2) {
+              omp.loop_nest (%arg5) : i32 = (%par_c1) to (%par_c10) inclusive step (%par_c1) {
                 omp.yield
               }
             } {omp.composite}

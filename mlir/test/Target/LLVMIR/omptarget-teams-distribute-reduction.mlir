@@ -30,9 +30,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
     omp.target map_entries(%9 -> %arg0, %10 -> %arg1 : !llvm.ptr, !llvm.ptr) {
       %11 = llvm.mlir.constant(10000 : i32) : i32
       %12 = llvm.mlir.constant(1 : i32) : i32
-      omp.teams reduction(@add_reduction_i32 %arg0 -> %arg2 : !llvm.ptr) {
-        omp.distribute private(@_QFsimple_target_teams_only_reductionEindex__private_i32 %arg1 -> %arg3 : !llvm.ptr) {
-          omp.loop_nest (%arg4) : i32 = (%12) to (%11) inclusive step (%12) {
+      omp.teams shared(%arg1 -> %t_arg1 : !llvm.ptr) reduction(@add_reduction_i32 %arg0 -> %arg2 : !llvm.ptr) {
+        %c10000 = llvm.mlir.constant(10000 : i32) : i32
+        %c1 = llvm.mlir.constant(1 : i32) : i32
+        omp.distribute private(@_QFsimple_target_teams_only_reductionEindex__private_i32 %t_arg1 -> %arg3 : !llvm.ptr) {
+          omp.loop_nest (%arg4) : i32 = (%c1) to (%c10000) inclusive step (%c1) {
             llvm.store %arg4, %arg3 : i32, !llvm.ptr
             %13 = llvm.load %arg2 : !llvm.ptr -> i32
             %14 = llvm.load %arg3 : !llvm.ptr -> i32

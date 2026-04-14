@@ -30,24 +30,27 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
       %11 = llvm.mlir.constant(0 : index) : i64
       %12 = llvm.mlir.constant(10000 : index) : i64
       %13 = llvm.mlir.constant(1 : index) : i64
-      omp.teams reduction(@add_reduction_i32 %arg0 -> %arg2 : !llvm.ptr) {
-        %14 = llvm.trunc %13 : i64 to i32
-        llvm.br ^bb1(%14, %12 : i32, i64)
+      omp.teams shared(%arg1 -> %t_arg1 : !llvm.ptr) reduction(@add_reduction_i32 %arg0 -> %arg2 : !llvm.ptr) {
+        %c0 = llvm.mlir.constant(0 : index) : i64
+        %c10000 = llvm.mlir.constant(10000 : index) : i64
+        %c1 = llvm.mlir.constant(1 : index) : i64
+        %14 = llvm.trunc %c1 : i64 to i32
+        llvm.br ^bb1(%14, %c10000 : i32, i64)
       ^bb1(%15: i32, %16: i64):  // 2 preds: ^bb0, ^bb2
-        %17 = llvm.icmp "sgt" %16, %11 : i64
+        %17 = llvm.icmp "sgt" %16, %c0 : i64
         llvm.cond_br %17, ^bb2, ^bb3
       ^bb2:  // pred: ^bb1
-        llvm.store %15, %arg1 : i32, !llvm.ptr
+        llvm.store %15, %t_arg1 : i32, !llvm.ptr
         %18 = llvm.load %arg2 : !llvm.ptr -> i32
-        %19 = llvm.load %arg1 : !llvm.ptr -> i32
+        %19 = llvm.load %t_arg1 : !llvm.ptr -> i32
         %20 = llvm.add %18, %19 : i32
         llvm.store %20, %arg2 : i32, !llvm.ptr
-        %21 = llvm.load %arg1 : !llvm.ptr -> i32
+        %21 = llvm.load %t_arg1 : !llvm.ptr -> i32
         %22 = llvm.add %21, %14 overflow<nsw> : i32
-        %23 = llvm.sub %16, %13 : i64
+        %23 = llvm.sub %16, %c1 : i64
         llvm.br ^bb1(%22, %23 : i32, i64)
       ^bb3:  // pred: ^bb1
-        llvm.store %15, %arg1 : i32, !llvm.ptr
+        llvm.store %15, %t_arg1 : i32, !llvm.ptr
         omp.terminator
       }
       omp.terminator

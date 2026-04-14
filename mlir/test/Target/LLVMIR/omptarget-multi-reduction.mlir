@@ -68,24 +68,28 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
       %36 = llvm.mlir.constant(1.000000e+00 : f64) : f64
       %37 = llvm.mlir.constant(1000 : i32) : i32
       %38 = llvm.mlir.constant(1 : i32) : i32
-      omp.teams reduction(@add_reduction_f64 %arg0 -> %arg5, @add_reduction_f64 %arg1 -> %arg6, @add_reduction_f32 %arg2 -> %arg7, @add_reduction_f32 %arg3 -> %arg8 : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) {
-        omp.parallel {
+      omp.teams shared(%arg4 -> %t_arg4 : !llvm.ptr) reduction(@add_reduction_f64 %arg0 -> %arg5, @add_reduction_f64 %arg1 -> %arg6, @add_reduction_f32 %arg2 -> %arg7, @add_reduction_f32 %arg3 -> %arg8 : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) {
+        omp.parallel shared(%t_arg4 -> %p_arg4, %arg5 -> %p_arg5, %arg6 -> %p_arg6, %arg7 -> %p_arg7, %arg8 -> %p_arg8 : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) {
+          %c1f32 = llvm.mlir.constant(1.000000e+00 : f32) : f32
+          %c1f64 = llvm.mlir.constant(1.000000e+00 : f64) : f64
+          %c1000 = llvm.mlir.constant(1000 : i32) : i32
+          %c1 = llvm.mlir.constant(1 : i32) : i32
           omp.distribute {
-            omp.wsloop reduction(@add_reduction_f64 %arg5 -> %arg9, @add_reduction_f64 %arg6 -> %arg10, @add_reduction_f32 %arg7 -> %arg11, @add_reduction_f32 %arg8 -> %arg12 : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) {
-              omp.simd private(@_QFEj_private_i32 %arg4 -> %arg13 : !llvm.ptr) reduction(@add_reduction_f64 %arg9 -> %arg14, @add_reduction_f64 %arg10 -> %arg15, @add_reduction_f32 %arg11 -> %arg16, @add_reduction_f32 %arg12 -> %arg17 : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) {
-                omp.loop_nest (%arg18) : i32 = (%38) to (%37) inclusive step (%38) {
+            omp.wsloop reduction(@add_reduction_f64 %p_arg5 -> %arg9, @add_reduction_f64 %p_arg6 -> %arg10, @add_reduction_f32 %p_arg7 -> %arg11, @add_reduction_f32 %p_arg8 -> %arg12 : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) {
+              omp.simd private(@_QFEj_private_i32 %p_arg4 -> %arg13 : !llvm.ptr) reduction(@add_reduction_f64 %arg9 -> %arg14, @add_reduction_f64 %arg10 -> %arg15, @add_reduction_f32 %arg11 -> %arg16, @add_reduction_f32 %arg12 -> %arg17 : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) {
+                omp.loop_nest (%arg18) : i32 = (%c1) to (%c1000) inclusive step (%c1) {
                   llvm.store %arg18, %arg13 : i32, !llvm.ptr
                   %39 = llvm.load %arg14 : !llvm.ptr -> f64
-                  %40 = llvm.fadd %39, %36 {fastmathFlags = #llvm.fastmath<contract>} : f64
+                  %40 = llvm.fadd %39, %c1f64 {fastmathFlags = #llvm.fastmath<contract>} : f64
                   llvm.store %40, %arg14 : f64, !llvm.ptr
                   %41 = llvm.load %arg15 : !llvm.ptr -> f64
-                  %42 = llvm.fadd %41, %36 {fastmathFlags = #llvm.fastmath<contract>} : f64
+                  %42 = llvm.fadd %41, %c1f64 {fastmathFlags = #llvm.fastmath<contract>} : f64
                   llvm.store %42, %arg15 : f64, !llvm.ptr
                   %43 = llvm.load %arg16 : !llvm.ptr -> f32
-                  %44 = llvm.fadd %43, %35 {fastmathFlags = #llvm.fastmath<contract>} : f32
+                  %44 = llvm.fadd %43, %c1f32 {fastmathFlags = #llvm.fastmath<contract>} : f32
                   llvm.store %44, %arg16 : f32, !llvm.ptr
                   %45 = llvm.load %arg17 : !llvm.ptr -> f32
-                  %46 = llvm.fadd %45, %35 {fastmathFlags = #llvm.fastmath<contract>} : f32
+                  %46 = llvm.fadd %45, %c1f32 {fastmathFlags = #llvm.fastmath<contract>} : f32
                   llvm.store %46, %arg17 : f32, !llvm.ptr
                   omp.yield
                 }

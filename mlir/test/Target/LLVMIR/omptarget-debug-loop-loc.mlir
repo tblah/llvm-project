@@ -17,12 +17,16 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
     omp.target map_entries(%6 -> %arg0, %7 -> %arg2, %8 -> %arg4, %9 -> %arg5 : !llvm.ptr, !llvm.ptr, !llvm.ptr, !llvm.ptr) {
       %10 = llvm.mlir.constant(1 : i32) : i32
       %11 = llvm.mlir.constant(16384 : i32) : i32
-      omp.teams {
-        omp.distribute private(@_QFEi_private_i32 %arg5 -> %arg6 : !llvm.ptr) {
-          omp.loop_nest (%arg7) : i32 = (%10) to (%11) inclusive step (%10) {
-            omp.parallel {
-              omp.wsloop private(@_QFEj_private_i32 %arg2 -> %arg8 : !llvm.ptr) {
-                omp.loop_nest (%arg9) : i32 = (%10) to (%11) inclusive step (%10) {
+      omp.teams shared(%arg5 -> %t_arg5, %arg2 -> %t_arg2 : !llvm.ptr, !llvm.ptr) {
+        %c1 = llvm.mlir.constant(1 : i32) : i32
+        %c16384 = llvm.mlir.constant(16384 : i32) : i32
+        omp.distribute private(@_QFEi_private_i32 %t_arg5 -> %arg6 : !llvm.ptr) {
+          omp.loop_nest (%arg7) : i32 = (%c1) to (%c16384) inclusive step (%c1) {
+            omp.parallel shared(%t_arg2 -> %p_arg2 : !llvm.ptr) {
+              %c1_0 = llvm.mlir.constant(1 : i32) : i32
+              %c16384_0 = llvm.mlir.constant(16384 : i32) : i32
+              omp.wsloop private(@_QFEj_private_i32 %p_arg2 -> %arg8 : !llvm.ptr) {
+                omp.loop_nest (%arg9) : i32 = (%c1_0) to (%c16384_0) inclusive step (%c1_0) {
                   llvm.store %arg9, %arg8 : i32, !llvm.ptr loc(#loc9)
                   omp.yield
                 } loc(#loc9)

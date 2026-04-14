@@ -12,14 +12,19 @@ module attributes {omp.is_target_device = false, omp.target_triples = ["amdgcn-a
     %7 = llvm.alloca %6 x i32 {bindc_name = "i"} : (i64) -> !llvm.ptr
     %8 = llvm.mlir.addressof @_QFEn : !llvm.ptr
     omp.task {
+      %t1 = llvm.mlir.constant(0 : index) : i64
+      %t2 = llvm.mlir.constant(1 : index) : i64
+      %t3 = llvm.mlir.constant(40 : index) : i64
+      %t4 = llvm.mlir.addressof @_QFEa : !llvm.ptr
+      %t8 = llvm.mlir.addressof @_QFEn : !llvm.ptr
       %14 = llvm.mlir.constant(1 : i64) : i64
       %15 = llvm.alloca %14 x i32 {bindc_name = "i", pinned} : (i64) -> !llvm.ptr
-      %16 = llvm.load %8 : !llvm.ptr -> i32
+      %16 = llvm.load %t8 : !llvm.ptr -> i32
       %17 = llvm.sext %16 : i32 to i64
-      %18 = llvm.trunc %2 : i64 to i32
+      %18 = llvm.trunc %t2 : i64 to i32
       llvm.br ^bb1(%18, %17 : i32, i64)
     ^bb1(%19: i32, %20: i64):  // 2 preds: ^bb0, ^bb2
-      %21 = llvm.icmp "sgt" %20, %1 : i64
+      %21 = llvm.icmp "sgt" %20, %t1 : i64
       llvm.cond_br %21, ^bb2, ^bb3
     ^bb2:  // pred: ^bb1
       llvm.store %19, %15 : i32, !llvm.ptr
@@ -31,12 +36,12 @@ module attributes {omp.is_target_device = false, omp.target_triples = ["amdgcn-a
       %27 = llvm.mul %26, %24 overflow<nsw> : i64
       %28 = llvm.mul %27, %24 overflow<nsw> : i64
       %29 = llvm.add %28, %25 overflow<nsw> : i64
-      %30 = llvm.mul %24, %3 overflow<nsw> : i64
-      %31 = llvm.getelementptr %4[%29] : (!llvm.ptr, i64) -> !llvm.ptr, i32
+      %30 = llvm.mul %24, %t3 overflow<nsw> : i64
+      %31 = llvm.getelementptr %t4[%29] : (!llvm.ptr, i64) -> !llvm.ptr, i32
       llvm.store %22, %31 : i32, !llvm.ptr
       %32 = llvm.load %15 : !llvm.ptr -> i32
       %33 = llvm.add %32, %18 : i32
-      %34 = llvm.sub %20, %2 : i64
+      %34 = llvm.sub %20, %t2 : i64
       llvm.br ^bb1(%33, %34 : i32, i64)
     ^bb3:  // pred: ^bb1
       llvm.store %19, %15 : i32, !llvm.ptr

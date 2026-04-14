@@ -26,12 +26,13 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr = dense<64> : vector<4
     omp.target map_entries(%14 -> %arg0, %15 -> %arg1, %16 -> %arg2 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
       %17 = llvm.mlir.constant(1 : i32) : i32
       %18 = llvm.load %arg0 : !llvm.ptr -> i32
-      omp.parallel num_threads(%18 : i32) {
+      omp.parallel num_threads(%18 : i32) shared(%arg1 -> %p_arg1, %arg2 -> %p_arg2 : !llvm.ptr, !llvm.ptr) {
+        %c1 = llvm.mlir.constant(1 : i32) : i32
         omp.atomic.capture {
-          omp.atomic.read %arg1 = %arg2 : !llvm.ptr, !llvm.ptr, i32
-          omp.atomic.update %arg2 : !llvm.ptr {
+          omp.atomic.read %p_arg1 = %p_arg2 : !llvm.ptr, !llvm.ptr, i32
+          omp.atomic.update %p_arg2 : !llvm.ptr {
           ^bb0(%arg3: i32):
-            %19 = llvm.add %arg3, %17 : i32
+            %19 = llvm.add %arg3, %c1 : i32
             omp.yield(%19 : i32)
           } {atomic_control = #omp.atomic_control<fine_grained_memory = true>}
         }

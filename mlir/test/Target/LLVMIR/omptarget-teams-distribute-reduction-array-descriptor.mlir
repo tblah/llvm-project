@@ -31,9 +31,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<"dlti.alloca_memory_space" = 5 :
       %5 = llvm.mlir.constant(1000 : i32) : i32
       omp.teams reduction(byref @add_reduction_byref_box_4xi32 %arg0 -> %arg1 : !llvm.ptr) {
         omp.parallel {
+          %c1 = llvm.mlir.constant(1 : i32) : i32
+          %c1000 = llvm.mlir.constant(1000 : i32) : i32
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%iv) : i32 = (%4) to (%5) inclusive step (%4) {
+              omp.loop_nest (%iv) : i32 = (%c1) to (%c1000) inclusive step (%c1) {
                 omp.yield
               }
             } {omp.composite}
@@ -100,13 +102,13 @@ module attributes {llvm.target_triple = "nvptx64-nvidia-cuda", omp.is_gpu = true
     %2 = llvm.addrspacecast %1 : !llvm.ptr<5> to !llvm.ptr
     %3 = omp.map.info var_ptr(%2 : !llvm.ptr, !llvm.array<4 x i32>) map_clauses(tofrom) capture(ByRef) -> !llvm.ptr {name = "red_array"}
     omp.target map_entries(%3 -> %arg0 : !llvm.ptr) {
-      %4 = llvm.mlir.constant(1 : i32) : i32
-      %5 = llvm.mlir.constant(1000 : i32) : i32
       omp.teams reduction(byref @add_reduction_byref_box_4xi32 %arg0 -> %arg1 : !llvm.ptr) {
         omp.parallel {
+          %c1 = llvm.mlir.constant(1 : i32) : i32
+          %c1000 = llvm.mlir.constant(1000 : i32) : i32
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%iv) : i32 = (%4) to (%5) inclusive step (%4) {
+              omp.loop_nest (%iv) : i32 = (%c1) to (%c1000) inclusive step (%c1) {
                 omp.yield
               }
             } {omp.composite}

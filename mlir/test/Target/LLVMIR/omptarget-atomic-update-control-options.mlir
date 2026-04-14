@@ -21,10 +21,11 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<!llvm.ptr = dense<64> : vector<4
     omp.target map_entries(%10 -> %arg0, %11 -> %arg1 : !llvm.ptr, !llvm.ptr) {
       %12 = llvm.mlir.constant(1 : i32) : i32
       %13 = llvm.load %arg0 : !llvm.ptr -> i32
-      omp.parallel num_threads(%13 : i32) {
-        omp.atomic.update %arg1 : !llvm.ptr {
+      omp.parallel num_threads(%13 : i32) shared(%arg1 -> %p_arg1 : !llvm.ptr) {
+        %c1 = llvm.mlir.constant(1 : i32) : i32
+        omp.atomic.update %p_arg1 : !llvm.ptr {
         ^bb0(%arg2: i32):
-          %14 = llvm.add %arg2, %12 : i32
+          %14 = llvm.add %arg2, %c1 : i32
           omp.yield(%14 : i32)
         } {atomic_control = #omp.atomic_control<ignore_denormal_mode = true>}
         omp.terminator

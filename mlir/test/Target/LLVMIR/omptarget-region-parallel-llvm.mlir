@@ -16,11 +16,11 @@ module attributes {omp.is_target_device = false} {
     %map2 = omp.map.info var_ptr(%5 : !llvm.ptr, i32)   map_clauses(tofrom) capture(ByRef) -> !llvm.ptr {name = ""}
     %map3 = omp.map.info var_ptr(%7 : !llvm.ptr, i32)   map_clauses(tofrom) capture(ByRef) -> !llvm.ptr {name = ""}
     omp.target map_entries( %map1 -> %arg0, %map2 -> %arg1, %map3 -> %arg2 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
-      omp.parallel {
-        %8 = llvm.load %arg0 : !llvm.ptr -> i32
-        %9 = llvm.load %arg1 : !llvm.ptr -> i32
+      omp.parallel shared(%arg0 -> %p0, %arg1 -> %p1, %arg2 -> %p2 : !llvm.ptr, !llvm.ptr, !llvm.ptr) {
+        %8 = llvm.load %p0 : !llvm.ptr -> i32
+        %9 = llvm.load %p1 : !llvm.ptr -> i32
         %10 = llvm.add %8, %9  : i32
-        llvm.store %10, %arg2 : i32, !llvm.ptr
+        llvm.store %10, %p2 : i32, !llvm.ptr
         omp.terminator
         }
       omp.terminator

@@ -7,9 +7,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
   llvm.func @_QQmain_omp_outline_1(%arg0: !llvm.ptr) attributes {omp.declare_target = #omp.declaretarget<device_type = (host), capture_clause = (to)>} {
     %0 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(from) capture(ByRef) -> !llvm.ptr {name = "d"}
     omp.target map_entries(%0 -> %arg2 : !llvm.ptr) {
-      omp.parallel {
+      omp.parallel shared(%arg2 -> %p_arg2 : !llvm.ptr) {
         %1 = llvm.mlir.constant(1 : i32) : i32
-        llvm.store %1, %arg2 : i32, !llvm.ptr
+        llvm.store %1, %p_arg2 : i32, !llvm.ptr
         omp.terminator
       }
     omp.terminator
@@ -21,9 +21,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
     %0 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(from) capture(ByRef) -> !llvm.ptr {name = "d"}
     omp.target map_entries(%0 -> %arg2 : !llvm.ptr) {
       %1 = llvm.mlir.constant(156 : i32) : i32
-      omp.parallel num_threads(%1 : i32) {
+      omp.parallel num_threads(%1 : i32) shared(%arg2 -> %p_arg2 : !llvm.ptr) {
         %2 = llvm.mlir.constant(1 : i32) : i32
-        llvm.store %2, %arg2 : i32, !llvm.ptr
+        llvm.store %2, %p_arg2 : i32, !llvm.ptr
         omp.terminator
       }
     omp.terminator
@@ -42,8 +42,9 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
       %5 = llvm.load %arg2 : !llvm.ptr -> i32
       %6 = llvm.mlir.constant(0 : i64) : i32
       %7 = llvm.icmp "ne" %5, %6 : i32
-      omp.parallel if(%7) {
-        llvm.store %4, %arg1 : i32, !llvm.ptr
+      omp.parallel if(%7) shared(%arg1 -> %p_arg1 : !llvm.ptr) {
+        %c10 = llvm.mlir.constant(10 : i32) : i32
+        llvm.store %c10, %p_arg1 : i32, !llvm.ptr
         omp.terminator
       }
       omp.terminator

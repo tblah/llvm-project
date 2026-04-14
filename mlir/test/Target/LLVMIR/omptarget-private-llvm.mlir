@@ -17,18 +17,19 @@ module attributes {dlti.dl_spec = #dlti.dl_spec<#dlti.dl_entry<"dlti.alloca_memo
     %5 = omp.map.info var_ptr(%arg0 : !llvm.ptr, i32) map_clauses(implicit, exit_release_or_enter_alloc) capture(ByCopy) -> !llvm.ptr {name = "d"}
     omp.target map_entries(%4 -> %arg1, %5 -> %arg2 : !llvm.ptr, !llvm.ptr) {
       %6 = llvm.mlir.constant(1 : i32) : i32
-      omp.teams {
+      omp.teams shared(%arg1 -> %t_arg1, %arg2 -> %t_arg2 : !llvm.ptr, !llvm.ptr) {
 
 // CHECK:    omp.par.entry:
 // CHECK:      %[[TID_ADDR_LOCAL:.*]] = alloca i32, align 4, addrspace(5)
 // CHECK:      %[[OMP_PRIVATE_ALLOC:omp\.private\.alloc]] = alloca i32, align 4, addrspace(5)
 // CHECK-NEXT: %[[CAST:.*]] = addrspacecast ptr addrspace(5) %[[OMP_PRIVATE_ALLOC]] to ptr
 
-        omp.parallel private(@_QMmodFfailingEi_private_i32 %arg1 -> %arg3 : !llvm.ptr) {
-          %7 = llvm.load %arg2 : !llvm.ptr -> i32
+        omp.parallel private(@_QMmodFfailingEi_private_i32 %t_arg1 -> %arg3 : !llvm.ptr) shared(%t_arg2 -> %p_arg2 : !llvm.ptr) {
+          %c1 = llvm.mlir.constant(1 : i32) : i32
+          %7 = llvm.load %p_arg2 : !llvm.ptr -> i32
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%arg4) : i32 = (%6) to (%7) inclusive step (%6) {
+              omp.loop_nest (%arg4) : i32 = (%c1) to (%7) inclusive step (%c1) {
                 llvm.store %arg4, %arg3 : i32, !llvm.ptr
                 llvm.call @_QMotherProutine(%arg3) {fastmathFlags = #llvm.fastmath<contract>} : (!llvm.ptr) -> ()
                 omp.yield

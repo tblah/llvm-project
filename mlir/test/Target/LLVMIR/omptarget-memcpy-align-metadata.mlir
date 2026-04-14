@@ -26,17 +26,18 @@ module attributes {llvm.data_layout = "e-p:64:64-p1:64:64-p2:32:32-p3:32:32-p4:6
       %15 = llvm.mlir.constant(13 : i32) : i32
       %16 = llvm.mlir.constant(1000 : i32) : i32
       %17 = llvm.mlir.constant(1 : i32) : i32
-      omp.teams {
-        omp.parallel private(@_QFEk_private_i32 %arg2 -> %arg5 : !llvm.ptr) {
+      omp.teams shared(%arg2 -> %t_arg2, %arg0 -> %t_arg0 : !llvm.ptr, !llvm.ptr) {
+        omp.parallel private(@_QFEk_private_i32 %t_arg2 -> %arg5 : !llvm.ptr) shared(%t_arg0 -> %p_arg0 : !llvm.ptr) {
           %18 = llvm.mlir.constant(1 : i32) : i32
+          %c1000 = llvm.mlir.constant(1000 : i32) : i32
           %19 = llvm.alloca %18 x !llvm.struct<(ptr, i64, i32, i8, i8, i8, i8, array<1 x array<3 x i64>>)> {alignment = 8 : i64} : (i32) -> !llvm.ptr<5>
           %20 = llvm.addrspacecast %19 : !llvm.ptr<5> to !llvm.ptr
           omp.distribute {
             omp.wsloop {
-              omp.loop_nest (%arg6) : i32 = (%17) to (%16) inclusive step (%17) {
+              omp.loop_nest (%arg6) : i32 = (%18) to (%c1000) inclusive step (%18) {
                 llvm.store %arg6, %arg5  : i32, !llvm.ptr
                 %115 = llvm.mlir.constant(48 : i32) : i32
-                "llvm.intr.memcpy"(%20, %arg0, %115) <{isVolatile = false}> : (!llvm.ptr, !llvm.ptr, i32) -> ()
+                "llvm.intr.memcpy"(%20, %p_arg0, %115) <{isVolatile = false}> : (!llvm.ptr, !llvm.ptr, i32) -> ()
                 omp.yield
               }
             } {omp.composite}
