@@ -55,8 +55,8 @@ llvm.func @foo(i32) -> ()
 // CHECK: call void {{.+}} @__kmpc_fork_teams(ptr @{{.+}}, i32 1, ptr [[OUTLINED_FN:.+]], ptr [[STRUCT_ARG]])
 // CHECK: ret void
 llvm.func @omp_teams_shared_simple(%arg0: i32) {
-    omp.teams {
-        llvm.call @foo(%arg0) : (i32) -> ()
+    omp.teams shared(%arg0 -> %arg0_in : i32) {
+        llvm.call @foo(%arg0_in) : (i32) -> ()
         omp.terminator
     }
     llvm.return
@@ -109,10 +109,10 @@ llvm.func @omp_teams_branching_shared(%condition: i1, %arg0: i32, %arg1: f32, %a
     %loaded = llvm.load %allocated : !llvm.ptr -> i32
     llvm.br ^codegenBlock
 ^codegenBlock:
-    omp.teams {
-        llvm.cond_br %condition, ^true_block, ^false_block
+    omp.teams shared(%condition -> %condition_in, %arg0 -> %arg0_in, %arg1 -> %arg1_in, %arg2 -> %arg2_in, %arg3 -> %arg3_in, %allocated -> %allocated_in, %loaded -> %loaded_in : i1, i32, f32, !llvm.ptr, f128, !llvm.ptr, i32) {
+        llvm.cond_br %condition_in, ^true_block, ^false_block
     ^true_block:
-        llvm.call @foo(%arg0, %arg1, %arg2, %arg3, %allocated, %loaded) : (i32, f32, !llvm.ptr, f128, !llvm.ptr, i32) -> ()
+        llvm.call @foo(%arg0_in, %arg1_in, %arg2_in, %arg3_in, %allocated_in, %loaded_in) : (i32, f32, !llvm.ptr, f128, !llvm.ptr, i32) -> ()
         llvm.br ^exit
     ^false_block:
         llvm.br ^exit

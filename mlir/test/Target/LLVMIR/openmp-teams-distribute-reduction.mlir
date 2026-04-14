@@ -24,9 +24,11 @@ llvm.func @simple_teams_reduction_() attributes {fir.internal_name = "_QPsimple_
   %7 = llvm.mlir.constant(1 : i64) : i64
   %8 = llvm.mlir.constant(1 : i64) : i64
   llvm.store %6, %1 : i32, !llvm.ptr
-  omp.teams reduction(@add_reduction_i32 %1 -> %arg0 : !llvm.ptr) {
-    omp.distribute private(@_QFsimple_teams_reductionEindex__private_i32 %3 -> %arg1 : !llvm.ptr) {
-      omp.loop_nest (%arg2) : i32 = (%5) to (%4) inclusive step (%5) {
+  omp.teams shared(%3 -> %idx_in : !llvm.ptr) reduction(@add_reduction_i32 %1 -> %arg0 : !llvm.ptr) {
+    %c10000 = llvm.mlir.constant(10000 : i32) : i32
+    %c1 = llvm.mlir.constant(1 : i32) : i32
+    omp.distribute private(@_QFsimple_teams_reductionEindex__private_i32 %idx_in -> %arg1 : !llvm.ptr) {
+      omp.loop_nest (%arg2) : i32 = (%c1) to (%c10000) inclusive step (%c1) {
         llvm.store %arg2, %arg1 : i32, !llvm.ptr
         %9 = llvm.load %arg0 : !llvm.ptr -> i32
         %10 = llvm.load %arg1 : !llvm.ptr -> i32

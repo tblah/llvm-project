@@ -24,24 +24,24 @@ llvm.func @simple_teams_only_reduction_() attributes {fir.internal_name = "_QPsi
   %8 = llvm.mlir.constant(1 : i64) : i64
   %9 = llvm.mlir.constant(1 : i64) : i64
   llvm.store %7, %1 : i32, !llvm.ptr
-  omp.teams reduction(@add_reduction_i32 %1 -> %arg0 : !llvm.ptr) {
-    %10 = llvm.trunc %6 : i64 to i32
-    llvm.br ^bb1(%10, %5 : i32, i64)
+  omp.teams shared(%6 -> %v6, %5 -> %v5, %4 -> %v4, %3 -> %v3 : i64, i64, i64, !llvm.ptr) reduction(@add_reduction_i32 %1 -> %arg0 : !llvm.ptr) {
+    %10 = llvm.trunc %v6 : i64 to i32
+    llvm.br ^bb1(%10, %v5 : i32, i64)
   ^bb1(%11: i32, %12: i64):  // 2 preds: ^bb0, ^bb2
-    %13 = llvm.icmp "sgt" %12, %4 : i64
+    %13 = llvm.icmp "sgt" %12, %v4 : i64
     llvm.cond_br %13, ^bb2, ^bb3
   ^bb2:  // pred: ^bb1
-    llvm.store %11, %3 : i32, !llvm.ptr
+    llvm.store %11, %v3 : i32, !llvm.ptr
     %14 = llvm.load %arg0 : !llvm.ptr -> i32
-    %15 = llvm.load %3 : !llvm.ptr -> i32
+    %15 = llvm.load %v3 : !llvm.ptr -> i32
     %16 = llvm.add %14, %15 : i32
     llvm.store %16, %arg0 : i32, !llvm.ptr
-    %17 = llvm.load %3 : !llvm.ptr -> i32
+    %17 = llvm.load %v3 : !llvm.ptr -> i32
     %18 = llvm.add %17, %10 overflow<nsw> : i32
-    %19 = llvm.sub %12, %6 : i64
+    %19 = llvm.sub %12, %v6 : i64
     llvm.br ^bb1(%18, %19 : i32, i64)
   ^bb3:  // pred: ^bb1
-    llvm.store %11, %3 : i32, !llvm.ptr
+    llvm.store %11, %v3 : i32, !llvm.ptr
     omp.terminator
   }
   llvm.return

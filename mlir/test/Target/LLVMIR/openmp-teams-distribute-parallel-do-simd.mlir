@@ -29,12 +29,14 @@ llvm.func @test_teams_distribute_parallel_do_simd() {
   %2 = llvm.mlir.constant(1000 : i32) : i32
   %3 = llvm.mlir.constant(1 : i32) : i32
   %4 = llvm.mlir.constant(1 : i64) : i64
-  omp.teams {
-    omp.parallel {
+  omp.teams shared(%1 -> %ptr_t : !llvm.ptr) {
+    omp.parallel shared(%ptr_t -> %ptr_p : !llvm.ptr) {
+      %c1000 = llvm.mlir.constant(1000 : i32) : i32
+      %c1 = llvm.mlir.constant(1 : i32) : i32
       omp.distribute {
         omp.wsloop {
-          omp.simd private(@_QFEi_private_i32 %1 -> %arg0 : !llvm.ptr) {
-            omp.loop_nest (%arg1) : i32 = (%3) to (%2) inclusive step (%3) {
+          omp.simd private(@_QFEi_private_i32 %ptr_p -> %arg0 : !llvm.ptr) {
+            omp.loop_nest (%arg1) : i32 = (%c1) to (%c1000) inclusive step (%c1) {
               llvm.store %arg1, %arg0 : i32, !llvm.ptr
               omp.yield
             }
