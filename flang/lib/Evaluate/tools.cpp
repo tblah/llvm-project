@@ -1411,6 +1411,32 @@ static RealExpr<KIND> buildRightAssociatedAddFold(
   return result;
 }
 
+template <typename T> static bool canBuildSplitSumExpressionTree(const T &) {
+  return false;
+}
+
+template <int KIND>
+static bool canBuildSplitSumExpressionTree(const RealExpr<KIND> &expr) {
+  if (!std::get_if<Add<Real<KIND>>>(&expr.u))
+    return false;
+
+  llvm::SmallVector<RealExpr<KIND>, 8> terms;
+  flattenTopLevelAdds(expr, terms);
+  return terms.size() > 1;
+}
+
+template <common::TypeCategory CAT>
+static bool canBuildSplitSumExpressionTree(const Expr<SomeKind<CAT>> &expr) {
+  if constexpr (CAT == common::TypeCategory::Real) {
+    return common::visit(
+        [&](const auto &typedExpr) {
+          return canBuildSplitSumExpressionTree(typedExpr);
+        },
+        expr.u);
+  }
+  return false;
+}
+
 template <typename T>
 static std::optional<Expr<SomeType>> tryBuildSplitSumExpressionTree(const T &) {
   return std::nullopt;
@@ -1457,7 +1483,12 @@ bool CanBuildSplitSumExpressionTree(
       !HasVectorSubscript(lhs) && !HasParentheses(rhs) && !HasSubtract(rhs) &&
       !HasProcedureRef(rhs) && !HasProcedureRef(lhs) &&
       !HasVolatileOrAsynchronousSymbol(rhs) &&
-      !HasVolatileOrAsynchronousSymbol(lhs);
+      !HasVolatileOrAsynchronousSymbol(lhs) &&
+      common::visit(
+          [&](const auto &typedExpr) {
+            return canBuildSplitSumExpressionTree(typedExpr);
+          },
+          rhs.u);
 }
 
 std::optional<Expr<SomeType>> TryBuildSplitSumExpressionTree(

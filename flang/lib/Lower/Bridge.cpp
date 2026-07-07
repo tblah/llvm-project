@@ -96,6 +96,10 @@ static llvm::cl::opt<bool> enableSplitSumExpressionTreeLowering(
     "enable-split-sum-expression-tree-lowering", llvm::cl::Hidden,
     llvm::cl::desc("Enable experimental split sum expression tree lowering"));
 
+static llvm::cl::opt<bool> enableGuardedRealSumReassociation(
+    "enable-guarded-real-sum-reassociation", llvm::cl::Hidden,
+    llvm::cl::desc("Enable experimental guarded real sum reassociation"));
+
 namespace {
 /// Information for generating a structured or unstructured increment loop.
 struct IncrementLoopInfo {
@@ -5574,22 +5578,44 @@ private:
 
     // Helper to generate the code evaluating the right-hand side.
     auto evaluateRhs = [&](Fortran::lower::StatementContext &stmtCtx) {
-      const Fortran::lower::SomeExpr *rhsExpr = &assign.rhs;
-      std::optional<Fortran::lower::SomeExpr> rewritten;
       if (enableSplitSumExpressionTreeLowering &&
+          enableGuardedRealSumReassociation)
+        fir::emitFatalError(
+            loc, "enable-split-sum-expression-tree-lowering and "
+                 "enable-guarded-real-sum-reassociation cannot both be set");
+
+      const bool canReassociateRealSum =
+          (enableSplitSumExpressionTreeLowering ||
+           enableGuardedRealSumReassociation) &&
           Fortran::evaluate::CanBuildSplitSumExpressionTree(assign.lhs,
-                                                            assign.rhs)) {
-        rewritten =
+                                                            assign.rhs);
+
+      std::optional<hlfir::Entity> rhs;
+      if (enableSplitSumExpressionTreeLowering && canReassociateRealSum) {
+        std::optional<Fortran::lower::SomeExpr> rewritten =
             Fortran::evaluate::TryBuildSplitSumExpressionTree(assign.rhs);
-        if (rewritten)
-          rhsExpr = &*rewritten;
+        const Fortran::lower::SomeExpr &rhsExpr =
+            rewritten ? *rewritten : assign.rhs;
+        rhs = Fortran::lower::convertExprToHLFIR(loc, *this, rhsExpr,
+                                                 localSymbols, stmtCtx);
+      } else if (enableGuardedRealSumReassociation && canReassociateRealSum) {
+        mlir::arith::FastMathFlags fmfBackup = builder.getFastMathFlags();
+        builder.setFastMathFlags(fmfBackup |
+                                 mlir::arith::FastMathFlags::reassoc);
+        rhs = Fortran::lower::convertExprToHLFIR(loc, *this, assign.rhs,
+                                                 localSymbols, stmtCtx);
+        rhs = hlfir::Entity{
+            hlfir::NoReassocOp::create(builder, loc, *rhs).getResult()};
+        builder.setFastMathFlags(fmfBackup);
+      } else {
+        rhs = Fortran::lower::convertExprToHLFIR(loc, *this, assign.rhs,
+                                                 localSymbols, stmtCtx);
       }
-      hlfir::Entity rhs = Fortran::lower::convertExprToHLFIR(
-          loc, *this, *rhsExpr, localSymbols, stmtCtx);
+
       // Load trivial scalar RHS to allow the loads to be hoisted outside of
       // loops early if possible. This also dereferences pointer and
       // allocatable RHS: the target is being assigned from.
-      rhs = hlfir::loadTrivialScalar(loc, builder, rhs);
+      hlfir::Entity loadedRhs = hlfir::loadTrivialScalar(loc, builder, *rhs);
       // In intrinsic assignments, the LHS type may not match the RHS type, in
       // which case an implicit conversion of the LHS must be done. The
       // front-end usually makes it explicit, unless it cannot (whole
@@ -5599,9 +5625,9 @@ private:
       // converted entity in case of assignment to whole allocatables so to
       // propagate the lower bounds to the LHS in case of reallocation.
       if (!userDefinedAssignment)
-        rhs = genImplicitConvert(assign, rhs, isWholeAllocatableAssignment,
-                                 stmtCtx);
-      return rhs;
+        loadedRhs = genImplicitConvert(assign, loadedRhs,
+                                       isWholeAllocatableAssignment, stmtCtx);
+      return loadedRhs;
     };
 
     // Helper to generate the code evaluating the left-hand side.
