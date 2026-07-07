@@ -101,6 +101,14 @@ static inline mlir::Type getI8Type(mlir::MLIRContext *context) {
   return mlir::IntegerType::get(context, 8);
 }
 
+static bool isFloatingPointOrVectorOfFloatingPoint(mlir::Type type) {
+  if (mlir::isa<mlir::FloatType>(type))
+    return true;
+  if (auto vectorType = mlir::dyn_cast<mlir::VectorType>(type))
+    return mlir::isa<mlir::FloatType>(vectorType.getElementType());
+  return false;
+}
+
 static mlir::Block *createBlock(mlir::ConversionPatternRewriter &rewriter,
                                 mlir::Block *insertBefore) {
   assert(insertBefore && "expected valid insertion block");
@@ -3757,7 +3765,14 @@ struct NoReassocOpConversion : public fir::FIROpConversion<fir::NoReassocOp> {
   llvm::LogicalResult
   matchAndRewrite(fir::NoReassocOp noreassoc, OpAdaptor adaptor,
                   mlir::ConversionPatternRewriter &rewriter) const override {
-    rewriter.replaceOp(noreassoc, adaptor.getOperands()[0]);
+    mlir::Value value = adaptor.getOperands()[0];
+    mlir::Type type = value.getType();
+    if (!isFloatingPointOrVectorOfFloatingPoint(type)) {
+      rewriter.replaceOp(noreassoc, value);
+      return mlir::success();
+    }
+    rewriter.replaceOpWithNewOp<mlir::LLVM::ArithmeticFenceOp>(noreassoc, type,
+                                                               value);
     return mlir::success();
   }
 };
