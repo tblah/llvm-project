@@ -131,6 +131,12 @@ def LLVM_FractionExpOp : LLVM_TwoResultIntrOp<"frexp", [0, 1], [],
         "functional-type(operands, results)";
 }
 def LLVM_FAbsOp : LLVM_UnaryIntrOpF<"fabs">;
+// Do not use LLVM_UnaryIntrOpF here: arithmetic.fence operates on floating
+// types, but the fence itself should not carry fastmath flags.
+def LLVM_ArithmeticFenceOp
+    : LLVM_UnaryIntrOpBase<"arithmetic.fence", LLVM_AnyFloat> {
+  let arguments = commonArgs;
+}
 def LLVM_FCeilOp : LLVM_UnaryIntrOpF<"ceil">;
 def LLVM_FFloorOp : LLVM_UnaryIntrOpF<"floor">;
 def LLVM_FMAOp : LLVM_TernarySameArgsIntrOpF<"fma">;
